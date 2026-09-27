@@ -35,7 +35,7 @@ O frontend sobe em `http://localhost:5173` (porta padrão do Vite) e consome a A
 
 Este repo segue os padrões de commit e branching definidos em [`kaikan-cachoeira-docs`](https://github.com/kaikan-cachoeira/kaikan-cachoeira-docs):
 
-- Commits: `docs/PADRONIZACAO_COMMITS.md`
-- Branches: `docs/FLUXO_DE_DESENVOLVIMENTO.md` (`feat/nome-da-feature → dev → main`)
+- Commits: [`PADRONIZACAO_COMMITS.md`](https://github.com/kaikan-cachoeira/kaikan-cachoeira-docs/blob/main/PADRONIZACAO_COMMITS.md)
+- Branches: [`FLUXO_DE_DESENVOLVIMENTO.md`](https://github.com/kaikan-cachoeira/kaikan-cachoeira-docs/blob/main/FLUXO_DE_DESENVOLVIMENTO.md) (`feat/nome-da-feature → dev → main`)
 
 Todas as chamadas de API seguem o contrato documentado em `kaikan-cachoeira-docs/ENDPOINTS.md`.
