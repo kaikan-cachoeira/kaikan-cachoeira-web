@@ -1,0 +1,159 @@
+/* Cores e configurações usadas no site inteiro */
+:root {
+  --vinho: #8a1a10;
+  --vinho-escuro: #6e130b;
+  --fundo: #f8f3de85;
+  --branco:rgb(244, 239, 239);
+  --texto: #1a1a2e;
+  --texto-suave: #6b7280;
+  --borda: #e5e5e0;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Montserrat", sans-serif;
+  color: var(--texto);
+  background: var(--branco);
+  font-size: 14px;
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Outfit", sans-serif;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ---------- Logo ---------- */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icone {
+  width: 34px;
+  height: 34px;
+  background: var(--vinho);
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family:  "Outfit", sans-serif;
+;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.logo-nome {
+  font-family:  "Outfit", sans-serif;
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1.5;
+}
+
+.logo-sub {
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: #9aa0a6;
+}
+
+/* ---------- Botões ---------- */
+.botao {
+  border: none;
+  cursor: pointer;
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  border-radius: 8px;
+  padding: 10px 26px;
+  margin-left: 10px;
+}
+
+.botao-principal {
+  width: 100%;
+  background: var(--vinho);
+  color: white;
+  padding: 12px;
+}
+
+.botao-principal:hover {
+  background: var(--vinho-escuro);
+}
+
+.botao-branco {
+  background: white;
+  color: var(--vinho);
+}
+
+.botao-translucido {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Campos de formulário */
+.campo {
+  margin-bottom: 16px;
+}
+
+.campo-label {
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.campo-caixa {
+  position: relative;
+}
+
+.campo-input {
+  width: 100%;
+  padding: 20px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  font-family: "Outfit", sans-serif;
+  font-size: 15px;
+  outline: none;
+}
+
+.campo-input:focus {
+  border-color: var(--vinho);
+}
+
+.campo-olho {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #8a8a8a;
+  display: flex;
+}
+
+/* ---------- Avatar redondo com iniciais ---------- */
+.avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--vinho);
+  color: white;
+  font-size: 9px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
