@@ -1,0 +1,164 @@
+.home {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.home-ola {
+  font-size: 30px;
+}
+
+.home-data {
+  font-size: 18px;
+  color: var(--texto-suave);
+  margin: 2px 0 18px;
+}
+
+/* ---------- Faixa do evento ---------- */
+.evento {
+  background: var(--vinho);
+  color: white;
+  border-radius: 12px;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.evento-etiqueta {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.evento-nome {
+  font-size: 20px;
+  margin: 5px 0;
+  font-weight: 90;
+   opacity: 0.9;
+}
+
+.evento-data {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.evento-botoes {
+  display: flex;
+  gap: 20px;
+}
+
+/* ---------- Cards de atalho ---------- */
+.home-grade-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 2fr);
+  gap: 34px;
+  margin-bottom: 22px;
+}
+
+.card-atalho {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-icone {
+  width: 39px;
+  height: 39px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 22px;
+}
+
+.card-icone-verde {
+  background: #efeee3;
+  color: #5a5a30;
+}
+
+.card-icone-vermelho {
+  background: #fdf0ee;
+  color: var(--vinho);
+}
+
+.card-icone-azul {
+  background: #eef3f8;
+  color: #4a7aa8;
+}
+
+.card-titulo {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.card-descricao {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--texto-suave);
+  min-height: 32px;
+  margin-bottom: 14px;
+}
+
+.card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vinho-escuro);
+}
+
+/* ---------- Estatísticas ---------- */
+.home-grade-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.estatistica {
+  background: white;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.estatistica-valor {
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.estatistica-titulo {
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.estatistica-detalhe {
+  font-size: 9px;
+  color: #9aa0a6;
+}
+
+/* ---------- Telas menores ---------- */
+@media (max-width: 900px) {
+  .home-grade-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .home-grade-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .sidebar {
+    display: none;
+  }
+  .home-grade-cards {
+    grid-template-columns: 1fr;
+  }
+  .evento {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
