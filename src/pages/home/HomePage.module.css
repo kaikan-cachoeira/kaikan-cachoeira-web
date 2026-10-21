@@ -1,0 +1,184 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-32);
+}
+
+.eventCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-24);
+  padding: var(--espaco-24);
+  border-color: var(--borda-bege);
+}
+
+.eventHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espaco-16);
+}
+
+.eyebrow {
+  margin-bottom: var(--espaco-4);
+  color: var(--texto-suave);
+  font-size: var(--texto-auxiliar);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.eventName {
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  font-weight: 700;
+}
+
+.eventPeriod {
+  margin-top: var(--espaco-8);
+  color: var(--texto-suave);
+  font-size: var(--texto-auxiliar);
+}
+
+.eventActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-12);
+}
+
+.emptyEvent {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-16);
+  padding: var(--espaco-24);
+}
+
+.emptyEvent > :last-child {
+  margin-left: auto;
+}
+
+.emptyIcon {
+  color: var(--texto-suave);
+  flex-shrink: 0;
+}
+
+.emptyTitle {
+  font-size: var(--texto-subtitulo);
+}
+
+.emptyText {
+  margin-top: var(--espaco-4);
+  color: var(--texto-suave);
+  font-size: var(--texto-auxiliar);
+}
+
+.quickSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-16);
+}
+
+.sectionTitle {
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
+.shortcutGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espaco-16);
+}
+
+.shortcut {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espaco-8);
+  min-height: 230px;
+  padding: var(--espaco-24);
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.shortcut:hover {
+  box-shadow: var(--sombra-2);
+  transform: translateY(-2px);
+}
+
+.shortcutIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: var(--espaco-4);
+  border-radius: var(--raio-campo);
+  background: var(--vinho-suave);
+  color: var(--vinho);
+}
+
+.shortcutTitle {
+  font-size: var(--texto-subtitulo);
+}
+
+.shortcutText {
+  flex: 1;
+  color: var(--texto-suave);
+  font-size: var(--texto-auxiliar);
+  line-height: 1.6;
+}
+
+.shortcutLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-8);
+  margin-top: var(--espaco-8);
+  color: var(--texto);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.shortcutLink:hover {
+  color: var(--vinho);
+}
+
+@media (max-width: 1024px) {
+  .shortcutGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .stack {
+    gap: var(--espaco-24);
+  }
+
+  .eventHeading {
+    flex-direction: column;
+  }
+
+  .eventActions {
+    flex-direction: column;
+  }
+
+  .eventActions > * {
+    width: 100%;
+  }
+
+  .emptyEvent {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .emptyEvent > :last-child {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .shortcutGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .shortcut {
+    min-height: 0;
+  }
+}

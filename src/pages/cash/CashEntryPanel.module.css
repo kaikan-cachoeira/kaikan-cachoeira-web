@@ -1,0 +1,89 @@
+.panel {
+  position: sticky;
+  top: calc(var(--altura-topbar) + var(--espaco-24));
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-16);
+  padding: var(--espaco-24);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-card);
+  background: var(--fundo);
+  box-shadow: var(--sombra-1);
+}
+
+.header {
+  padding-bottom: var(--espaco-12);
+  border-bottom: 1px solid var(--borda);
+}
+
+.title {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin-top: var(--espaco-4);
+  color: var(--texto-suave);
+  font-size: var(--texto-auxiliar);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-16);
+}
+
+.payments {
+  display: flex;
+  flex-direction: column;
+}
+
+.paymentGrid button:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.fiadoSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-12);
+  padding-top: var(--espaco-12);
+  border-top: 1px dashed var(--borda-bege);
+}
+
+.fiadoHeader h3 {
+  font-size: var(--texto-corpo);
+  font-weight: 600;
+}
+
+.fiadoHeader p {
+  margin-top: 2px;
+  color: var(--texto-suave);
+  font-size: var(--texto-auxiliar);
+}
+
+.serverError {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espaco-8);
+  padding: var(--espaco-12);
+  border: 1px solid var(--cor-erro);
+  border-radius: var(--raio-campo);
+  background: var(--erro-suave);
+  color: var(--cor-erro);
+  font-size: var(--texto-auxiliar);
+}
+
+.serverError svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.submit {
+  width: 100%;
+}
+
+@media (max-width: 1100px) {
+  .panel {
+    position: static;
+  }
+}

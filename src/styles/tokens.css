@@ -1,0 +1,63 @@
+/*
+ * Design tokens do Kaikan Cachoeira.
+ * Valores definidos no SDD (seção 3). Tokens extras são derivados e estão
+ * identificados para não conflitar com a fonte de verdade.
+ */
+:root {
+  /* Cores */
+  --vinho: #8a1a10;
+  --vinho-escuro: #6e130b;
+  --fundo: #fffdf8;
+  --branco-suave: #f4efef;
+  --texto: #1a1a2e;
+  --texto-suave: #6b7280;
+  --borda: #e5e5e0;
+  --borda-transparente: rgba(233, 224, 224, 0.614);
+  --borda-bege: #ddd9c4;
+  --cor-erro: #b42318;
+  --cor-sucesso: #217a45;
+  --cor-aviso: #8a4b08;
+
+  /* Derivados para superfícies e estados (contraste verificado na composição) */
+  --superficie-cabecalho: #ede7e6;
+  --vinho-suave: #f6e7e4;
+  --sucesso-suave: #e6f3eb;
+  --aviso-suave: #fbf0df;
+  --erro-suave: #fbeae8;
+  --overlay: rgba(26, 26, 46, 0.46);
+  --foco: #6e130b;
+
+  /* Tipografia */
+  --fonte: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  --texto-titulo: 2rem;
+  --texto-subtitulo: 1.125rem;
+  --texto-corpo: 1rem;
+  --texto-auxiliar: 0.875rem;
+  --peso-titulo: 700;
+  --peso-botao: 600;
+
+  /* Espaçamento — escala de 4 px */
+  --espaco-4: 4px;
+  --espaco-8: 8px;
+  --espaco-12: 12px;
+  --espaco-16: 16px;
+  --espaco-24: 24px;
+  --espaco-32: 32px;
+  --espaco-48: 48px;
+
+  /* Raios */
+  --raio-campo: 6px;
+  --raio-card: 12px;
+  --raio-modal: 12px;
+  --raio-pill: 999px;
+
+  /* Sombras */
+  --sombra-1: 0 2px 8px rgba(26, 26, 46, 0.08);
+  --sombra-2: 0 8px 24px rgba(26, 26, 46, 0.14);
+
+  /* Layout */
+  --largura-sidebar: 264px;
+  --altura-topbar: 84px;
+  --largura-conteudo: 1360px;
+}

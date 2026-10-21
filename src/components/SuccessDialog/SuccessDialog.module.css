@@ -1,0 +1,28 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espaco-16);
+  padding: var(--espaco-16) 0;
+  text-align: center;
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--sucesso-suave);
+  color: var(--cor-sucesso);
+}
+
+.message {
+  max-width: 44ch;
+  color: var(--texto-suave);
+}
+
+.button {
+  min-width: 120px;
+}

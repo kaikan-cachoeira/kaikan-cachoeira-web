@@ -1,0 +1,82 @@
+.region {
+  position: fixed;
+  right: var(--espaco-24);
+  bottom: var(--espaco-24);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-8);
+  width: min(420px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espaco-12);
+  padding: var(--espaco-16);
+  border: 1px solid var(--borda);
+  border-left: 4px solid var(--vinho);
+  border-radius: var(--raio-card);
+  background: var(--branco-suave);
+  box-shadow: var(--sombra-2);
+  color: var(--texto);
+  pointer-events: auto;
+}
+
+.toast p {
+  flex: 1;
+  font-size: var(--texto-corpo);
+}
+
+.success {
+  border-left-color: var(--cor-sucesso);
+}
+
+.success > svg {
+  color: var(--cor-sucesso);
+  flex-shrink: 0;
+}
+
+.error {
+  border-left-color: var(--cor-erro);
+}
+
+.error > svg {
+  color: var(--cor-erro);
+  flex-shrink: 0;
+}
+
+.info {
+  border-left-color: var(--cor-aviso);
+}
+
+.info > svg {
+  color: var(--cor-aviso);
+  flex-shrink: 0;
+}
+
+.close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: -4px -4px 0 0;
+  border: 0;
+  border-radius: var(--raio-campo);
+  background: transparent;
+  color: var(--texto-suave);
+}
+
+.close:hover {
+  background: rgba(26, 26, 46, 0.06);
+  color: var(--texto);
+}
+
+@media (max-width: 600px) {
+  .region {
+    right: var(--espaco-16);
+    bottom: var(--espaco-16);
+  }
+}

@@ -1,0 +1,28 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-12);
+  padding: var(--espaco-16);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-card);
+  background: var(--branco-suave);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--filter-columns, 2), minmax(0, 1fr));
+  gap: var(--espaco-16);
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--espaco-4);
+  border-top: 1px solid var(--borda);
+}
+
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

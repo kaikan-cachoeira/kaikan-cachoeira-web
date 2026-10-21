@@ -1,0 +1,199 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-16);
+  min-height: var(--altura-topbar);
+  padding: var(--espaco-16) var(--espaco-32);
+  border-bottom: 1px solid var(--borda);
+  background: rgba(255, 253, 248, 0.96);
+  backdrop-filter: blur(8px);
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-12);
+  min-width: 0;
+}
+
+.title {
+  overflow: hidden;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menuButton {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-left: calc(var(--espaco-8) * -1);
+  border: 0;
+  border-radius: var(--raio-campo);
+  background: transparent;
+  color: var(--texto);
+}
+
+.menuButton:hover {
+  background: var(--vinho-suave);
+  color: var(--vinho);
+}
+
+.userArea {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.userButton {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-12);
+  min-height: 48px;
+  padding: var(--espaco-4) var(--espaco-8);
+  border: 0;
+  border-radius: var(--raio-campo);
+  background: transparent;
+  color: var(--texto);
+}
+
+.userButton:hover {
+  background: var(--branco-suave);
+}
+
+.userText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.25;
+}
+
+.userName {
+  font-size: var(--texto-auxiliar);
+  font-weight: 600;
+}
+
+.userEmail {
+  max-width: 240px;
+  overflow: hidden;
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 1px solid var(--borda-bege);
+  border-radius: 50%;
+  background: var(--fundo);
+  color: var(--texto);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + var(--espaco-8));
+  right: 0;
+  z-index: 60;
+  width: 290px;
+  padding: var(--espaco-16);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-card);
+  background: var(--fundo);
+  box-shadow: var(--sombra-2);
+}
+
+.popoverIdentity {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-12);
+}
+
+.popoverName {
+  font-size: var(--texto-auxiliar);
+  font-weight: 600;
+}
+
+.popoverEmail {
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.accountLabel {
+  margin: var(--espaco-12) 0;
+  padding: var(--espaco-8) var(--espaco-12);
+  border-radius: var(--raio-campo);
+  background: var(--branco-suave);
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+}
+
+.logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espaco-8);
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-campo);
+  background: transparent;
+  color: var(--texto);
+  font-size: var(--texto-auxiliar);
+  font-weight: 600;
+}
+
+.logout:hover {
+  border-color: var(--vinho);
+  background: var(--vinho-suave);
+  color: var(--vinho);
+}
+
+@media (max-width: 1024px) {
+  .header {
+    padding: var(--espaco-12) var(--espaco-24);
+  }
+
+  .menuButton {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 600px) {
+  .header {
+    min-height: 68px;
+    padding: var(--espaco-8) var(--espaco-16);
+  }
+
+  .title {
+    font-size: 1.25rem;
+  }
+
+  .userText,
+  .userButton > svg {
+    display: none;
+  }
+
+  .userButton {
+    padding: var(--espaco-4);
+  }
+
+  .popover {
+    width: min(290px, calc(100vw - 32px));
+  }
+}

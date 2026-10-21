@@ -1,0 +1,89 @@
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espaco-12);
+  min-height: 220px;
+  padding: var(--espaco-32) var(--espaco-16);
+  border: 1px dashed var(--borda-bege);
+  border-radius: var(--raio-card);
+  background: var(--branco-suave);
+  color: var(--texto-suave);
+  text-align: center;
+}
+
+.state p {
+  max-width: 480px;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--borda);
+  border-top-color: var(--vinho);
+  border-radius: 50%;
+  animation: girar 800ms linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.errorIcon {
+  color: var(--cor-erro);
+}
+
+.emptyIcon {
+  color: var(--texto-suave);
+}
+
+.emptyTitle {
+  color: var(--texto) !important;
+  font-size: var(--texto-subtitulo);
+  font-weight: 600;
+}
+
+.emptyText {
+  color: var(--texto-suave);
+  font-size: var(--texto-auxiliar);
+}
+
+.emptyAction {
+  margin-top: var(--espaco-4);
+}
+
+.skeletonList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-12);
+}
+
+.skeleton {
+  height: 88px;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-card);
+  background: linear-gradient(
+    90deg,
+    var(--branco-suave) 0%,
+    var(--fundo) 50%,
+    var(--branco-suave) 100%
+  );
+  background-size: 200% 100%;
+  animation: brilho 1.4s ease-in-out infinite;
+}
+
+@keyframes brilho {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner,
+  .skeleton {
+    animation-duration: 2400ms;
+  }
+}

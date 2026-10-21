@@ -1,0 +1,67 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-12);
+  padding: var(--espaco-16);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-card);
+  background: var(--branco-suave);
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espaco-8);
+}
+
+.name {
+  font-size: var(--texto-subtitulo);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.category {
+  color: var(--texto-suave);
+  font-size: var(--texto-auxiliar);
+}
+
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--espaco-8);
+  margin-top: var(--espaco-4);
+}
+
+.priceRow strong {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.priceRow s {
+  color: var(--texto-suave);
+  font-size: var(--texto-auxiliar);
+  text-decoration-color: var(--cor-erro);
+}
+
+.availability {
+  color: var(--texto-suave);
+  font-size: var(--texto-auxiliar);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-8);
+  margin-top: auto;
+}
+
+.addButton {
+  width: 100%;
+}
