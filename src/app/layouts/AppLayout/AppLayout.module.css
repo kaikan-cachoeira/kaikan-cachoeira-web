@@ -1,0 +1,44 @@
+.shell {
+  min-height: 100vh;
+  display: flex;
+  background: var(--fundo);
+}
+
+.workspace {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  margin-left: var(--largura-sidebar);
+}
+
+.content {
+  width: 100%;
+  max-width: var(--largura-conteudo);
+  margin: 0 auto;
+  padding: var(--espaco-32);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  border: 0;
+  background: var(--overlay);
+}
+
+@media (max-width: 1024px) {
+  .workspace {
+    margin-left: 0;
+  }
+
+  .content {
+    padding: var(--espaco-24);
+  }
+}
+
+@media (max-width: 600px) {
+  .content {
+    padding: var(--espaco-16);
+  }
+}

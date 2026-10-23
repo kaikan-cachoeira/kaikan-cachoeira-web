@@ -1,0 +1,14 @@
+export type {
+  AtualizarCategoriaPayload,
+  Categoria,
+  CriarCategoriaPayload,
+  CriarMovimentacaoPayload,
+  CriarProdutoPayload,
+  LoteProduto,
+  MovimentacaoProduto,
+  OpcaoCategoria,
+  ParametrosProdutos,
+  Produto,
+  RespostaCategorias,
+  RespostaProdutos,
+} from "./inventario";

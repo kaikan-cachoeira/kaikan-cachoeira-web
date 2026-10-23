@@ -1,0 +1,67 @@
+import { Navigate, Route, Routes } from "react-router-dom";
+import AppLayout from "@/app/layouts/AppLayout/AppLayout";
+import AuthLayout from "@/app/layouts/AuthLayout/AuthLayout";
+import RotaProtegida from "@/app/routes/RotaProtegida";
+import PaginaPendente from "@/app/pages/PaginaPendente";
+import PaginaNaoEncontrada from "@/app/pages/PaginaNaoEncontrada";
+import {
+  ConfirmacaoRecuperacaoPage,
+  LoginPage,
+  RecuperarSenhaPage,
+} from "@/features/auth";
+import { HomePage } from "@/features/home";
+import { InventarioPage } from "@/features/inventario";
+import { DoacoesPage } from "@/features/doacoes";
+import {
+  EventoCardapioPage,
+  EventoDetalhesPage,
+  EventosPage,
+} from "@/features/eventos";
+import {
+  EventoVendasPage,
+  HistoricoVendasPage,
+  RegistroVendasPage,
+  VendasPorHora,
+} from "@/features/vendas";
+import { CaixaPage, FiadosPage } from "@/features/caixa";
+
+export default function AppRoutes() {
+  return (
+    <Routes>
+      <Route element={<AuthLayout />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/recuperar-senha" element={<RecuperarSenhaPage />} />
+        <Route
+          path="/confirmacao-recuperacao"
+          element={<ConfirmacaoRecuperacaoPage />}
+        />
+      </Route>
+
+      <Route element={<RotaProtegida />}>
+        <Route element={<AppLayout />}>
+          <Route index element={<Navigate to="/inicio" replace />} />
+          <Route path="/inicio" element={<HomePage />} />
+          <Route path="/estoque" element={<InventarioPage />} />
+          <Route path="/doacoes" element={<DoacoesPage />} />
+          <Route path="/eventos" element={<EventosPage />} />
+          <Route
+            path="/eventos/:id"
+            element={<EventoDetalhesPage vendasPorHora={VendasPorHora} />}
+          />
+          <Route path="/eventos/:id/cardapio" element={<EventoCardapioPage />} />
+          <Route path="/eventos/:id/vendas" element={<EventoVendasPage />} />
+          <Route path="/registro-vendas" element={<RegistroVendasPage />} />
+          <Route
+            path="/registro-vendas/historico"
+            element={<HistoricoVendasPage />}
+          />
+          <Route path="/caixa" element={<CaixaPage />} />
+          <Route path="/caixa/fiado" element={<CaixaPage />} />
+          <Route path="/caixa/fiados" element={<FiadosPage />} />
+          <Route path="/em-definicao/:slug" element={<PaginaPendente />} />
+          <Route path="*" element={<PaginaNaoEncontrada />} />
+        </Route>
+      </Route>
+    </Routes>
+  );
+}

@@ -1,0 +1,278 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-24);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espaco-16);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--espaco-24);
+  align-items: start;
+}
+
+.left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-16);
+  min-width: 0;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--espaco-12);
+}
+
+.clearButton {
+  min-height: 44px;
+}
+
+.listCard {
+  overflow: hidden;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-card);
+  background: var(--fundo);
+}
+
+.listHeader {
+  padding: var(--espaco-16) var(--espaco-24);
+  border-bottom: 1px solid var(--borda);
+}
+
+.listHeader h2 {
+  font-size: var(--texto-subtitulo);
+  font-weight: 700;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) 150px auto;
+  align-items: center;
+  gap: var(--espaco-16);
+  padding: var(--espaco-16) var(--espaco-24);
+  border-bottom: 1px solid var(--borda);
+  font-size: var(--texto-auxiliar);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.rowValue {
+  font-size: 1.0625rem;
+}
+
+.rowPayment {
+  color: var(--texto-suave);
+  overflow-wrap: anywhere;
+}
+
+.rowDate {
+  color: var(--texto-suave);
+  font-size: 0.8125rem;
+  text-align: right;
+}
+
+.rowAction {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.statusPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-8);
+}
+
+.pill {
+  min-height: 36px;
+  padding: 6px var(--espaco-16);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pill);
+  background: transparent;
+  color: var(--texto);
+  font-size: var(--texto-auxiliar);
+}
+
+.pill:hover {
+  border-color: var(--vinho);
+  color: var(--vinho);
+}
+
+.pillActive {
+  border-color: var(--texto);
+  background: var(--texto);
+  color: var(--fundo);
+  font-weight: 600;
+}
+
+.pillActive:hover {
+  border-color: var(--texto);
+  background: var(--texto);
+  color: var(--fundo);
+}
+
+.fiadoRow {
+  display: grid;
+  grid-template-columns: 130px 150px minmax(0, 1fr) 150px auto;
+  align-items: center;
+  gap: var(--espaco-16);
+  padding: var(--espaco-16) var(--espaco-24);
+  border-bottom: 1px solid var(--borda);
+  font-size: var(--texto-auxiliar);
+}
+
+.fiadoRow:last-child {
+  border-bottom: 0;
+}
+
+.fiadoAmount {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fiadoAmount strong {
+  font-size: 1.0625rem;
+}
+
+.fiadoAmount span {
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+}
+
+.pending {
+  color: var(--cor-aviso);
+}
+
+.settled {
+  color: var(--texto-suave);
+}
+
+.fiadoDebtor {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1200px) {
+  .row,
+  .fiadoRow {
+    grid-template-columns: 110px minmax(0, 1fr) 110px auto;
+  }
+
+  .fiadoRow .fiadoDebtor {
+    grid-column: 2 / 3;
+  }
+
+  .fiadoRow .rowDate {
+    grid-column: 3 / 4;
+  }
+
+  .fiadoRow .rowAction {
+    grid-column: 4 / 5;
+  }
+
+  .fiadoRow .settled,
+  .fiadoRow .pending {
+    grid-column: 2 / 3;
+    grid-row: 2;
+  }
+
+  .fiadoRow .fiadoAmount {
+    grid-row: 1 / 3;
+  }
+}
+
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .clearButton {
+    width: 100%;
+  }
+
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--espaco-8);
+  }
+
+  .rowPayment {
+    grid-column: 1 / 2;
+  }
+
+  .rowDate {
+    grid-column: 2 / 3;
+    grid-row: 1;
+  }
+
+  .rowAction {
+    grid-column: 1 / -1;
+  }
+
+  .rowAction > * {
+    width: 100%;
+  }
+
+  .fiadoRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--espaco-8);
+  }
+
+  .fiadoRow .fiadoAmount {
+    grid-row: auto;
+  }
+
+  .fiadoRow .settled,
+  .fiadoRow .pending,
+  .fiadoRow .fiadoDebtor,
+  .fiadoRow .rowDate,
+  .fiadoRow .rowAction {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .fiadoRow .rowDate {
+    grid-column: 2 / 3;
+    grid-row: 1;
+  }
+
+  .fiadoRow .rowAction {
+    grid-column: 1 / -1;
+  }
+
+  .fiadoRow .rowAction > * {
+    width: 100%;
+  }
+
+  .listHeader {
+    padding: var(--espaco-16);
+  }
+
+  .row,
+  .fiadoRow {
+    padding: var(--espaco-16);
+  }
+}

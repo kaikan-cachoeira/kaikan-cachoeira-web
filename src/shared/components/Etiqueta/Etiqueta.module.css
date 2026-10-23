@@ -1,0 +1,57 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-4);
+  min-height: 28px;
+  padding: 2px var(--espaco-12);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pill);
+  background: var(--fundo);
+  color: var(--texto);
+  font-size: var(--texto-auxiliar);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.neutral {
+  border-color: var(--borda-bege);
+  background: var(--fundo);
+  color: var(--texto);
+}
+
+.brand {
+  border-color: transparent;
+  background: var(--vinho-suave);
+  color: var(--vinho-escuro);
+}
+
+.success {
+  border-color: transparent;
+  background: var(--sucesso-suave);
+  color: var(--cor-sucesso);
+}
+
+.warning {
+  border-color: transparent;
+  background: var(--aviso-suave);
+  color: var(--cor-aviso);
+}
+
+.danger {
+  border-color: transparent;
+  background: var(--erro-suave);
+  color: var(--cor-erro);
+}
+
+.muted {
+  border-color: var(--borda);
+  background: var(--branco-suave);
+  color: var(--texto-suave);
+}

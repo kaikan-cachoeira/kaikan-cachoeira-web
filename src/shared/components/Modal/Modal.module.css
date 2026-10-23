@@ -1,0 +1,123 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--espaco-24);
+  background: var(--overlay);
+  overflow-y: auto;
+}
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 640px);
+  max-height: calc(100vh - 48px);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-modal);
+  background: var(--branco-suave);
+  box-shadow: var(--sombra-2);
+  outline: none;
+}
+
+.small {
+  max-width: 440px;
+}
+
+.medium {
+  max-width: 640px;
+}
+
+.large {
+  max-width: 820px;
+}
+
+.xlarge {
+  max-width: 1040px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espaco-16);
+  padding: var(--espaco-24);
+  border-bottom: 1px solid var(--borda);
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+}
+
+.title {
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
+.subtitle {
+  color: var(--texto-suave);
+  font-size: var(--texto-auxiliar);
+  line-height: 1.4;
+}
+
+.close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin: -8px -8px 0 0;
+  border: 1px solid transparent;
+  border-radius: var(--raio-campo);
+  background: transparent;
+  color: var(--texto);
+}
+
+.close:hover {
+  border-color: var(--borda);
+  background: var(--fundo);
+}
+
+.content {
+  padding: var(--espaco-24);
+  overflow-y: auto;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--espaco-12);
+  padding: var(--espaco-16) var(--espaco-24);
+  border-top: 1px solid var(--borda);
+}
+
+@media (max-width: 600px) {
+  .overlay {
+    padding: var(--espaco-16);
+    align-items: flex-end;
+  }
+
+  .modal {
+    max-height: calc(100vh - 32px);
+  }
+
+  .header,
+  .content {
+    padding: var(--espaco-16);
+  }
+
+  .footer {
+    padding: var(--espaco-16);
+  }
+
+  .footer > * {
+    flex: 1 1 auto;
+  }
+}
