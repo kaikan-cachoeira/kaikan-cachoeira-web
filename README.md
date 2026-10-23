@@ -5,10 +5,12 @@ Interface web do sistema de gestão da associação. Veja a visão geral do proj
 ## Stack
 
 - React 19
-- TypeScript (decisão ainda sujeita a revisão pelo time)
+- TypeScript estrito
 - Vite
 - Axios
 - React Router
+- TanStack Query
+- Vitest
 
 ## Como rodar
 
@@ -30,6 +32,12 @@ npm run dev
 ```
 
 O frontend sobe em `http://localhost:5173` (porta padrão do Vite) e consome a API do [`kaikan-cachoeira-api`](https://github.com/kaikan-cachoeira/kaikan-cachoeira-api) rodando em `http://localhost:8080`.
+
+## Arquitetura
+
+A organização por features, o DAG de dependências, as camadas internas e os
+comandos de verificação estão documentados em
+[`docs/arquitetura.md`](docs/arquitetura.md).
 
 ## Padrões
 

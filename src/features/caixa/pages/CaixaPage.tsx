@@ -1,0 +1,232 @@
+import { Link } from "react-router-dom";
+import PageHeader from "@/shared/components/PageHeader/PageHeader";
+import Abas from "@/shared/components/Abas/Abas";
+import Selecao from "@/shared/components/Formulario/Selecao";
+import Botao from "@/shared/components/Botao/Botao";
+import Paginacao from "@/shared/components/Paginacao/Paginacao";
+import ConfirmacaoDialog from "@/shared/components/ConfirmacaoDialog/ConfirmacaoDialog";
+import { EstatisticaCard } from "@/shared/components/Card/Card";
+import {
+  EstadoVazio,
+  EstadoErro,
+  EstadoCarregando,
+} from "@/shared/components/Estado/Estado";
+import { useCaixa } from "../hooks/useCaixa";
+import { formatarMoeda, formatarHoraHoje } from "@/shared/lib/formatacao";
+import type { LancamentoCaixa } from "../models";
+import PainelLancamentoCaixa from "../components/PainelLancamentoCaixa";
+import styles from "./Caixa.module.css";
+
+const TYPE_OPTIONS = [
+  { value: "", label: "Todos" },
+  { value: "Venda de fichas", label: "Venda de fichas" },
+  { value: "Devolução", label: "Devolução" },
+];
+
+const PAYMENT_OPTIONS = [
+  { value: "", label: "Todos" },
+  { value: "PIX", label: "PIX" },
+  { value: "Débito", label: "Débito" },
+  { value: "Crédito", label: "Crédito" },
+  { value: "Dinheiro", label: "Dinheiro" },
+  { value: "Fiado", label: "Fiado" },
+];
+
+function cancelLabel(entry: LancamentoCaixa) {
+  if (entry.payment === "Fiado") return "Cancelar fiado";
+  if (entry.type === "Venda de fichas") return "Cancelar venda";
+  return "Cancelar devolução";
+}
+
+export default function CaixaPage() {
+  const {
+    event,
+    eventLoading,
+    type,
+    setType,
+    payment,
+    setPayment,
+    setPage,
+    cancelTarget,
+    setCancelTarget,
+    caixaQuery,
+    summary,
+    entries,
+    tabs,
+    cancelarLancamento,
+    clearFilters,
+    confirmCancel,
+  } = useCaixa();
+  const { data, isLoading, isError, refetch } = caixaQuery;
+
+  if (eventLoading) {
+    return <EstadoCarregando message="Carregando caixa..." />;
+  }
+
+  if (!event) {
+    return (
+      <div className={styles.page}>
+        <PageHeader
+          title="Caixa"
+          subtitle="Controle de fichas, pagamentos e fiados"
+        />
+        <EstadoVazio
+          title="Nenhum evento em andamento."
+          description="Inicie um evento para registrar e consultar o caixa."
+          icon="cash"
+          action={
+            <Botao as={Link} to="/eventos">
+              Ir para eventos
+            </Botao>
+          }
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.page}>
+      <PageHeader
+        title="Caixa"
+        subtitle="Controle de fichas, pagamentos e fiados"
+      />
+
+      <section className={styles.statsGrid} aria-label="Resumo do caixa">
+        <EstatisticaCard label="Fichas vendidas" value={formatarMoeda(summary.sold)} />
+        <EstatisticaCard
+          label="Fichas devolvidas"
+          value={formatarMoeda(summary.returned)}
+        />
+        <EstatisticaCard
+          label="Fiados em aberto"
+          value={formatarMoeda(summary.openFiados)}
+        />
+      </section>
+
+      <div className={styles.layout}>
+        <div className={styles.left}>
+          <Abas items={tabs} label="Seções do caixa" />
+
+          <div className={styles.filters}>
+            <Selecao
+              id="caixa-filtro-tipo"
+              label="Tipo de registro"
+              options={TYPE_OPTIONS}
+              value={type}
+              onChange={(changeEvent) => {
+                setType(changeEvent.target.value);
+                setPage(1);
+              }}
+            />
+            <Selecao
+              id="caixa-filtro-pagamento"
+              label="Forma de pagamento"
+              options={PAYMENT_OPTIONS}
+              value={payment}
+              onChange={(changeEvent) => {
+                setPayment(changeEvent.target.value);
+                setPage(1);
+              }}
+            />
+            <Botao
+              variant="secondary"
+              className={styles.clearButton}
+              onClick={clearFilters}
+            >
+              Limpar filtros
+            </Botao>
+          </div>
+
+          <section className={styles.listCard} aria-labelledby="historico-caixa">
+            <header className={styles.listHeader}>
+              <h2 id="historico-caixa">Histórico de lançamentos</h2>
+            </header>
+
+            {isLoading ? (
+              <EstadoCarregando message="Carregando lançamentos..." />
+            ) : isError ? (
+              <EstadoErro
+                message="Não foi possível carregar o caixa."
+                onRetry={refetch}
+              />
+            ) : entries.length ? (
+              <ul className={styles.list}>
+                {entries.map((entry) => (
+                  <li className={styles.row} key={entry.id}>
+                    <strong className={styles.rowValue}>
+                      {formatarMoeda(entry.value)}
+                    </strong>
+                    <span className={styles.rowPayment}>
+                      {entry.type === "Venda de fichas"
+                        ? "Venda"
+                        : "Devolução"}{" "}
+                      - {entry.paymentLabel}
+                    </span>
+                    <span className={styles.rowDate}>
+                      {formatarHoraHoje(entry.createdAt)}
+                    </span>
+                    <div className={styles.rowAction}>
+                      <Botao
+                        variant="secondary"
+                        size="compact"
+                        onClick={() => setCancelTarget(entry)}
+                      >
+                        {cancelLabel(entry)}
+                      </Botao>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EstadoVazio
+                title="Nenhum lançamento encontrado."
+                description={
+                  type || payment
+                    ? "Ajuste os filtros para ver outros lançamentos."
+                    : "Os lançamentos do caixa aparecerão aqui."
+                }
+                icon="cash"
+                action={
+                  type || payment ? (
+                    <Botao variant="secondary" onClick={clearFilters}>
+                      Limpar filtros
+                    </Botao>
+                  ) : null
+                }
+              />
+            )}
+          </section>
+
+          {entries.length && data && data.totalPages > 1 ? (
+            <Paginacao
+              page={data.page}
+              totalPages={data.totalPages}
+              onPageChange={setPage}
+            />
+          ) : null}
+        </div>
+
+        <PainelLancamentoCaixa eventId={event.id} />
+      </div>
+
+      {cancelTarget ? (
+        <ConfirmacaoDialog
+          title={cancelLabel(cancelTarget)}
+          message={`Deseja cancelar este lançamento de ${formatarMoeda(
+            cancelTarget.value,
+          )}? ${
+            cancelTarget.payment === "Fiado"
+              ? "O fiado correspondente também será removido."
+              : "O valor deixará de ser considerado no resumo do caixa."
+          }`}
+          confirmLabel={cancelLabel(cancelTarget)}
+          cancelLabel="Voltar"
+          destructive
+          loading={cancelarLancamento.isPending}
+          onCancel={() => setCancelTarget(null)}
+          onConfirm={confirmCancel}
+        />
+      ) : null}
+    </div>
+  );
+}
