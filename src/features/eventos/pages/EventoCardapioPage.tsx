@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useParams } from "react-router-dom";
 import PageHeader from "@/shared/components/PageHeader/PageHeader";
 import BarraPesquisa from "@/shared/components/BarraPesquisa/BarraPesquisa";
@@ -22,7 +24,11 @@ import {
   EstadoCarregando,
 } from "@/shared/components/Estado/Estado";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
+import ConfirmacaoDialog from "@/shared/components/ConfirmacaoDialog/ConfirmacaoDialog";
+import { mensagemErro } from "@/shared/api/erros";
+import { useEventoMutations } from "../hooks/useEventos";
 import { useEventoCardapio } from "../hooks/useEventoCardapio";
+import type { ItemCardapio } from "../models";
 import {
   formatarMoeda,
   formatarNumero,
@@ -37,10 +43,22 @@ const TYPE_OPTIONS = [
   { value: "made", label: "Feito na hora" },
 ];
 
+interface MenuAcoes {
+  item: ItemCardapio;
+  top: number;
+  left: number;
+}
 
 export default function EventoCardapioPage() {
   const { id } = useParams();
   const { addToast } = useToast();
+  const { excluirProduto } = useEventoMutations();
+  const [actionsMenu, setActionsMenu] = useState<MenuAcoes | null>(null);
+  const [editTarget, setEditTarget] = useState<ItemCardapio | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ItemCardapio | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const menuItemRef = useRef<ItemCardapio | null>(null);
   const {
     event,
     isLoading,
@@ -71,6 +89,129 @@ export default function EventoCardapioPage() {
     openAdd,
     hasFilters,
   } = useEventoCardapio(id);
+  const activeMenuItemId = actionsMenu?.item.id;
+
+  function closeActionsMenu(returnFocus = false) {
+    setActionsMenu(null);
+    menuItemRef.current = null;
+    if (returnFocus) triggerRef.current?.focus();
+  }
+
+  function toggleActionsMenu(
+    item: ItemCardapio,
+    trigger: HTMLButtonElement,
+  ) {
+    if (actionsMenu?.item.id === item.id) {
+      closeActionsMenu();
+      return;
+    }
+    const rect = trigger.getBoundingClientRect();
+    const width = 184;
+    const height = 96;
+    const left = Math.max(
+      8,
+      Math.min(rect.right - width, window.innerWidth - width - 8),
+    );
+    let top = rect.bottom + 4;
+    if (top + height > window.innerHeight - 8) {
+      top = Math.max(8, rect.top - height - 4);
+    }
+    triggerRef.current = trigger;
+    menuItemRef.current = item;
+    setActionsMenu({ item, top, left });
+  }
+
+  useEffect(() => {
+    if (!activeMenuItemId) return undefined;
+
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target as Node;
+      if (
+        !menuRef.current?.contains(target) &&
+        !triggerRef.current?.contains(target)
+      ) {
+        closeActionsMenu();
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeActionsMenu(true);
+        return;
+      }
+      if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+      const options = menuRef.current?.querySelectorAll<HTMLButtonElement>(
+        '[role="menuitem"]',
+      );
+      if (!options?.length) return;
+      event.preventDefault();
+      const currentIndex = Array.from(options).indexOf(
+        document.activeElement as HTMLButtonElement,
+      );
+      const nextIndex =
+        event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? options.length - 1
+            : event.key === "ArrowDown"
+              ? (currentIndex + 1) % options.length
+              : (currentIndex - 1 + options.length) % options.length;
+      options[nextIndex]?.focus();
+    }
+
+    function updatePosition() {
+      const item = menuItemRef.current;
+      const trigger = triggerRef.current;
+      if (!item || !trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      const width = 184;
+      const height = 96;
+      const left = Math.max(
+        8,
+        Math.min(rect.right - width, window.innerWidth - width - 8),
+      );
+      let top = rect.bottom + 4;
+      if (top + height > window.innerHeight - 8) {
+        top = Math.max(8, rect.top - height - 4);
+      }
+      setActionsMenu({ item, top, left });
+    }
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      menuRef.current
+        ?.querySelector<HTMLButtonElement>('[role="menuitem"]')
+        ?.focus();
+    });
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [activeMenuItemId]);
+
+  async function confirmDelete() {
+    if (!id || !deleteTarget) return;
+    try {
+      await excluirProduto.mutateAsync({
+        eventId: id,
+        itemId: deleteTarget.id,
+      });
+      addToast("Produto excluído do cardápio.");
+      setDeleteTarget(null);
+    } catch (error) {
+      addToast(
+        mensagemErro(error, "Não foi possível excluir o produto do cardápio."),
+        "error",
+      );
+    }
+  }
 
   return (
     <div className={styles.stack}>
@@ -218,12 +359,17 @@ export default function EventoCardapioPage() {
                       <button
                         type="button"
                         className={styles.moreButton}
+                        id={`menu-trigger-${item.id}`}
                         aria-label={`Mais opções de ${item.name}`}
-                        onClick={() =>
-                          addToast(
-                            "O menu de opções do produto do cardápio ainda não foi especificado no SDD.",
-                            "info",
-                          )
+                        aria-haspopup="menu"
+                        aria-expanded={actionsMenu?.item.id === item.id}
+                        aria-controls={
+                          actionsMenu?.item.id === item.id
+                            ? `menu-produto-${item.id}`
+                            : undefined
+                        }
+                        onClick={(event) =>
+                          toggleActionsMenu(item, event.currentTarget)
                         }
                       >
                         <Icone name="more-vertical" size={20} />
@@ -279,9 +425,68 @@ export default function EventoCardapioPage() {
         />
       ) : null}
 
+      {editTarget && id ? (
+        <AdicionarProdutoCardapioModal
+          eventId={id}
+          item={editTarget}
+          categories={categories}
+          onClose={() => setEditTarget(null)}
+        />
+      ) : null}
+
+      {deleteTarget ? (
+        <ConfirmacaoDialog
+          title="Excluir produto do cardápio"
+          message={`Deseja excluir "${deleteTarget.name}" do cardápio deste evento?`}
+          confirmLabel="Excluir"
+          destructive
+          loading={excluirProduto.isPending}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={confirmDelete}
+        />
+      ) : null}
+
       {categoriesOpen ? (
         <CategoriasModal onClose={() => setCategoriesOpen(false)} />
       ) : null}
+
+      {actionsMenu
+        ? createPortal(
+            <div
+              ref={menuRef}
+              id={`menu-produto-${actionsMenu.item.id}`}
+              className={styles.actionsMenu}
+              role="menu"
+              aria-labelledby={`menu-trigger-${actionsMenu.item.id}`}
+              style={{ top: actionsMenu.top, left: actionsMenu.left }}
+            >
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setEditTarget(actionsMenu.item);
+                  closeActionsMenu();
+                }}
+              >
+                <Icone name="edit" size={16} />
+                Editar produto
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className={styles.dangerMenuItem}
+                onClick={() => {
+                  setDeleteTarget(actionsMenu.item);
+                  closeActionsMenu();
+                }}
+              >
+                <Icone name="trash" size={16} />
+                Excluir produto
+              </button>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

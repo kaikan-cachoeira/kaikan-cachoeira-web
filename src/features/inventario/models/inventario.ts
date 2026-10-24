@@ -84,3 +84,5 @@ export interface OpcaoCategoria {
   value: string;
   label: string;
 }
+
+export type AtualizarProdutoPayload = CriarProdutoPayload;

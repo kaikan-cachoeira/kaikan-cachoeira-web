@@ -36,3 +36,5 @@ export interface CriarDoacaoPayload {
   amount?: number;
   paymentMethod?: string;
 }
+
+export type AtualizarDoacaoPayload = CriarDoacaoPayload;

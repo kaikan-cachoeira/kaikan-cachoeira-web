@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { comporChave, queryKeys } from "@/shared/query/keys";
+import type { ParametrosPaginacao } from "@/shared/models/paginacao";
 import type {
   AtualizarCategoriaPayload,
   CriarCategoriaPayload,
@@ -8,6 +9,7 @@ import type {
   CriarProdutoPayload,
   ParametrosProdutos,
   Produto,
+  AtualizarProdutoPayload,
 } from "../models";
 import {
   atualizarCategoria,
@@ -20,6 +22,8 @@ import {
   criarProduto,
   listarProdutos,
   obterProduto,
+  atualizarProduto,
+  listarMovimentacoesLote,
 } from "../services/inventario";
 
 export function useProdutosQuery(params: ParametrosProdutos) {
@@ -37,6 +41,17 @@ export function useProdutoQuery(id?: string | null) {
   });
 }
 
+export function useMovimentacoesLoteQuery(
+  lotId: string | undefined,
+  params: ParametrosPaginacao,
+) {
+  return useQuery({
+    queryKey: comporChave(queryKeys.produtos, "lote", lotId, params),
+    queryFn: () => listarMovimentacoesLote(lotId as string, params),
+    enabled: Boolean(lotId),
+  });
+}
+
 export function useCategoriasQuery(search = "") {
   return useQuery({
     queryKey: comporChave(queryKeys.categorias, search),
@@ -49,6 +64,19 @@ export function useProdutoMutations() {
 
   const criar = useMutation({
     mutationFn: (payload: CriarProdutoPayload) => criarProduto(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.produtos });
+    },
+  });
+
+  const atualizar = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: AtualizarProdutoPayload;
+    }) => atualizarProduto(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.produtos });
     },
@@ -70,7 +98,11 @@ export function useProdutoMutations() {
     },
   });
 
-  return { criarProduto: criar, criarMovimentacao: movimentar };
+  return {
+    criarProduto: criar,
+    atualizarProduto: atualizar,
+    criarMovimentacao: movimentar,
+  };
 }
 
 export function useCategoriaMutations() {
@@ -126,6 +158,9 @@ export function useInventario() {
   const [movementProduct, setMovementProduct] = useState<Produto | null>(null);
   const [movementSuccess, setMovementSuccess] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
+
+  const [editProduct, setEditProduct] = useState<Produto | null>(null);
+  const [updatedProduct, setUpdatedProduct] = useState<Produto | null>(null);
 
   const params = useMemo<ParametrosProdutos>(
     () => ({
@@ -210,5 +245,9 @@ export function useInventario() {
     clearAll,
     openMovement,
     handleMovementSuccess,
+    editProduct, 
+    setEditProduct, 
+    updatedProduct, 
+    setUpdatedProduct,
   };
 }

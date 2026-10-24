@@ -1,0 +1,18 @@
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-8);
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--texto-suave);
+  font: inherit;
+  font-size: var(--texto-auxiliar);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.backLink:hover {
+  color: var(--vinho);
+}

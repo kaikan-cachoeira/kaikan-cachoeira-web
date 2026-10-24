@@ -11,14 +11,14 @@ interface ProdutoCardProps {
   produto: Produto;
   onDetails?: (produto: Produto) => void;
   onMovement?: (produto: Produto) => void;
-  onPending?: (label: string, produto: Produto) => void;
+  onEdit?: (produto: Produto) => void;
 }
 
 export default function ProdutoCard({
   produto,
   onDetails,
   onMovement,
-  onPending,
+  onEdit,
 }: ProdutoCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -86,8 +86,8 @@ export default function ProdutoCard({
                     role="menuitem"
                     onClick={() => {
                       setMenuOpen(false);
-                      onPending?.("Editar produto", produto);
-                    }}
+                      onEdit?.(produto);
+                    }}  
                   >
                     <Icone name="edit" size={16} />
                     Editar produto

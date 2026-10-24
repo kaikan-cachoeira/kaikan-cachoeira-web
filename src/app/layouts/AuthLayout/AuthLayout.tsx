@@ -22,24 +22,18 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
   return (
     <div className={styles.shell}>
       <main className={styles.main}>
-        <div className={styles.top}>
-          <Logo />
+        <div className={styles.formColumn}>
+          <div className={styles.top}>
+            <Logo />
+          </div>
+          <div className={styles.content}>{children || <Outlet />}</div>
         </div>
-        <div className={styles.content}>{children || <Outlet />}</div>
-        <p className={styles.footer}>Sistema de gestão Kaikan Cachoeira</p>
       </main>
-      <aside className={styles.illustration} aria-hidden="true">
-        <div className={styles.pattern}>
-          <span />
-          <span />
-          <span />
-        </div>
-        <div className={styles.illustrationContent}>
-          <p className={styles.overline}>Associação Cultural</p>
-          <p className={styles.illustrationTitle}>Kaikan Cachoeira</p>
-          <p className={styles.illustrationText}>
-            Tradição, comunidade e cuidado em cada evento.
-          </p>
+      <aside className={styles.photo} aria-hidden="true">
+        <div className={styles.photoImage} />
+        <div className={styles.photoText}>
+          <h2>Kaikan Cachoeira</h2>
+          <p>Sistema de gestão administrativa da associação cultural japonesa.</p>
         </div>
       </aside>
     </div>

@@ -21,6 +21,7 @@ export default function Abas({ items, label = "Seções" }: AbasProps) {
           key={item.to}
           to={item.to}
           end={item.end}
+          replace
           className={({ isActive }) =>
             `${styles.tab} ${isActive ? styles.active : ""}`.trim()
           }

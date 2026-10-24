@@ -6,8 +6,6 @@ import Icone from "@/shared/components/Icone/Icone";
 import styles from "./PaginaPendente.module.css";
 
 const LABELS: Record<string, string> = {
-  "painel-de-controle": "Painel de controle",
-  "relatorio-geral": "Relatório geral",
   "editar-evento": "Editar evento",
   "editar-produto": "Editar produto",
   "editar-categoria": "Editar categoria",
@@ -19,10 +17,15 @@ const LABELS: Record<string, string> = {
   "lista-de-movimentacoes": "Lista de movimentações",
 };
 
-export default function PaginaPendente() {
+interface PaginaPendenteProps {
+  titulo?: string;
+}
+
+export default function PaginaPendente({ titulo }: PaginaPendenteProps) {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const title =
+    titulo ||
     LABELS[slug || ""] ||
     String(slug || "Tela")
       .split("-")
@@ -32,7 +35,7 @@ export default function PaginaPendente() {
   return (
     <div className={styles.stack}>
       <PageHeader
-        title={title}
+        {...(titulo ? {} : { title })}
         subtitle="Destino identificado, mas ainda sem tela especificada"
         actions={
           <Botao variant="secondary" onClick={() => navigate(-1)}>

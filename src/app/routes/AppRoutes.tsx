@@ -10,7 +10,7 @@ import {
   RecuperarSenhaPage,
 } from "@/features/auth";
 import { HomePage } from "@/features/home";
-import { InventarioPage } from "@/features/inventario";
+import { InventarioPage, LoteMovimentacoesPage } from "@/features/inventario";
 import { DoacoesPage } from "@/features/doacoes";
 import {
   EventoCardapioPage,
@@ -23,7 +23,8 @@ import {
   RegistroVendasPage,
   VendasPorHora,
 } from "@/features/vendas";
-import { CaixaPage, FiadosPage } from "@/features/caixa";
+import { CaixaPage, FiadosGeraisPage, FiadosPage } from "@/features/caixa";
+import { RelatorioGeralPage } from "@/features/relatorio";
 
 export default function AppRoutes() {
   return (
@@ -42,6 +43,10 @@ export default function AppRoutes() {
           <Route index element={<Navigate to="/inicio" replace />} />
           <Route path="/inicio" element={<HomePage />} />
           <Route path="/estoque" element={<InventarioPage />} />
+          <Route
+            path="/estoque/:productId/lotes/:lotId/movimentacoes"
+            element={<LoteMovimentacoesPage />}
+          />
           <Route path="/doacoes" element={<DoacoesPage />} />
           <Route path="/eventos" element={<EventosPage />} />
           <Route
@@ -58,6 +63,19 @@ export default function AppRoutes() {
           <Route path="/caixa" element={<CaixaPage />} />
           <Route path="/caixa/fiado" element={<CaixaPage />} />
           <Route path="/caixa/fiados" element={<FiadosPage />} />
+          <Route path="/relatorio-geral" element={<RelatorioGeralPage />} />
+          <Route
+            path="/relatorio-geral/fiados"
+            element={<FiadosGeraisPage />}
+          />
+          <Route
+            path="/em-definicao/painel-de-controle"
+            element={<Navigate to="/relatorio-geral" replace />}
+          />
+          <Route
+            path="/em-definicao/relatorio-geral"
+            element={<Navigate to="/relatorio-geral" replace />}
+          />
           <Route path="/em-definicao/:slug" element={<PaginaPendente />} />
           <Route path="*" element={<PaginaNaoEncontrada />} />
         </Route>

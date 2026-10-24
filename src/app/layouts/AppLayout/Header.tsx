@@ -11,6 +11,7 @@ const TITLES = [
   { pattern: /^\/eventos/, title: "Eventos" },
   { pattern: /^\/registro-vendas/, title: "Registro de vendas" },
   { pattern: /^\/caixa/, title: "Caixa" },
+  { pattern: /^\/relatorio-geral/, title: "Relatório geral" },
   { pattern: /^\/em-definicao/, title: "Em definição" },
 ];
 

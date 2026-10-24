@@ -15,7 +15,11 @@ import type { Categoria } from "@/features/inventario";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
 import { mensagemErro } from "@/shared/api/erros";
 import { formatarNumero } from "@/shared/lib/formatacao";
-import type { AdicionarProdutoCardapioPayload } from "../models";
+import type {
+  AdicionarProdutoCardapioPayload,
+  ItemCardapio,
+  AtualizarProdutoCardapioPayload,
+} from "../models";
 import styles from "./AdicionarProdutoCardapioModal.module.css";
 
 const TYPE_OPTIONS = [
@@ -25,6 +29,7 @@ const TYPE_OPTIONS = [
 
 interface AdicionarProdutoCardapioModalProps {
   eventId: string;
+  item?: ItemCardapio;
   categories?: Categoria[];
   initialType?: "ready" | "made";
   onClose: () => void;
@@ -42,17 +47,25 @@ interface ProdutoCardapioFormValues {
 
 export default function AdicionarProdutoCardapioModal({
   eventId,
+  item,
   categories = [],
   initialType = "ready",
   onClose,
 }: AdicionarProdutoCardapioModalProps) {
-  const [type, setType] = useState<"ready" | "made">(initialType);
+  const isEdit = Boolean(item);
+  const [type, setType] = useState<"ready" | "made">(
+    item?.type ?? initialType,
+  );
   const [serverError, setServerError] = useState("");
-  const [image, setImage] = useState<string | null>(null);
+  const [image, setImage] = useState<string | null>(item?.image ?? null);
   const [imageName, setImageName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
-  const { adicionarProduto: addProduct } = useEventoMutations();
+  const {
+    adicionarProduto: addProduct,
+    atualizarProduto: updateProduct,
+  } = useEventoMutations();
+  const mutation = isEdit ? updateProduct : addProduct;
   const { data: productsData, isLoading: productsLoading } = useProdutosQuery({
     pageSize: 100,
   });
@@ -67,13 +80,13 @@ export default function AdicionarProdutoCardapioModal({
   } = useForm<ProdutoCardapioFormValues>({
     mode: "onTouched",
     defaultValues: {
-      productId: "",
-      quantity: 1,
-      price: 0,
-      name: "",
-      description: "",
-      category: "",
-      ingredientCost: 0,
+      productId: item?.productId ?? "",
+      quantity: item?.expected ?? 1,
+      price: item?.price ?? 0,
+      name: item?.name ?? "",
+      description: item?.description ?? "",
+      category: item?.category ?? "",
+      ingredientCost: item?.unitCost ?? 0,
     },
   });
 
@@ -122,6 +135,40 @@ export default function AdicionarProdutoCardapioModal({
 
   const onSubmit: SubmitHandler<ProdutoCardapioFormValues> = async (values) => {
     setServerError("");
+    if (item) {
+      const payload: AtualizarProdutoCardapioPayload =
+        item.type === "ready"
+          ? {
+              type: "ready",
+              productId: item.productId ?? undefined,
+              quantity: values.quantity,
+              price: values.price,
+            }
+          : {
+              type: "made",
+              name: values.name,
+              description: values.description,
+              category: values.category,
+              price: values.price,
+              ingredientCost: values.ingredientCost,
+              image,
+            };
+      try {
+        await updateProduct.mutateAsync({
+          eventId,
+          itemId: item.id,
+          payload,
+        });
+        addToast("Produto atualizado no cardápio.");
+        onClose();
+      } catch (error) {
+        setServerError(
+          mensagemErro(error, "Não foi possível atualizar o produto."),
+        );
+      }
+      return;
+    }
+
     const payload: AdicionarProdutoCardapioPayload = {
       type,
       price: values.price,
@@ -168,26 +215,30 @@ export default function AdicionarProdutoCardapioModal({
 
   return (
     <Modal
-      title="Adicionar produto ao evento"
-      subtitle="Adiciona o produto no cardápio do evento para venda no baiten"
-      onClose={addProduct.isPending ? undefined : onClose}
-      showClose={!addProduct.isPending}
-      closeOnOverlay={!addProduct.isPending}
+      title={isEdit ? "Editar produto do cardápio" : "Adicionar produto ao evento"}
+      subtitle={
+        isEdit
+          ? "Atualize os dados do produto no cardápio do evento"
+          : "Adiciona o produto no cardápio do evento para venda no baiten"
+      }
+      onClose={mutation.isPending ? undefined : onClose}
+      showClose={!mutation.isPending}
+      closeOnOverlay={!mutation.isPending}
       footer={
         <>
           <Botao
             variant="secondary"
             onClick={onClose}
-            disabled={addProduct.isPending}
+            disabled={mutation.isPending}
           >
             Cancelar
           </Botao>
           <Botao
             type="submit"
             form="form-cardapio"
-            loading={addProduct.isPending}
+            loading={mutation.isPending}
           >
-            Registrar
+            {isEdit ? "Salvar alterações" : "Registrar"}
           </Botao>
         </>
       }
@@ -198,33 +249,46 @@ export default function AdicionarProdutoCardapioModal({
         onSubmit={handleSubmit(onSubmit)}
         noValidate
       >
-        <ControleSegmentado
-          label="Tipo de produto"
-          options={TYPE_OPTIONS}
-          value={type}
-          onChange={changeType}
-          columns={2}
-        />
+        {isEdit ? (
+          <p className={styles.hintBox}>
+            Tipo do produto:{" "}
+            {type === "ready" ? "Produto pronto do estoque" : "Feito na hora"}
+          </p>
+        ) : (
+          <ControleSegmentado
+            label="Tipo de produto"
+            options={TYPE_OPTIONS}
+            value={type}
+            onChange={changeType}
+            columns={2}
+          />
+        )}
 
         {type === "ready" ? (
           <>
-            <Selecao
-              id="cardapio-produto"
-              label="Produto / item"
-              placeholder={
-                productsLoading ? "Carregando..." : "Selecionar produto"
-              }
-              options={(productsData?.items || []).map((product) => ({
-                value: product.id,
-                label: `${product.name} (${formatarNumero(product.quantity)} un.)`,
-              }))}
-              disabled={productsLoading}
-              required
-              error={errors.productId?.message}
-              {...register("productId", {
-                required: "Selecione um produto do estoque.",
-              })}
-            />
+            {item ? (
+              <p className={styles.hintBox}>
+                Produto: {item.name} · Categoria: {item.category}
+              </p>
+            ) : (
+              <Selecao
+                id="cardapio-produto"
+                label="Produto / item"
+                placeholder={
+                  productsLoading ? "Carregando..." : "Selecionar produto"
+                }
+                options={(productsData?.items || []).map((product) => ({
+                  value: product.id,
+                  label: `${product.name} (${formatarNumero(product.quantity)} un.)`,
+                }))}
+                disabled={productsLoading}
+                required
+                error={errors.productId?.message}
+                {...register("productId", {
+                  required: "Selecione um produto do estoque.",
+                })}
+              />
+            )}
             <div className={styles.twoColumns}>
               <Entrada
                 id="cardapio-quantidade"
@@ -242,6 +306,7 @@ export default function AdicionarProdutoCardapioModal({
                       return "Informe uma quantidade inteira maior que zero.";
                     }
                     if (
+                      !item &&
                       selectedProduct &&
                       value > Number(selectedProduct.quantity)
                     ) {
@@ -273,7 +338,7 @@ export default function AdicionarProdutoCardapioModal({
                 )}
               />
             </div>
-            {selectedProduct ? (
+            {selectedProduct && !item ? (
               <p className={styles.hintBox}>
                 Estoque disponível: {formatarNumero(selectedProduct.quantity)}{" "}
                 unidades · Categoria:{" "}

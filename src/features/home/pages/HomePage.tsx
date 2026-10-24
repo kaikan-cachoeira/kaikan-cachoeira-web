@@ -1,5 +1,4 @@
 import { Link, useNavigate } from "react-router-dom";
-import PageHeader from "@/shared/components/PageHeader/PageHeader";
 import Card from "@/shared/components/Card/Card";
 import Botao from "@/shared/components/Botao/Botao";
 import Icone from "@/shared/components/Icone/Icone";
@@ -39,7 +38,7 @@ const ATALHOS: Atalho[] = [
   {
     title: "Relatório geral",
     description: "Acompanhe indicadores e resultados dos eventos.",
-    to: "/em-definicao/relatorio-geral",
+    to: "/relatorio-geral",
     icon: "chart",
   },
 ];
@@ -56,8 +55,7 @@ export default function HomePage() {
 
   return (
     <div className={styles.stack}>
-      <PageHeader title="Início" />
-
+   
       {carregando ? (
         <EstadoCarregando message="Carregando o painel..." />
       ) : erro ? (
