@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { comporChave, queryKeys } from "@/shared/query/keys";
+import type { ParametrosPaginacao } from "@/shared/models/paginacao";
 import type {
   AtualizarCategoriaPayload,
   CriarCategoriaPayload,
@@ -22,6 +23,7 @@ import {
   listarProdutos,
   obterProduto,
   atualizarProduto,
+  listarMovimentacoesLote,
 } from "../services/inventario";
 
 export function useProdutosQuery(params: ParametrosProdutos) {
@@ -36,6 +38,17 @@ export function useProdutoQuery(id?: string | null) {
     queryKey: comporChave(queryKeys.produtos, "detalhe", id),
     queryFn: () => obterProduto(id as string),
     enabled: Boolean(id),
+  });
+}
+
+export function useMovimentacoesLoteQuery(
+  lotId: string | undefined,
+  params: ParametrosPaginacao,
+) {
+  return useQuery({
+    queryKey: comporChave(queryKeys.produtos, "lote", lotId, params),
+    queryFn: () => listarMovimentacoesLote(lotId as string, params),
+    enabled: Boolean(lotId),
   });
 }
 

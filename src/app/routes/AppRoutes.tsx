@@ -10,7 +10,7 @@ import {
   RecuperarSenhaPage,
 } from "@/features/auth";
 import { HomePage } from "@/features/home";
-import { InventarioPage } from "@/features/inventario";
+import { InventarioPage, LoteMovimentacoesPage } from "@/features/inventario";
 import { DoacoesPage } from "@/features/doacoes";
 import {
   EventoCardapioPage,
@@ -42,6 +42,10 @@ export default function AppRoutes() {
           <Route index element={<Navigate to="/inicio" replace />} />
           <Route path="/inicio" element={<HomePage />} />
           <Route path="/estoque" element={<InventarioPage />} />
+          <Route
+            path="/estoque/:productId/lotes/:lotId/movimentacoes"
+            element={<LoteMovimentacoesPage />}
+          />
           <Route path="/doacoes" element={<DoacoesPage />} />
           <Route path="/eventos" element={<EventosPage />} />
           <Route

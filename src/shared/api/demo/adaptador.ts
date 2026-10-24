@@ -356,15 +356,30 @@ async function route(config: any) {
     if (isEntry && totalCost < 0) {
       return fail(config, 400, "Confira o custo informado e tente novamente.");
     }
-    const unitCost = isEntry && quantity > 0 ? totalCost / quantity : 0;
+       const unitCost = isEntry && quantity > 0 ? totalCost / quantity : 0;
+    const eventName = body.eventName || "";
+    const notes = String(body.notes || "").trim();
+    const createdMovements: any[] = [];
 
     if (isEntry) {
+      const lotId = criarId("lot");
       product.quantity = Number(product.quantity) + quantity;
       product.lots = product.lots || [];
       product.lots.unshift({
-        id: criarId("lot"),
+        id: lotId,
         entryQty: quantity,
         balance: quantity,
+        totalCost,
+        unitCost,
+        createdAt: now,
+      });
+      createdMovements.push({
+        id: criarId("mov"),
+        lotId,
+        type,
+        quantity,
+        eventName,
+        notes,
         totalCost,
         unitCost,
         createdAt: now,
@@ -377,25 +392,47 @@ async function route(config: any) {
       lots.forEach((lot) => {
         if (toRemove <= 0) return;
         const used = Math.min(Number(lot.balance) || 0, toRemove);
+        if (used <= 0) return;
         lot.balance = Number(lot.balance) - used;
         toRemove -= used;
+        const lotUnitCost = Number(lot.unitCost) || 0;
+        createdMovements.push({
+          id: criarId("mov"),
+          lotId: lot.id,
+          type,
+          quantity: -used,
+          eventName,
+          notes,
+          totalCost: used * lotUnitCost,
+          unitCost: lotUnitCost,
+          createdAt: now,
+        });
       });
       product.quantity = Number(product.quantity) - quantity;
     }
 
-    const movement = {
-      id: criarId("mov"),
-      type,
-      quantity: isEntry ? quantity : -quantity,
-      eventName: body.eventName || "",
-      notes: String(body.notes || "").trim(),
-      totalCost: isEntry ? totalCost : 0,
-      unitCost,
-      createdAt: now,
-    };
-    product.movements = [movement, ...(product.movements || [])];
+    product.movements = [...createdMovements, ...(product.movements || [])];
     persistDb();
     return ok(config, buildProduct(db, product), 201);
+  }
+
+    const lotMovementsMatch = path.match(/^\/lots\/([^/]+)\/movements$/);
+  if (method === "get" && lotMovementsMatch) {
+    const lotId = lotMovementsMatch[1];
+    const product = db.products.find((item: any) =>
+      (item.lots || []).some((lot: any) => lot.id === lotId),
+    );
+    if (!product) return fail(config, 404, "Lote não encontrado.");
+    // Movimentações antigas (sem lotId) pertencem ao lote mais antigo do produto
+    const oldestLotId = [...product.lots].sort((a: any, b: any) =>
+      String(a.createdAt).localeCompare(String(b.createdAt)),
+    )[0]?.id;
+    const items = (product.movements || [])
+      .filter((movement: any) => (movement.lotId ?? oldestLotId) === lotId)
+      .sort((a: any, b: any) =>
+        String(b.createdAt).localeCompare(String(a.createdAt)),
+      );
+    return ok(config, paginate(items, params, 6));
   }
 
   const productMatch = path.match(/^\/products\/([^/]+)$/);

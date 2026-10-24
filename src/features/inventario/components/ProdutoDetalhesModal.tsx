@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Botao from "@/shared/components/Botao/Botao";
 import {
   EstadoCarregando,
@@ -8,7 +9,6 @@ import {
 import Etiqueta from "@/shared/components/Etiqueta/Etiqueta";
 import MiniaturaProduto from "@/shared/components/MiniaturaProduto/MiniaturaProduto";
 import Modal from "@/shared/components/Modal/Modal";
-import { useToast } from "@/shared/components/Toast/ToastProvider";
 import {
   formatarDataHora,
   formatarMoeda,
@@ -20,10 +20,10 @@ import styles from "./ModaisInventario.module.css";
 
 interface LotRowProps {
   lot: LoteProduto;
-  onPending: (label: string) => void;
+  onViewMovements: () => void;
 }
 
-function LotRow({ lot, onPending }: LotRowProps) {
+function LotRow({ lot, onViewMovements }: LotRowProps) {
   const hasCost = Number(lot.totalCost) > 0;
   return (
     <li className={styles.listItem}>
@@ -38,11 +38,7 @@ function LotRow({ lot, onPending }: LotRowProps) {
           unitário: {hasCost ? formatarMoeda(lot.unitCost) : "Sem custo"}
         </p>
       </div>
-      <Botao
-        variant="tertiary"
-        size="compact"
-        onClick={() => onPending("Movimentações do lote")}
-      >
+      <Botao variant="tertiary" size="compact" onClick={onViewMovements}>
         Ver movimentações
       </Botao>
     </li>
@@ -95,15 +91,9 @@ export default function ProdutoDetalhesModal({
   onMovement,
 }: ProdutoDetalhesModalProps) {
   const { data: product, isLoading, isError, refetch } = useProdutoQuery(productId);
-  const { addToast } = useToast();
+  const navigate = useNavigate();
   const [showAllLots, setShowAllLots] = useState(false);
   const [showAllMovements, setShowAllMovements] = useState(false);
-
-  const pending = (label: string) =>
-    addToast(
-      `${label}: a tela detalhada ainda não foi especificada no SDD.`,
-      "info",
-    );
 
   const lots = product?.lots || [];
   const movements = product?.movements || [];
@@ -191,7 +181,15 @@ export default function ProdutoDetalhesModal({
             {visibleLots.length ? (
               <ul className={styles.list}>
                 {visibleLots.map((lot) => (
-                  <LotRow key={lot.id} lot={lot} onPending={pending} />
+                  <LotRow
+                    key={lot.id}
+                    lot={lot}
+                    onViewMovements={() =>
+                      navigate(
+                        `/estoque/${productId}/lotes/${lot.id}/movimentacoes`,
+                      )
+                    }
+                  />
                 ))}
               </ul>
             ) : (
