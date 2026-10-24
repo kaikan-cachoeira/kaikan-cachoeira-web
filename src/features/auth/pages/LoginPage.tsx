@@ -41,8 +41,10 @@ export default function LoginPage() {
   return (
       <div className={styles.panel}>
         <header className={styles.header}>
-          <h1 className={styles.title}>Entrar</h1>
-          <p className={styles.subtitle}>Acesse sua conta para continuar</p>
+          <h1 className={styles.title}>Bem-vindo!</h1>
+          <p className={styles.subtitle}>
+            Faça login para acessar o sistema administrativo.
+          </p>
         </header>
 
         <form
@@ -55,7 +57,7 @@ export default function LoginPage() {
             label="E-mail"
             type="email"
             autoComplete="email"
-            placeholder="seuemail@exemplo.com"
+            placeholder="seu@email.com.br"
             error={errors.email?.message}
             required
             {...register("email", {
@@ -94,7 +96,7 @@ export default function LoginPage() {
           ) : null}
 
           <Botao type="submit" loading={isSubmitting} className={styles.submit}>
-            ENTRAR
+            Entrar
           </Botao>
         </form>
 
