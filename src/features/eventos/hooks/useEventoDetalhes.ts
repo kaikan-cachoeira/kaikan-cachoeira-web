@@ -8,6 +8,7 @@ export function useEventoDetalhes(id?: string | null) {
   const { addToast } = useToast();
   const [costOpen, setCostOpen] = useState(false);
   const [addProductOpen, setAddProductOpen] = useState(false);
+  const [startConfirm, setStartConfirm] = useState(false);
   const [closeConfirm, setCloseConfirm] = useState(false);
 
   const eventoQuery = useEventoQuery(id);
@@ -24,6 +25,14 @@ export function useEventoDetalhes(id?: string | null) {
         mensagemErro(error, "Não foi possível iniciar o evento."),
         "error",
       );
+    }
+  }
+
+  async function confirmStart() {
+    try {
+      await startEvent();
+    } finally {
+      setStartConfirm(false);
     }
   }
 
@@ -46,12 +55,15 @@ export function useEventoDetalhes(id?: string | null) {
     setCostOpen,
     addProductOpen,
     setAddProductOpen,
+    startConfirm,
+    setStartConfirm,
     closeConfirm,
     setCloseConfirm,
     eventoQuery,
     categoriasQuery,
     alterarStatus,
     startEvent,
+    confirmStart,
     closeEvent,
   };
 }

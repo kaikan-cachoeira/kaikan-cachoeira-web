@@ -153,6 +153,10 @@ export function useEventos() {
   const [to, setTo] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Evento | null>(null);
+  const [statusTarget, setStatusTarget] = useState<{
+    event: Evento;
+    status: string;
+  } | null>(null);
 
   const { alterarStatus, excluirEvento } = useEventoMutations();
 
@@ -186,6 +190,19 @@ export function useEventos() {
         mensagemErro(error, "Não foi possível alterar a situação do evento."),
         "error",
       );
+    }
+  }
+
+  function requestStatus(event: Evento, status: string) {
+    setStatusTarget({ event, status });
+  }
+
+  async function confirmStatus() {
+    if (!statusTarget) return;
+    try {
+      await handleStatus(statusTarget.event, statusTarget.status);
+    } finally {
+      setStatusTarget(null);
     }
   }
 
@@ -242,10 +259,14 @@ export function useEventos() {
     setCreateOpen,
     deleteTarget,
     setDeleteTarget,
+    statusTarget,
+    setStatusTarget,
     eventosQuery,
     alterarStatus,
     excluirEvento,
     handleStatus,
+    requestStatus,
+    confirmStatus,
     confirmDelete,
     runSearch,
     clearFilters,

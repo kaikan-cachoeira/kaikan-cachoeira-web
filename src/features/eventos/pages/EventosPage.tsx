@@ -16,6 +16,7 @@ import { useEventos } from "../hooks/useEventos";
 import type { Evento } from "../models";
 import EventoCard from "../components/EventoCard";
 import EventoFormModal from "../components/EventoFormModal";
+import { obterConfirmacaoStatus } from "../utils/confirmacaoStatus";
 import styles from "./EventosPage.module.css";
 
 const STATUS_OPTIONS = [
@@ -49,10 +50,13 @@ export default function EventosPage() {
     setCreateOpen,
     deleteTarget,
     setDeleteTarget,
+    statusTarget,
+    setStatusTarget,
     eventosQuery,
     alterarStatus: changeStatus,
     excluirEvento: deleteEvent,
-    handleStatus,
+    requestStatus,
+    confirmStatus,
     confirmDelete,
     runSearch,
     clearFilters,
@@ -74,10 +78,13 @@ export default function EventosPage() {
     Boolean(to);
 
   const cardProps = {
-    onChangeStatus: handleStatus,
+    onChangeStatus: requestStatus,
     onDelete: setDeleteTarget,
     onEdit: setEditTarget,
   };
+  const statusConfirmation = statusTarget
+    ? obterConfirmacaoStatus(statusTarget.event, statusTarget.status)
+    : null;
 
   return (
     <div className={styles.stack}>
@@ -248,6 +255,17 @@ export default function EventosPage() {
           loading={deleteEvent.isPending}
           onCancel={() => setDeleteTarget(null)}
           onConfirm={confirmDelete}
+        />
+      ) : null}
+
+      {statusTarget && statusConfirmation ? (
+        <ConfirmacaoDialog
+          title={statusConfirmation.title}
+          message={statusConfirmation.message}
+          confirmLabel={statusConfirmation.confirmLabel}
+          loading={changeStatus.isPending}
+          onCancel={() => setStatusTarget(null)}
+          onConfirm={confirmStatus}
         />
       ) : null}
     </div>

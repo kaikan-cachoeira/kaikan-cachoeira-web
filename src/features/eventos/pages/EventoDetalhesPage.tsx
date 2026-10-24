@@ -19,6 +19,7 @@ import {
   EstadoCarregando,
 } from "@/shared/components/Estado/Estado";
 import { useEventoDetalhes } from "../hooks/useEventoDetalhes";
+import { obterConfirmacaoStatus } from "../utils/confirmacaoStatus";
 import {
   formatarMoeda,
   formatarNumero,
@@ -61,12 +62,14 @@ export default function EventoDetalhesPage({
     setCostOpen,
     addProductOpen,
     setAddProductOpen,
+    startConfirm,
+    setStartConfirm,
     closeConfirm,
     setCloseConfirm,
     eventoQuery,
     categoriasQuery,
     alterarStatus: changeStatus,
-    startEvent,
+    confirmStart,
     closeEvent,
   } = useEventoDetalhes(id);
   const { data: event, isLoading, isError, refetch } = eventoQuery;
@@ -87,6 +90,7 @@ export default function EventoDetalhesPage({
 
   const isOngoing = event.status === "Em andamento";
   const isNotStarted = event.status === "Não iniciado";
+  const startConfirmation = obterConfirmacaoStatus(event, "Em andamento");
   const menu = event.menu || [];
   const donations = event.donations || [];
   const costs = event.costs || [];
@@ -144,7 +148,10 @@ export default function EventoDetalhesPage({
                 >
                   Registrar custo
                 </Botao>
-                <Botao loading={changeStatus.isPending} onClick={startEvent}>
+                <Botao
+                  loading={changeStatus.isPending}
+                  onClick={() => setStartConfirm(true)}
+                >
                   Iniciar evento
                 </Botao>
               </>
@@ -421,6 +428,16 @@ export default function EventoDetalhesPage({
           loading={changeStatus.isPending}
           onCancel={() => setCloseConfirm(false)}
           onConfirm={closeEvent}
+        />
+      ) : null}
+      {startConfirm && startConfirmation ? (
+        <ConfirmacaoDialog
+          title={startConfirmation.title}
+          message={startConfirmation.message}
+          confirmLabel={startConfirmation.confirmLabel}
+          loading={changeStatus.isPending}
+          onCancel={() => setStartConfirm(false)}
+          onConfirm={confirmStart}
         />
       ) : null}
     </div>
