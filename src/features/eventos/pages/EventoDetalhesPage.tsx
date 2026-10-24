@@ -27,6 +27,7 @@ import {
 } from "@/shared/lib/formatacao";
 import type { DoacaoEvento } from "../models";
 import CustoModal from "../components/CustoModal";
+import CustosEventoModal from "../components/CustosEventoModal";
 import AdicionarProdutoCardapioModal from "../components/AdicionarProdutoCardapioModal";
 import styles from "./EventoDetalhesPage.module.css";
 
@@ -60,6 +61,8 @@ export default function EventoDetalhesPage({
   const {
     costOpen,
     setCostOpen,
+    costsListOpen,
+    setCostsListOpen,
     addProductOpen,
     setAddProductOpen,
     startConfirm,
@@ -386,10 +389,23 @@ export default function EventoDetalhesPage({
           </Botao>
         </SecaoCard>
 
-        <SecaoCard title="Custos adicionais">
+        <SecaoCard
+          title="Custos adicionais"
+          action={
+            costs.length ? (
+              <Botao
+                variant="tertiary"
+                size="compact"
+                onClick={() => setCostsListOpen(true)}
+              >
+                Ver todos
+              </Botao>
+            ) : undefined
+          }
+        >
           {costs.length ? (
             <ul className={styles.costList}>
-              {costs.map((cost) => (
+              {costs.slice(0, 3).map((cost) => (
                 <li key={cost.id}>
                   <span>
                     <strong>{cost.name}</strong>
@@ -409,6 +425,15 @@ export default function EventoDetalhesPage({
 
       {costOpen && id ? (
         <CustoModal eventId={id} onClose={() => setCostOpen(false)} />
+      ) : null}
+
+      {costsListOpen && id ? (
+        <CustosEventoModal
+          eventId={id}
+          custos={costs}
+          somenteLeitura={event.status === "Encerrado"}
+          onClose={() => setCostsListOpen(false)}
+        />
       ) : null}
 
       {addProductOpen && id ? (

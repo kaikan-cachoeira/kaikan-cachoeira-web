@@ -5,6 +5,7 @@ import { mensagemErro } from "@/shared/api/erros";
 import { comporChave, queryKeys } from "@/shared/query/keys";
 import type {
   AdicionarProdutoCardapioPayload,
+  AtualizarCustoEventoPayload,
   CriarCustoEventoPayload,
   CriarEventoPayload,
   Evento,
@@ -14,8 +15,10 @@ import {
   adicionarProdutoCardapio,
   alterarStatusEvento,
   atualizarEvento,
+  atualizarCustoEvento,
   criarCustoEvento,
   criarEvento,
+  excluirCustoEvento,
   excluirEvento,
   listarEventos,
   obterCardapioEvento,
@@ -112,6 +115,35 @@ export function useEventoMutations() {
     },
   });
 
+  const atualizarCusto = useMutation({
+    mutationFn: ({
+      id,
+      custoId,
+      payload,
+    }: {
+      id: string;
+      custoId: string;
+      payload: AtualizarCustoEventoPayload;
+    }) => atualizarCustoEvento(id, custoId, payload),
+    onSuccess: (_data, variables) => {
+      invalidarEventos();
+      queryClient.invalidateQueries({
+        queryKey: comporChave(queryKeys.eventos, "detalhe", variables.id),
+      });
+    },
+  });
+
+  const excluirCusto = useMutation({
+    mutationFn: ({ id, custoId }: { id: string; custoId: string }) =>
+      excluirCustoEvento(id, custoId),
+    onSuccess: (_data, variables) => {
+      invalidarEventos();
+      queryClient.invalidateQueries({
+        queryKey: comporChave(queryKeys.eventos, "detalhe", variables.id),
+      });
+    },
+  });
+
   const adicionarProduto = useMutation({
     mutationFn: ({
       id,
@@ -137,6 +169,8 @@ export function useEventoMutations() {
     alterarStatus,
     excluirEvento: excluir,
     criarCusto,
+    atualizarCusto,
+    excluirCusto,
     adicionarProduto,
   };
 }

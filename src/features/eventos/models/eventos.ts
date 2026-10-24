@@ -94,6 +94,8 @@ export interface CriarCustoEventoPayload {
   description?: string;
 }
 
+export type AtualizarCustoEventoPayload = CriarCustoEventoPayload;
+
 export interface AdicionarProdutoCardapioPayload {
   type: "ready" | "made";
   productId?: string;

@@ -1,6 +1,7 @@
 import api from "@/shared/api/cliente";
 import type {
   AdicionarProdutoCardapioPayload,
+  AtualizarCustoEventoPayload,
   CriarCustoEventoPayload,
   CriarEventoPayload,
   Evento,
@@ -60,6 +61,26 @@ export async function criarCustoEvento(
   payload: CriarCustoEventoPayload,
 ): Promise<Evento> {
   const { data } = await api.post<Evento>(`/events/${id}/costs`, payload);
+  return data;
+}
+
+export async function atualizarCustoEvento(
+  id: string,
+  custoId: string,
+  payload: AtualizarCustoEventoPayload,
+): Promise<Evento> {
+  const { data } = await api.put<Evento>(
+    `/events/${id}/costs/${custoId}`,
+    payload,
+  );
+  return data;
+}
+
+export async function excluirCustoEvento(
+  id: string,
+  custoId: string,
+): Promise<Evento> {
+  const { data } = await api.delete<Evento>(`/events/${id}/costs/${custoId}`);
   return data;
 }
 

@@ -660,6 +660,36 @@ async function route(config: any) {
     return ok(config, buildEvent(db, event, true), 201);
   }
 
+  const eventCostMatch = path.match(/^\/events\/([^/]+)\/costs\/([^/]+)$/);
+  if (eventCostMatch && (method === "put" || method === "patch" || method === "delete")) {
+    const event = db.events.find((item: any) => item.id === eventCostMatch[1]);
+    if (!event) return fail(config, 404, "Evento não encontrado.");
+    const cost = (event.costs || []).find(
+      (item: any) => item.id === eventCostMatch[2],
+    );
+    if (!cost) return fail(config, 404, "Custo não encontrado.");
+
+    if (method === "delete") {
+      event.costs = event.costs.filter(
+        (item: any) => item.id !== eventCostMatch[2],
+      );
+    } else {
+      if (!String(body.name || "").trim()) {
+        return fail(config, 400, "Informe o nome do custo.");
+      }
+      const value = Number(body.value);
+      if (!Number.isFinite(value) || value <= 0) {
+        return fail(config, 400, "Informe um valor maior que zero.");
+      }
+      cost.name = String(body.name).trim();
+      cost.value = value;
+      cost.description = String(body.description || "").trim();
+    }
+
+    persistDb();
+    return ok(config, buildEvent(db, event, true));
+  }
+
   const menuMatch = path.match(/^\/events\/([^/]+)\/menu$/);
   if (method === "get" && menuMatch) {
     const event = db.events.find((item: any) => item.id === menuMatch[1]);

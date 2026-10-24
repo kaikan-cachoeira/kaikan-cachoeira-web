@@ -7,6 +7,7 @@ import { useEventoMutations, useEventoQuery } from "./useEventos";
 export function useEventoDetalhes(id?: string | null) {
   const { addToast } = useToast();
   const [costOpen, setCostOpen] = useState(false);
+  const [costsListOpen, setCostsListOpen] = useState(false);
   const [addProductOpen, setAddProductOpen] = useState(false);
   const [startConfirm, setStartConfirm] = useState(false);
   const [closeConfirm, setCloseConfirm] = useState(false);
@@ -53,6 +54,8 @@ export function useEventoDetalhes(id?: string | null) {
   return {
     costOpen,
     setCostOpen,
+    costsListOpen,
+    setCostsListOpen,
     addProductOpen,
     setAddProductOpen,
     startConfirm,
