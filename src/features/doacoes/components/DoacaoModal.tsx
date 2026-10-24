@@ -15,13 +15,8 @@ import { useToast } from "@/shared/components/Toast/ToastProvider";
 import { mensagemErro } from "@/shared/api/erros";
 import type { CriarDoacaoPayload, Doacao } from "../models";
 import { formatarNumero } from "@/shared/lib/formatacao";
+import { OPCOES_TIPO_DOACAO } from "@/shared/lib/tiposDoacao";
 import styles from "./DoacaoModal.module.css";
-
-const TYPE_OPTIONS = [
-  { value: "ready", label: "Produto pronto" },
-  { value: "money", label: "Dinheiro" },
-  { value: "ingredient", label: "Ingrediente" },
-];
 
 const PAYMENT_OPTIONS = [
   { value: "PIX", label: "PIX" },
@@ -213,7 +208,7 @@ export default function DoacaoModal({
 
         <ControleSegmentado
           label="Tipo de doação"
-          options={TYPE_OPTIONS}
+          options={OPCOES_TIPO_DOACAO}
           value={type}
           onChange={changeType}
           columns={3}

@@ -25,17 +25,12 @@ import {
   formatarNumero,
   formatarPeriodo,
 } from "@/shared/lib/formatacao";
+import { rotuloTipoDoacao } from "@/shared/lib/tiposDoacao";
 import type { DoacaoEvento } from "../models";
 import CustoModal from "../components/CustoModal";
 import CustosEventoModal from "../components/CustosEventoModal";
 import AdicionarProdutoCardapioModal from "../components/AdicionarProdutoCardapioModal";
 import styles from "./EventoDetalhesPage.module.css";
-
-const DONATION_TYPES: Record<string, string> = {
-  ready: "Produto",
-  money: "Dinheiro",
-  ingredient: "Ingrediente",
-};
 
 function donationDescription(donation: DoacaoEvento) {
   if (donation.type === "money") {
@@ -351,7 +346,7 @@ export default function EventoDetalhesPage({
                 <Linha key={donation.id}>
                   <Celula>{donationDescription(donation)}</Celula>
                   <Celula>{donation.donor || "Não informado"}</Celula>
-                  <Celula>{DONATION_TYPES[donation.type] || donation.type}</Celula>
+                  <Celula>{rotuloTipoDoacao(donation.type)}</Celula>
                   <Celula numeric>
                     {donation.type === "money"
                       ? "—"

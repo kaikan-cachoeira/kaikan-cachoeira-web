@@ -33,20 +33,12 @@ import {
   formatarDataHora,
   formatarNumero,
 } from "@/shared/lib/formatacao";
+import {
+  OPCOES_TIPO_DOACAO,
+  rotuloTipoDoacao,
+} from "@/shared/lib/tiposDoacao";
 import DoacaoModal from "../components/DoacaoModal";
 import styles from "./DoacoesPage.module.css";
-
-const TYPE_OPTIONS = [
-  { value: "ready", label: "Produto" },
-  { value: "money", label: "Dinheiro" },
-  { value: "ingredient", label: "Ingrediente" },
-];
-
-const TYPE_LABELS: Record<string, string> = {
-  ready: "Produto",
-  money: "Dinheiro",
-  ingredient: "Ingrediente",
-};
 
 function donationLabel(donation: Doacao) {
   if (donation.type === "money") {
@@ -275,7 +267,7 @@ export default function DoacoesPage() {
           />
           <SelecaoMultipla
             label="Tipo de doação"
-            options={TYPE_OPTIONS}
+            options={OPCOES_TIPO_DOACAO}
             value={selectedTypes}
             onChange={(value) => {
               setSelectedTypes(value);
@@ -317,7 +309,7 @@ export default function DoacoesPage() {
                     <Etiqueta
                       variant={donation.type === "money" ? "success" : "neutral"}
                     >
-                      {TYPE_LABELS[donation.type] || donation.type}
+                      {rotuloTipoDoacao(donation.type)}
                     </Etiqueta>
                   </Celula>
                   <Celula numeric>{formatarMoeda(donation.ticketValue)}</Celula>
