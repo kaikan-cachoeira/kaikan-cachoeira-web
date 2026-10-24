@@ -108,3 +108,16 @@ export interface AdicionarProdutoCardapioPayload {
   ingredientCost?: number;
   image?: string | null;
 }
+
+export interface AtualizarProdutoCardapioPayload {
+  type: "ready" | "made";
+  productId?: string;
+  name?: string;
+  description?: string;
+  category?: string;
+  quantity?: number;
+  price: number;
+  unitCost?: number;
+  ingredientCost?: number;
+  image?: string | null;
+}

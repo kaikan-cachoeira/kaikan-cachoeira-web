@@ -779,6 +779,63 @@ async function route(config: any) {
     return ok(config, item, 201);
   }
 
+  const menuItemMatch = path.match(/^\/events\/([^/]+)\/menu\/([^/]+)$/);
+  if (
+    menuItemMatch &&
+    (method === "put" || method === "patch" || method === "delete")
+  ) {
+    const event = db.events.find((item: any) => item.id === menuItemMatch[1]);
+    if (!event) return fail(config, 404, "Evento não encontrado.");
+    const item = db.menu.find(
+      (menuItem: any) =>
+        menuItem.id === menuItemMatch[2] && menuItem.eventId === event.id,
+    );
+    if (!item) return fail(config, 404, "Produto do cardápio não encontrado.");
+
+    if (method === "delete") {
+      db.menu = db.menu.filter(
+        (menuItem: any) => menuItem.id !== menuItemMatch[2],
+      );
+      persistDb();
+      return ok(config, { ok: true });
+    }
+
+    const price = Number(body.price);
+    if (
+      !Number.isFinite(price) ||
+      (item.type === "ready" ? price <= 0 : price < 0)
+    ) {
+      return fail(config, 400, "Confira o preço de venda informado.");
+    }
+    if (item.type === "ready") {
+      const quantity = Number(body.quantity);
+      if (!Number.isInteger(quantity) || quantity <= 0) {
+        return fail(config, 400, "Informe uma quantidade inteira maior que zero.");
+      }
+      item.price = price;
+      item.expected = quantity;
+      item.costTotal = Number(item.unitCost || 0) * quantity;
+    } else {
+      const name = String(body.name || "").trim();
+      const category = String(body.category || "").trim();
+      const ingredientCost = Number(body.ingredientCost);
+      if (!name) return fail(config, 400, "Informe o nome do produto.");
+      if (!category) return fail(config, 400, "Selecione uma categoria.");
+      if (!Number.isFinite(ingredientCost) || ingredientCost < 0) {
+        return fail(config, 400, "Confira os valores informados.");
+      }
+      item.price = price;
+      item.name = name;
+      item.description = String(body.description || "").trim();
+      item.category = category;
+      item.unitCost = ingredientCost;
+      item.costTotal = ingredientCost;
+      item.image = body.image || null;
+    }
+    persistDb();
+    return ok(config, item);
+  }
+
   const eventMatch = path.match(/^\/events\/([^/]+)$/);
   if (eventMatch) {
     const event = db.events.find((item: any) => item.id === eventMatch[1]);

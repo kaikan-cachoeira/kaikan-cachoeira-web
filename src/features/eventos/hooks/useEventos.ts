@@ -6,6 +6,7 @@ import { comporChave, queryKeys } from "@/shared/query/keys";
 import type {
   AdicionarProdutoCardapioPayload,
   AtualizarCustoEventoPayload,
+  AtualizarProdutoCardapioPayload,
   CriarCustoEventoPayload,
   CriarEventoPayload,
   Evento,
@@ -16,9 +17,11 @@ import {
   alterarStatusEvento,
   atualizarEvento,
   atualizarCustoEvento,
+  atualizarProdutoCardapio,
   criarCustoEvento,
   criarEvento,
   excluirCustoEvento,
+  excluirProdutoCardapio,
   excluirEvento,
   listarEventos,
   obterCardapioEvento,
@@ -163,6 +166,46 @@ export function useEventoMutations() {
     },
   });
 
+  const atualizarProduto = useMutation({
+    mutationFn: ({
+      eventId,
+      itemId,
+      payload,
+    }: {
+      eventId: string;
+      itemId: string;
+      payload: AtualizarProdutoCardapioPayload;
+    }) => atualizarProdutoCardapio(eventId, itemId, payload),
+    onSuccess: (_data, variables) => {
+      invalidarEventos();
+      queryClient.invalidateQueries({
+        queryKey: comporChave(queryKeys.eventos, "detalhe", variables.eventId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: comporChave(queryKeys.eventos, "cardapio", variables.eventId),
+      });
+    },
+  });
+
+  const excluirProduto = useMutation({
+    mutationFn: ({
+      eventId,
+      itemId,
+    }: {
+      eventId: string;
+      itemId: string;
+    }) => excluirProdutoCardapio(eventId, itemId),
+    onSuccess: (_data, variables) => {
+      invalidarEventos();
+      queryClient.invalidateQueries({
+        queryKey: comporChave(queryKeys.eventos, "detalhe", variables.eventId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: comporChave(queryKeys.eventos, "cardapio", variables.eventId),
+      });
+    },
+  });
+
   return {
     criarEvento: criar,
     atualizarEvento: atualizar,
@@ -172,6 +215,8 @@ export function useEventoMutations() {
     atualizarCusto,
     excluirCusto,
     adicionarProduto,
+    atualizarProduto,
+    excluirProduto,
   };
 }
 

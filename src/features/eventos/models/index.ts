@@ -1,6 +1,7 @@
 export type {
   AdicionarProdutoCardapioPayload,
   AtualizarCustoEventoPayload,
+  AtualizarProdutoCardapioPayload,
   CriarCustoEventoPayload,
   CriarEventoPayload,
   CustoEvento,

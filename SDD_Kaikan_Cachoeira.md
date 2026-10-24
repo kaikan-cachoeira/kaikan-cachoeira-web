@@ -1426,14 +1426,14 @@ Os estados visuais devem ser implementados por tokens. Estados não desenhados n
 - **Objetivo:** Controlar os produtos vendidos no baiten do evento, com quantidade prevista, vendida, receita, custo e lucro.
 - **Perfil de acesso:** Usuário autenticado
 - **Entrada / retorno:** TL19 - Detalhes do evento - Não iniciado, TL20 - Detalhes do evento - Em andamento.
-- **Saídas previstas:** TL09 - Menu de categorias, TL23 - Adicionar produto ao evento - Produto pronto, TL24 - Adicionar produto ao evento - Produto feito na hora, Menu de opções do produto (tela a definir).
+- **Saídas previstas:** TL09 - Menu de categorias, TL23 - Adicionar produto ao evento - Produto pronto, TL24 - Adicionar produto ao evento - Produto feito na hora, edição e exclusão de produto do cardápio.
 - **Wireframe(s):** TL-22 Produtos do Evento - Ver todos - evento.png.
 - **Prioridade:** Alta.
 
 **Layout (de cima para baixo, baseado no wireframe e na descrição da planilha)**
 1. **Estrutura principal:** área autenticada com navegação lateral e área de conteúdo principal.
 2. **Hierarquia:** título principal seguido de subtítulo quando listado; controles agrupados por tarefa; ações primárias destacadas com `vinho`; textos com `texto` e apoio com `texto-suave`.
-3. **Composição específica:** Título e subtítulo da página, botões 'Menu de categorias' e 'Adicionar produto', campo de pesquisa com botões 'Filtrar' e 'Pesquisar', tabela de produtos (produto, previsto, vendido, preço de venda, receita, custo total, descontos, lucro líquido, menu de opções), paginação.
+3. **Composição específica:** Título e subtítulo da página, botões 'Menu de categorias' e 'Adicionar produto', campo de pesquisa com botões 'Filtrar' e 'Pesquisar', tabela de produtos (produto, previsto, vendido, preço de venda, receita, custo total, descontos, lucro líquido, menu de opções), paginação. O menu de opções oferece editar e excluir o produto do cardápio.
 
 **Grid e responsividade (mobile-first)**
 - **360 px:** uma coluna; conteúdo e formulários em largura total; cards/listas empilhados; tabelas devem preservar leitura e ações por adaptação/rolagem horizontal (derivado, confirmar). Modais ocupam a largura disponível com margem `espaco-16` (derivado).
@@ -1456,7 +1456,7 @@ Os estados visuais devem ser implementados por tokens. Estados não desenhados n
   - Origem: Entrada do usuário.
   - Observação: Opções de filtro não aparecem no wireframe.
 - **Tabela de produtos** (Tabela): “Colunas: 'Produto' | 'Previsto' | 'Vendido' | 'Preço de venda' | 'Receita' | 'Custo total' | 'Descontos' | 'Lucro líquido' | Menu de opções (três pontos)”
-  - Ação/destino: Menu de opções (a definir).
+  - Ação/destino: Menu de opções abre as ações Editar produto e Excluir produto. Editar abre o formulário preenchido; excluir solicita confirmação antes de remover o item do cardápio.
   - Origem: Banco de dados.
   - Observação: Produto feito na hora exibe '· produzido' após o nome e '—' em Previsto. Previsto vem da quantidade informada ao adicionar produto pronto (TL23). Receita, descontos e lucro vêm das vendas. Lucro líquido pode ser negativo (regra de cálculo a confirmar).
 - **Paginação** (Botão (CTA)): “Botão: 'Anterior' | Texto: 'Página [X] de [Y]' | Botão: 'Próxima'”
@@ -1471,10 +1471,10 @@ Os estados visuais devem ser implementados por tokens. Estados não desenhados n
 
 **Interações e destinos**
 - A tela é acessada a partir de: TL19 - Detalhes do evento - Não iniciado, TL20 - Detalhes do evento - Em andamento.
-- Transições previstas: TL09 - Menu de categorias, TL23 - Adicionar produto ao evento - Produto pronto, TL24 - Adicionar produto ao evento - Produto feito na hora, Menu de opções do produto (tela a definir).
+- Transições previstas: TL09 - Menu de categorias, TL23 - Adicionar produto ao evento - Produto pronto, TL24 - Adicionar produto ao evento - Produto feito na hora, edição e exclusão de produto do cardápio.
 - Ações da página: Menu de categorias abre TL09 - Menu de categorias. Adicionar produto abre TL23 - Adicionar produto ao evento - Produto pronto (tipo padrão).
 - Pesquisa de produtos: Pesquisar filtra a lista pelo nome. Filtrar abre as opções de filtro (a definir).
-- Tabela de produtos: Menu de opções (a definir).
+- Tabela de produtos: Menu de opções abre Editar produto ou Excluir produto. Editar salva as alterações do item sem alterar os dados de vendas; Excluir remove o item somente após confirmação.
 - Paginação: Anterior e Próxima trocam a página da lista.
 
 **Rastreabilidade**

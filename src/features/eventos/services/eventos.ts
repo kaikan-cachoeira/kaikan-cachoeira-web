@@ -2,6 +2,7 @@ import api from "@/shared/api/cliente";
 import type {
   AdicionarProdutoCardapioPayload,
   AtualizarCustoEventoPayload,
+  AtualizarProdutoCardapioPayload,
   CriarCustoEventoPayload,
   CriarEventoPayload,
   Evento,
@@ -96,5 +97,27 @@ export async function adicionarProdutoCardapio(
   payload: AdicionarProdutoCardapioPayload,
 ): Promise<ItemCardapio> {
   const { data } = await api.post<ItemCardapio>(`/events/${id}/menu`, payload);
+  return data;
+}
+
+export async function atualizarProdutoCardapio(
+  eventId: string,
+  itemId: string,
+  payload: AtualizarProdutoCardapioPayload,
+): Promise<ItemCardapio> {
+  const { data } = await api.put<ItemCardapio>(
+    `/events/${eventId}/menu/${itemId}`,
+    payload,
+  );
+  return data;
+}
+
+export async function excluirProdutoCardapio(
+  eventId: string,
+  itemId: string,
+): Promise<{ ok: boolean }> {
+  const { data } = await api.delete<{ ok: boolean }>(
+    `/events/${eventId}/menu/${itemId}`,
+  );
   return data;
 }
