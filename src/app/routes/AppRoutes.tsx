@@ -62,6 +62,18 @@ export default function AppRoutes() {
           <Route path="/caixa" element={<CaixaPage />} />
           <Route path="/caixa/fiado" element={<CaixaPage />} />
           <Route path="/caixa/fiados" element={<FiadosPage />} />
+          <Route
+            path="/relatorio-geral"
+            element={<PaginaPendente titulo="Relatório geral" />}
+          />
+          <Route
+            path="/em-definicao/painel-de-controle"
+            element={<Navigate to="/relatorio-geral" replace />}
+          />
+          <Route
+            path="/em-definicao/relatorio-geral"
+            element={<Navigate to="/relatorio-geral" replace />}
+          />
           <Route path="/em-definicao/:slug" element={<PaginaPendente />} />
           <Route path="*" element={<PaginaNaoEncontrada />} />
         </Route>

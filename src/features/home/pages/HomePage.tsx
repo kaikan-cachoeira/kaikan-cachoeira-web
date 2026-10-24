@@ -38,7 +38,7 @@ const ATALHOS: Atalho[] = [
   {
     title: "Relatório geral",
     description: "Acompanhe indicadores e resultados dos eventos.",
-    to: "/em-definicao/relatorio-geral",
+    to: "/relatorio-geral",
     icon: "chart",
   },
 ];
