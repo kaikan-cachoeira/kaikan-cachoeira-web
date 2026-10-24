@@ -50,7 +50,6 @@ export default function FiadosPage() {
     return (
       <div className={styles.page}>
         <PageHeader
-          title="Caixa"
           subtitle="Controle de fichas, pagamentos e fiados"
         />
         <EstadoVazio
@@ -70,7 +69,6 @@ export default function FiadosPage() {
   return (
     <div className={styles.page}>
       <PageHeader
-        title="Caixa"
         subtitle="Controle de fichas, pagamentos e fiados"
       />
 

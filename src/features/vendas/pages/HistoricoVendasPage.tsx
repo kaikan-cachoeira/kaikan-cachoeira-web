@@ -30,7 +30,7 @@ export default function HistoricoVendasPage() {
 
   return (
     <div className={styles.page}>
-      <PageHeader title="Registro de venda" subtitle={subtitle} />
+      <PageHeader subtitle={subtitle} />
 
       {eventLoading ? (
         <EstadoCarregando message="Carregando evento em andamento..." />
