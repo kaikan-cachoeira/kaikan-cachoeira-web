@@ -16,6 +16,7 @@ import { formatarMoeda, formatarHoraHoje } from "@/shared/lib/formatacao";
 import PainelLancamentoCaixa from "../components/PainelLancamentoCaixa";
 import QuitarFiadoModal from "../components/QuitarFiadoModal";
 import styles from "./Caixa.module.css";
+import BotaoVoltar from "@/shared/components/BotaoVoltar/BotaoVoltar";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Todos" },
@@ -49,6 +50,7 @@ export default function FiadosPage() {
   if (!event) {
     return (
       <div className={styles.page}>
+        <BotaoVoltar fallback="/inicio" />
         <PageHeader
           subtitle="Controle de fichas, pagamentos e fiados"
         />
@@ -68,6 +70,7 @@ export default function FiadosPage() {
 
   return (
     <div className={styles.page}>
+      <BotaoVoltar fallback="/inicio" />
       <PageHeader
         subtitle="Controle de fichas, pagamentos e fiados"
       />

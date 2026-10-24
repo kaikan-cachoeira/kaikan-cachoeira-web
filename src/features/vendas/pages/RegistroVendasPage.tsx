@@ -13,6 +13,7 @@ import VendaProdutoCard from "../components/VendaProdutoCard";
 import ResumoVenda from "../components/ResumoVenda";
 import DescontoModal from "../components/DescontoModal";
 import styles from "./Vendas.module.css";
+import BotaoVoltar from "@/shared/components/BotaoVoltar/BotaoVoltar";
 
 const TABS = [
   { to: "/registro-vendas", label: "Registro de vendas", end: true },
@@ -46,6 +47,7 @@ export default function RegistroVendasPage() {
 
   return (
     <div className={styles.page}>
+      <BotaoVoltar fallback="/inicio" />
       <PageHeader subtitle={subtitle} />
 
       {eventLoading ? (

@@ -11,6 +11,7 @@ import { useVendas } from "../hooks/useVendas";
 import HistoricoVendasView from "../components/HistoricoVendasView";
 import ResumoVenda from "../components/ResumoVenda";
 import styles from "./Vendas.module.css";
+import BotaoVoltar from "@/shared/components/BotaoVoltar/BotaoVoltar";
 
 const TABS = [
   { to: "/registro-vendas", label: "Registro de vendas", end: true },
@@ -30,6 +31,7 @@ export default function HistoricoVendasPage() {
 
   return (
     <div className={styles.page}>
+      <BotaoVoltar fallback="/inicio" />
       <PageHeader subtitle={subtitle} />
 
       {eventLoading ? (

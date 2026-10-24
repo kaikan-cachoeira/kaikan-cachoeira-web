@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import BotaoVoltar from "@/shared/components/BotaoVoltar/BotaoVoltar";
 import PageHeader from "@/shared/components/PageHeader/PageHeader";
 import Abas from "@/shared/components/Abas/Abas";
 import Selecao from "@/shared/components/Formulario/Selecao";
@@ -66,6 +67,7 @@ export default function CaixaPage() {
   if (!event) {
     return (
       <div className={styles.page}>
+        <BotaoVoltar fallback="/inicio" />
         <PageHeader
           subtitle="Controle de fichas, pagamentos e fiados"
         />
@@ -85,6 +87,7 @@ export default function CaixaPage() {
 
   return (
     <div className={styles.page}>
+      <BotaoVoltar fallback="/inicio" />
       <PageHeader
         subtitle="Controle de fichas, pagamentos e fiados"
       />
