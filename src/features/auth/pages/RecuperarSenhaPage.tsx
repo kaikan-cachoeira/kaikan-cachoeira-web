@@ -81,7 +81,7 @@ export default function RecuperarSenhaPage() {
           ) : null}
 
           <Botao type="submit" loading={isSubmitting} className={styles.submit}>
-            RECUPERAR
+            Recuperar
           </Botao>
         </form>
       </div>
