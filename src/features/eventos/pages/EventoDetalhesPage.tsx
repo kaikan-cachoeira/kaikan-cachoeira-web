@@ -328,6 +328,7 @@ export default function EventoDetalhesPage({
           <Botao
             as={Link}
             to={`/doacoes?evento=${id}`}
+            state={{ fromEventId: id }}
             variant="tertiary"
             size="compact"
           >

@@ -1,3 +1,4 @@
+import { Link, useLocation } from "react-router-dom";
 import PageHeader from "@/shared/components/PageHeader/PageHeader";
 import BarraPesquisa from "@/shared/components/BarraPesquisa/BarraPesquisa";
 import PainelFiltros from "@/shared/components/Filtros/PainelFiltros";
@@ -52,6 +53,12 @@ function donationLabel(donation: Doacao) {
 }
 
 export default function DoacoesPage() {
+  const location = useLocation();
+  const navigationState = location.state as { fromEventId?: unknown } | null;
+  const eventId =
+    typeof navigationState?.fromEventId === "string"
+      ? navigationState.fromEventId
+      : null;
   const { addToast } = useToast();
   const {
     searchDraft,
@@ -79,6 +86,13 @@ export default function DoacoesPage() {
 
   return (
     <div className={styles.stack}>
+      <Link
+        to={eventId ? `/eventos/${eventId}` : "/eventos"}
+        className={styles.backLink}
+      >
+        <Icone name="arrow-left" size={18} />
+        Voltar para o evento
+      </Link>
       <PageHeader
         subtitle="Doações destinadas e consumidas em cada evento"
         actions={

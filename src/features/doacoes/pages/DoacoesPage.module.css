@@ -4,6 +4,21 @@
   gap: var(--espaco-24);
 }
 
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-8);
+  width: fit-content;
+  color: var(--texto-suave);
+  font-size: var(--texto-auxiliar);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: var(--vinho);
+}
+
 .moreButton {
   display: inline-flex;
   align-items: center;
