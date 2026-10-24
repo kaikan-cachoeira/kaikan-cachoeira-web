@@ -5,6 +5,8 @@ import { mensagemErro } from "@/shared/api/erros";
 import { comporChave, queryKeys } from "@/shared/query/keys";
 import type {
   AdicionarProdutoCardapioPayload,
+  AtualizarCustoEventoPayload,
+  AtualizarProdutoCardapioPayload,
   CriarCustoEventoPayload,
   CriarEventoPayload,
   Evento,
@@ -13,8 +15,13 @@ import type {
 import {
   adicionarProdutoCardapio,
   alterarStatusEvento,
+  atualizarEvento,
+  atualizarCustoEvento,
+  atualizarProdutoCardapio,
   criarCustoEvento,
   criarEvento,
+  excluirCustoEvento,
+  excluirProdutoCardapio,
   excluirEvento,
   listarEventos,
   obterCardapioEvento,
@@ -68,6 +75,17 @@ export function useEventoMutations() {
     onSuccess: invalidarEventos,
   });
 
+  const atualizar = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: CriarEventoPayload;
+    }) => atualizarEvento(id, payload),
+    onSuccess: invalidarEventos,
+  });
+
   const alterarStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
       alterarStatusEvento(id, status),
@@ -100,6 +118,35 @@ export function useEventoMutations() {
     },
   });
 
+  const atualizarCusto = useMutation({
+    mutationFn: ({
+      id,
+      custoId,
+      payload,
+    }: {
+      id: string;
+      custoId: string;
+      payload: AtualizarCustoEventoPayload;
+    }) => atualizarCustoEvento(id, custoId, payload),
+    onSuccess: (_data, variables) => {
+      invalidarEventos();
+      queryClient.invalidateQueries({
+        queryKey: comporChave(queryKeys.eventos, "detalhe", variables.id),
+      });
+    },
+  });
+
+  const excluirCusto = useMutation({
+    mutationFn: ({ id, custoId }: { id: string; custoId: string }) =>
+      excluirCustoEvento(id, custoId),
+    onSuccess: (_data, variables) => {
+      invalidarEventos();
+      queryClient.invalidateQueries({
+        queryKey: comporChave(queryKeys.eventos, "detalhe", variables.id),
+      });
+    },
+  });
+
   const adicionarProduto = useMutation({
     mutationFn: ({
       id,
@@ -119,12 +166,57 @@ export function useEventoMutations() {
     },
   });
 
+  const atualizarProduto = useMutation({
+    mutationFn: ({
+      eventId,
+      itemId,
+      payload,
+    }: {
+      eventId: string;
+      itemId: string;
+      payload: AtualizarProdutoCardapioPayload;
+    }) => atualizarProdutoCardapio(eventId, itemId, payload),
+    onSuccess: (_data, variables) => {
+      invalidarEventos();
+      queryClient.invalidateQueries({
+        queryKey: comporChave(queryKeys.eventos, "detalhe", variables.eventId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: comporChave(queryKeys.eventos, "cardapio", variables.eventId),
+      });
+    },
+  });
+
+  const excluirProduto = useMutation({
+    mutationFn: ({
+      eventId,
+      itemId,
+    }: {
+      eventId: string;
+      itemId: string;
+    }) => excluirProdutoCardapio(eventId, itemId),
+    onSuccess: (_data, variables) => {
+      invalidarEventos();
+      queryClient.invalidateQueries({
+        queryKey: comporChave(queryKeys.eventos, "detalhe", variables.eventId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: comporChave(queryKeys.eventos, "cardapio", variables.eventId),
+      });
+    },
+  });
+
   return {
     criarEvento: criar,
+    atualizarEvento: atualizar,
     alterarStatus,
     excluirEvento: excluir,
     criarCusto,
+    atualizarCusto,
+    excluirCusto,
     adicionarProduto,
+    atualizarProduto,
+    excluirProduto,
   };
 }
 
@@ -140,6 +232,10 @@ export function useEventos() {
   const [to, setTo] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Evento | null>(null);
+  const [statusTarget, setStatusTarget] = useState<{
+    event: Evento;
+    status: string;
+  } | null>(null);
 
   const { alterarStatus, excluirEvento } = useEventoMutations();
 
@@ -173,6 +269,19 @@ export function useEventos() {
         mensagemErro(error, "Não foi possível alterar a situação do evento."),
         "error",
       );
+    }
+  }
+
+  function requestStatus(event: Evento, status: string) {
+    setStatusTarget({ event, status });
+  }
+
+  async function confirmStatus() {
+    if (!statusTarget) return;
+    try {
+      await handleStatus(statusTarget.event, statusTarget.status);
+    } finally {
+      setStatusTarget(null);
     }
   }
 
@@ -229,10 +338,14 @@ export function useEventos() {
     setCreateOpen,
     deleteTarget,
     setDeleteTarget,
+    statusTarget,
+    setStatusTarget,
     eventosQuery,
     alterarStatus,
     excluirEvento,
     handleStatus,
+    requestStatus,
+    confirmStatus,
     confirmDelete,
     runSearch,
     clearFilters,

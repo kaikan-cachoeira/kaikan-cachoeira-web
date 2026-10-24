@@ -8,6 +8,8 @@ import Selecao from "@/shared/components/Formulario/Selecao";
 import AreaTexto from "@/shared/components/Formulario/AreaTexto";
 import Icone from "@/shared/components/Icone/Icone";
 import { useEventoMutations } from "../hooks/useEventos";
+import type { Evento } from "../models";
+import { paraEntradaDataHora } from "@/shared/lib/formatacao";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
 import { mensagemErro } from "@/shared/api/erros";
 import styles from "./ModaisEvento.module.css";
@@ -18,6 +20,7 @@ const TYPE_OPTIONS = [
 ];
 
 interface EventoFormModalProps {
+  evento?: Evento;
   onClose: () => void;
 }
 
@@ -29,8 +32,14 @@ interface EventoFormValues {
   end: string;
 }
 
-export default function EventoFormModal({ onClose }: EventoFormModalProps) {
-  const { criarEvento: createEvent } = useEventoMutations();
+export default function EventoFormModal({
+  evento,
+  onClose,
+}: EventoFormModalProps) {
+  const isEdit = Boolean(evento);
+  const { criarEvento: createEvent, atualizarEvento: updateEvent } =
+    useEventoMutations();
+  const mutation = isEdit ? updateEvent : createEvent;
   const { addToast } = useToast();
   const [serverError, setServerError] = useState("");
   const {
@@ -40,7 +49,13 @@ export default function EventoFormModal({ onClose }: EventoFormModalProps) {
     formState: { errors },
   } = useForm<EventoFormValues>({
     mode: "onTouched",
-    defaultValues: { type: "Evento", name: "", notes: "", start: "", end: "" },
+    defaultValues: {
+      type: evento?.type ?? "Evento",
+      name: evento?.name ?? "",
+      notes: evento?.notes ?? "",
+      start: paraEntradaDataHora(evento?.start),
+      end: paraEntradaDataHora(evento?.end),
+    },
   });
 
   const start = watch("start");
@@ -48,37 +63,47 @@ export default function EventoFormModal({ onClose }: EventoFormModalProps) {
   const onSubmit: SubmitHandler<EventoFormValues> = async (values) => {
     setServerError("");
     try {
-      await createEvent.mutateAsync(values);
-      addToast("Evento criado com sucesso.");
-      onClose?.();
+      if (evento) {
+        await updateEvent.mutateAsync({ id: evento.id, payload: values });
+        addToast("Evento atualizado com sucesso.");
+      } else {
+        await createEvent.mutateAsync(values);
+        addToast("Evento criado com sucesso.");
+      }
+      onClose();
     } catch (error) {
       setServerError(
-        mensagemErro(error, "Não foi possível criar o evento."),
+        mensagemErro(
+          error,
+          isEdit
+            ? "Não foi possível atualizar o evento."
+            : "Não foi possível criar o evento.",
+        ),
       );
     }
   };
 
   return (
     <Modal
-      title="Criar Evento"
-      onClose={createEvent.isPending ? undefined : onClose}
-      showClose={!createEvent.isPending}
-      closeOnOverlay={!createEvent.isPending}
+      title={isEdit ? "Editar Evento" : "Criar Evento"}
+      onClose={mutation.isPending ? undefined : onClose}
+      showClose={!mutation.isPending}
+      closeOnOverlay={!mutation.isPending}
       footer={
         <>
           <Botao
             variant="secondary"
             onClick={onClose}
-            disabled={createEvent.isPending}
+            disabled={mutation.isPending}
           >
             Cancelar
           </Botao>
           <Botao
             type="submit"
             form="form-evento"
-            loading={createEvent.isPending}
+            loading={mutation.isPending}
           >
-            Criar Evento
+            {isEdit ? "Salvar alterações" : "Criar Evento"}
           </Botao>
         </>
       }

@@ -11,4 +11,5 @@ export type {
   Produto,
   RespostaCategorias,
   RespostaProdutos,
+  AtualizarProdutoPayload,
 } from "./inventario";

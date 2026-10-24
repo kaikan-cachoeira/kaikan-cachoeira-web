@@ -3,8 +3,17 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { comporChave, queryKeys } from "@/shared/query/keys";
 import { useEventosQuery } from "@/features/eventos";
-import type { CriarDoacaoPayload, ParametrosDoacoes } from "../models";
-import { criarDoacao, listarDoacoes } from "../services/doacoes";
+import type {
+  AtualizarDoacaoPayload,
+  CriarDoacaoPayload,
+  ParametrosDoacoes,
+} from "../models";
+import {
+  atualizarDoacao,
+  criarDoacao,
+  excluirDoacao,
+  listarDoacoes,
+} from "../services/doacoes";
 
 export function useDoacoesQuery(params: ParametrosDoacoes) {
   return useQuery({
@@ -24,7 +33,33 @@ export function useDoacaoMutations() {
     },
   });
 
-  return { criarDoacao: criar };
+  const atualizar = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: AtualizarDoacaoPayload;
+    }) => atualizarDoacao(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.doacoes });
+      queryClient.invalidateQueries({ queryKey: queryKeys.eventos });
+    },
+  });
+
+  const excluir = useMutation({
+    mutationFn: (id: string) => excluirDoacao(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.doacoes });
+      queryClient.invalidateQueries({ queryKey: queryKeys.eventos });
+    },
+  });
+
+  return {
+    criarDoacao: criar,
+    atualizarDoacao: atualizar,
+    excluirDoacao: excluir,
+  };
 }
 
 export function useDoacoes() {
@@ -53,6 +88,7 @@ export function useDoacoes() {
 
   const doacoesQuery = useDoacoesQuery(params);
   const eventosQuery = useEventosQuery({ pageSize: 100 });
+  const { excluirDoacao } = useDoacaoMutations();
 
   const eventOptions = (eventosQuery.data?.items || []).map((event) => ({
     value: event.id,
@@ -92,6 +128,7 @@ export function useDoacoes() {
     setModalOpen,
     doacoesQuery,
     eventosQuery,
+    excluirDoacao,
     eventOptions,
     runSearch,
     clearFilters,

@@ -19,21 +19,18 @@ import {
   EstadoCarregando,
 } from "@/shared/components/Estado/Estado";
 import { useEventoDetalhes } from "../hooks/useEventoDetalhes";
+import { obterConfirmacaoStatus } from "../utils/confirmacaoStatus";
 import {
   formatarMoeda,
   formatarNumero,
   formatarPeriodo,
 } from "@/shared/lib/formatacao";
+import { rotuloTipoDoacao } from "@/shared/lib/tiposDoacao";
 import type { DoacaoEvento } from "../models";
 import CustoModal from "../components/CustoModal";
+import CustosEventoModal from "../components/CustosEventoModal";
 import AdicionarProdutoCardapioModal from "../components/AdicionarProdutoCardapioModal";
 import styles from "./EventoDetalhesPage.module.css";
-
-const DONATION_TYPES: Record<string, string> = {
-  ready: "Produto",
-  money: "Dinheiro",
-  ingredient: "Ingrediente",
-};
 
 function donationDescription(donation: DoacaoEvento) {
   if (donation.type === "money") {
@@ -59,14 +56,18 @@ export default function EventoDetalhesPage({
   const {
     costOpen,
     setCostOpen,
+    costsListOpen,
+    setCostsListOpen,
     addProductOpen,
     setAddProductOpen,
+    startConfirm,
+    setStartConfirm,
     closeConfirm,
     setCloseConfirm,
     eventoQuery,
     categoriasQuery,
     alterarStatus: changeStatus,
-    startEvent,
+    confirmStart,
     closeEvent,
   } = useEventoDetalhes(id);
   const { data: event, isLoading, isError, refetch } = eventoQuery;
@@ -87,6 +88,7 @@ export default function EventoDetalhesPage({
 
   const isOngoing = event.status === "Em andamento";
   const isNotStarted = event.status === "Não iniciado";
+  const startConfirmation = obterConfirmacaoStatus(event, "Em andamento");
   const menu = event.menu || [];
   const donations = event.donations || [];
   const costs = event.costs || [];
@@ -144,7 +146,10 @@ export default function EventoDetalhesPage({
                 >
                   Registrar custo
                 </Botao>
-                <Botao loading={changeStatus.isPending} onClick={startEvent}>
+                <Botao
+                  loading={changeStatus.isPending}
+                  onClick={() => setStartConfirm(true)}
+                >
                   Iniciar evento
                 </Botao>
               </>
@@ -318,6 +323,7 @@ export default function EventoDetalhesPage({
           <Botao
             as={Link}
             to={`/doacoes?evento=${id}`}
+            state={{ fromEventId: id }}
             variant="tertiary"
             size="compact"
           >
@@ -340,7 +346,7 @@ export default function EventoDetalhesPage({
                 <Linha key={donation.id}>
                   <Celula>{donationDescription(donation)}</Celula>
                   <Celula>{donation.donor || "Não informado"}</Celula>
-                  <Celula>{DONATION_TYPES[donation.type] || donation.type}</Celula>
+                  <Celula>{rotuloTipoDoacao(donation.type)}</Celula>
                   <Celula numeric>
                     {donation.type === "money"
                       ? "—"
@@ -379,10 +385,23 @@ export default function EventoDetalhesPage({
           </Botao>
         </SecaoCard>
 
-        <SecaoCard title="Custos adicionais">
+        <SecaoCard
+          title="Custos adicionais"
+          action={
+            costs.length ? (
+              <Botao
+                variant="tertiary"
+                size="compact"
+                onClick={() => setCostsListOpen(true)}
+              >
+                Ver todos
+              </Botao>
+            ) : undefined
+          }
+        >
           {costs.length ? (
             <ul className={styles.costList}>
-              {costs.map((cost) => (
+              {costs.slice(0, 3).map((cost) => (
                 <li key={cost.id}>
                   <span>
                     <strong>{cost.name}</strong>
@@ -404,6 +423,15 @@ export default function EventoDetalhesPage({
         <CustoModal eventId={id} onClose={() => setCostOpen(false)} />
       ) : null}
 
+      {costsListOpen && id ? (
+        <CustosEventoModal
+          eventId={id}
+          custos={costs}
+          somenteLeitura={event.status === "Encerrado"}
+          onClose={() => setCostsListOpen(false)}
+        />
+      ) : null}
+
       {addProductOpen && id ? (
         <AdicionarProdutoCardapioModal
           eventId={id}
@@ -421,6 +449,16 @@ export default function EventoDetalhesPage({
           loading={changeStatus.isPending}
           onCancel={() => setCloseConfirm(false)}
           onConfirm={closeEvent}
+        />
+      ) : null}
+      {startConfirm && startConfirmation ? (
+        <ConfirmacaoDialog
+          title={startConfirmation.title}
+          message={startConfirmation.message}
+          confirmLabel={startConfirmation.confirmLabel}
+          loading={changeStatus.isPending}
+          onCancel={() => setStartConfirm(false)}
+          onConfirm={confirmStart}
         />
       ) : null}
     </div>

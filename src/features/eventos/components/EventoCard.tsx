@@ -18,7 +18,7 @@ interface EventoCardProps {
   busy?: boolean;
   onChangeStatus: (event: Evento, status: string) => void;
   onDelete: (event: Evento) => void;
-  onPending: (action: string, event: Evento) => void;
+  onEdit: (event: Evento) => void;
 }
 
 export default function EventoCard({
@@ -27,7 +27,7 @@ export default function EventoCard({
   busy = false,
   onChangeStatus,
   onDelete,
-  onPending,
+  onEdit,
 }: EventoCardProps) {
   const status = event.status;
   const isOngoing = status === "Em andamento";
@@ -136,7 +136,7 @@ export default function EventoCard({
         <Botao
           variant="tertiary"
           size="compact"
-          onClick={() => onPending?.("Editar evento", event)}
+          onClick={() => onEdit(event)}
         >
           Editar evento
         </Botao>

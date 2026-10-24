@@ -1,3 +1,4 @@
+import type { Paginado, ParametrosPaginacao } from "@/shared/models/paginacao";
 import api from "@/shared/api/cliente";
 import type {
   CriarMovimentacaoPayload,
@@ -5,6 +6,8 @@ import type {
   ParametrosProdutos,
   Produto,
   RespostaProdutos,
+  AtualizarProdutoPayload,
+  MovimentacaoProduto,
 } from "../models";
 
 export async function listarProdutos(
@@ -33,6 +36,25 @@ export async function criarMovimentacao(
   const { data } = await api.post<Produto>(
     `/products/${productId}/movements`,
     payload,
+  );
+  return data;
+}
+
+export async function atualizarProduto(
+  id: string,
+  payload: AtualizarProdutoPayload,
+): Promise<Produto> {
+  const { data } = await api.put<Produto>(`/products/${id}`, payload);
+  return data;
+}
+
+export async function listarMovimentacoesLote(
+  lotId: string,
+  params: ParametrosPaginacao,
+): Promise<Paginado<MovimentacaoProduto>> {
+  const { data } = await api.get<Paginado<MovimentacaoProduto>>(
+    `/lots/${lotId}/movements`,
+    { params },
   );
   return data;
 }

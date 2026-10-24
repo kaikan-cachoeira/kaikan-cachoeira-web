@@ -1,0 +1,263 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-24);
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) minmax(200px, 1.3fr) auto;
+  align-items: end;
+  gap: var(--espaco-16);
+  padding: var(--espaco-16);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-card);
+  background: var(--branco-suave);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--espaco-16);
+}
+
+.periodSummary {
+  grid-column: 1 / -1;
+  color: var(--texto-suave);
+  font-size: var(--texto-auxiliar);
+}
+
+.chartScroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--espaco-16);
+  min-width: max-content;
+  min-height: 240px;
+  padding: var(--espaco-16) var(--espaco-8);
+  border-bottom: 1px solid var(--borda);
+}
+
+.chartEvent {
+  display: flex;
+  flex: 0 0 112px;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espaco-8);
+  min-height: 220px;
+  text-align: center;
+}
+
+.bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: var(--espaco-8);
+  width: 100%;
+  height: 150px;
+  margin-top: auto;
+}
+
+.bar {
+  display: block;
+  width: 30px;
+  min-height: 2px;
+  border-radius: var(--raio-campo) var(--raio-campo) 0 0;
+}
+
+.revenueBar {
+  background: var(--vinho);
+}
+
+.costBar {
+  background: var(--cor-aviso);
+}
+
+.chartName {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  color: var(--texto);
+  font-size: var(--texto-auxiliar);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.positive,
+.negative {
+  font-size: var(--texto-auxiliar);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.positive {
+  color: var(--cor-sucesso);
+}
+
+.negative {
+  color: var(--cor-erro);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-16);
+  padding-top: var(--espaco-12);
+  color: var(--texto-suave);
+  font-size: var(--texto-auxiliar);
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-8);
+}
+
+.legend i {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--raio-campo);
+}
+
+.revenueKey {
+  background: var(--vinho);
+}
+
+.costKey {
+  background: var(--cor-aviso);
+}
+
+.eventCell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espaco-8);
+}
+
+.eventName,
+.productName {
+  font-weight: 600;
+}
+
+.insightsGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--espaco-24);
+}
+
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-24);
+  min-width: 0;
+}
+
+.productList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-16);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.productItem {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-12);
+}
+
+.rank {
+  display: inline-flex;
+  flex: 0 0 32px;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--raio-pill);
+  background: var(--vinho-suave);
+  color: var(--vinho);
+  font-weight: 700;
+}
+
+.productDetails {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--espaco-4);
+  min-width: 0;
+}
+
+.productName {
+  overflow-wrap: anywhere;
+}
+
+.productMeta,
+.emptyText {
+  color: var(--texto-suave);
+  font-size: var(--texto-auxiliar);
+}
+
+.alertList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-12);
+}
+
+.alertLink {
+  display: block;
+  padding: var(--espaco-12);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-campo);
+  color: var(--texto);
+  font-size: var(--texto-corpo);
+  text-decoration: none;
+}
+
+.alertLink:hover {
+  border-color: var(--borda-bege);
+  background: var(--fundo);
+  text-decoration: underline;
+}
+
+.donationStats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-12);
+}
+
+.donationStats p:first-child {
+  font-weight: 600;
+}
+
+.donationStats p:last-child {
+  color: var(--texto-suave);
+  font-size: var(--texto-auxiliar);
+}
+
+@media (max-width: 900px) {
+  .insightsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filters {
+    grid-template-columns: 1fr;
+  }
+}

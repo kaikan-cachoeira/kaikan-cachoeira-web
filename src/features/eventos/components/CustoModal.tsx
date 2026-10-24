@@ -8,12 +8,14 @@ import AreaTexto from "@/shared/components/Formulario/AreaTexto";
 import CampoMoeda from "@/shared/components/Formulario/CampoMoeda";
 import Icone from "@/shared/components/Icone/Icone";
 import { useEventoMutations } from "../hooks/useEventos";
+import type { CustoEvento } from "../models";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
 import { mensagemErro } from "@/shared/api/erros";
 import styles from "./ModaisEvento.module.css";
 
 interface CustoModalProps {
   eventId: string;
+  custo?: CustoEvento;
   onClose: () => void;
 }
 
@@ -23,8 +25,15 @@ interface CustoFormValues {
   description: string;
 }
 
-export default function CustoModal({ eventId, onClose }: CustoModalProps) {
-  const { criarCusto: createCost } = useEventoMutations();
+export default function CustoModal({
+  eventId,
+  custo,
+  onClose,
+}: CustoModalProps) {
+  const isEdit = Boolean(custo);
+  const { criarCusto: createCost, atualizarCusto: updateCost } =
+    useEventoMutations();
+  const mutation = isEdit ? updateCost : createCost;
   const { addToast } = useToast();
   const [serverError, setServerError] = useState("");
   const {
@@ -34,44 +43,62 @@ export default function CustoModal({ eventId, onClose }: CustoModalProps) {
     formState: { errors },
   } = useForm<CustoFormValues>({
     mode: "onTouched",
-    defaultValues: { value: 0, name: "", description: "" },
+    defaultValues: {
+      value: custo?.value ?? 0,
+      name: custo?.name ?? "",
+      description: custo?.description ?? "",
+    },
   });
 
   const onSubmit: SubmitHandler<CustoFormValues> = async (values) => {
     setServerError("");
     try {
-      await createCost.mutateAsync({ id: eventId, payload: values });
-      addToast("Custo registrado com sucesso.");
-      onClose?.();
+      if (custo) {
+        await updateCost.mutateAsync({
+          id: eventId,
+          custoId: custo.id,
+          payload: values,
+        });
+        addToast("Custo atualizado com sucesso.");
+      } else {
+        await createCost.mutateAsync({ id: eventId, payload: values });
+        addToast("Custo registrado com sucesso.");
+      }
+      onClose();
     } catch (error) {
       setServerError(
-        mensagemErro(error, "Não foi possível registrar o custo."),
+        mensagemErro(
+          error,
+          isEdit
+            ? "Não foi possível atualizar o custo."
+            : "Não foi possível registrar o custo.",
+        ),
       );
     }
   };
 
   return (
     <Modal
-      title="Registrar custos"
-      subtitle="Registre custos do evento"
-      onClose={createCost.isPending ? undefined : onClose}
-      showClose={!createCost.isPending}
-      closeOnOverlay={!createCost.isPending}
+      title={isEdit ? "Editar custo" : "Registrar custos"}
+      subtitle={isEdit ? "Atualize os dados do custo" : "Registre custos do evento"}
+      onClose={mutation.isPending ? undefined : onClose}
+      showClose={!mutation.isPending}
+      closeOnOverlay={!mutation.isPending}
       footer={
         <>
           <Botao
             variant="secondary"
             onClick={onClose}
-            disabled={createCost.isPending}
+            disabled={mutation.isPending}
           >
             Cancelar
           </Botao>
           <Botao
             type="submit"
             form="form-custo"
-            loading={createCost.isPending}
+            loading={mutation.isPending}
           >
-            Registrar Custos
+            {isEdit ? "Salvar alterações" : "Registrar Custos"}
           </Botao>
         </>
       }

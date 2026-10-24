@@ -1,0 +1,1 @@
+export { listarProdutosMaisVendidos } from "./relatorio";

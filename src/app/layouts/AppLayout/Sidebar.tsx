@@ -10,8 +10,8 @@ const NAV_ITEMS = [
   { to: "/eventos", label: "Eventos", icon: "ticket" },
   { to: "/doacoes", label: "Doações", icon: "gift" },
   {
-    to: "/em-definicao/painel-de-controle",
-    label: "Painel de controle",
+    to: "/relatorio-geral",
+    label: "Relatório geral",
     icon: "chart",
   },
   { to: "/registro-vendas", label: "Registro de vendas", icon: "bag" },

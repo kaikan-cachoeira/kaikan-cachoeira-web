@@ -110,6 +110,28 @@ function inDateRange(value: any, from: any, to: any) {
   return true;
 }
 
+function filtrarEventos(db: any, params: URLSearchParams) {
+  const term = params.get("search") || "";
+  const statuses = listParam(params, "statuses");
+  const types = listParam(params, "types");
+  const from = params.get("from") || "";
+  const to = params.get("to") || "";
+
+  return db.events
+    .filter((event: any) => search(event.name, term))
+    .filter((event: any) => statuses.length === 0 || statuses.includes(event.status))
+    .filter((event: any) => types.length === 0 || types.includes(event.type))
+    .filter((event: any) => {
+      if (!from && !to) return true;
+      return inDateRange(event.start, from, to) || inDateRange(event.end, from, to);
+    })
+    .sort((a: any, b: any) => {
+      if (a.status === "Em andamento" && b.status !== "Em andamento") return -1;
+      if (b.status === "Em andamento" && a.status !== "Em andamento") return 1;
+      return String(b.start).localeCompare(String(a.start));
+    });
+}
+
 function categoryName(db: any, categoryId: any) {
   return db.categories.find((category: any) => category.id === categoryId)?.name || "";
 }
@@ -165,7 +187,7 @@ function buildEvent(db: any, event: any, includeRelations = false) {
         availableQuantity:
           item.type === "ready"
             ? db.products.find((product: any) => product.id === item.productId)?.quantity ??
-              0
+            0
             : null,
       })),
     donations: db.donations
@@ -356,15 +378,30 @@ async function route(config: any) {
     if (isEntry && totalCost < 0) {
       return fail(config, 400, "Confira o custo informado e tente novamente.");
     }
-    const unitCost = isEntry && quantity > 0 ? totalCost / quantity : 0;
+       const unitCost = isEntry && quantity > 0 ? totalCost / quantity : 0;
+    const eventName = body.eventName || "";
+    const notes = String(body.notes || "").trim();
+    const createdMovements: any[] = [];
 
     if (isEntry) {
+      const lotId = criarId("lot");
       product.quantity = Number(product.quantity) + quantity;
       product.lots = product.lots || [];
       product.lots.unshift({
-        id: criarId("lot"),
+        id: lotId,
         entryQty: quantity,
         balance: quantity,
+        totalCost,
+        unitCost,
+        createdAt: now,
+      });
+      createdMovements.push({
+        id: criarId("mov"),
+        lotId,
+        type,
+        quantity,
+        eventName,
+        notes,
         totalCost,
         unitCost,
         createdAt: now,
@@ -377,28 +414,67 @@ async function route(config: any) {
       lots.forEach((lot) => {
         if (toRemove <= 0) return;
         const used = Math.min(Number(lot.balance) || 0, toRemove);
+        if (used <= 0) return;
         lot.balance = Number(lot.balance) - used;
         toRemove -= used;
+        const lotUnitCost = Number(lot.unitCost) || 0;
+        createdMovements.push({
+          id: criarId("mov"),
+          lotId: lot.id,
+          type,
+          quantity: -used,
+          eventName,
+          notes,
+          totalCost: used * lotUnitCost,
+          unitCost: lotUnitCost,
+          createdAt: now,
+        });
       });
       product.quantity = Number(product.quantity) - quantity;
     }
 
-    const movement = {
-      id: criarId("mov"),
-      type,
-      quantity: isEntry ? quantity : -quantity,
-      eventName: body.eventName || "",
-      notes: String(body.notes || "").trim(),
-      totalCost: isEntry ? totalCost : 0,
-      unitCost,
-      createdAt: now,
-    };
-    product.movements = [movement, ...(product.movements || [])];
+    product.movements = [...createdMovements, ...(product.movements || [])];
     persistDb();
     return ok(config, buildProduct(db, product), 201);
   }
 
+    const lotMovementsMatch = path.match(/^\/lots\/([^/]+)\/movements$/);
+  if (method === "get" && lotMovementsMatch) {
+    const lotId = lotMovementsMatch[1];
+    const product = db.products.find((item: any) =>
+      (item.lots || []).some((lot: any) => lot.id === lotId),
+    );
+    if (!product) return fail(config, 404, "Lote não encontrado.");
+    // Movimentações antigas (sem lotId) pertencem ao lote mais antigo do produto
+    const oldestLotId = [...product.lots].sort((a: any, b: any) =>
+      String(a.createdAt).localeCompare(String(b.createdAt)),
+    )[0]?.id;
+    const items = (product.movements || [])
+      .filter((movement: any) => (movement.lotId ?? oldestLotId) === lotId)
+      .sort((a: any, b: any) =>
+        String(b.createdAt).localeCompare(String(a.createdAt)),
+      );
+    return ok(config, paginate(items, params, 6));
+  }
+
   const productMatch = path.match(/^\/products\/([^/]+)$/);
+  if (method === "put" && productMatch) {
+    const product = db.products.find((item: any) => item.id === productMatch[1]);
+    if (!product) return fail(config, 404, "Produto não encontrado.");
+    if (!String(body.name || "").trim()) {
+      return fail(config, 400, "Informe o nome do produto.");
+    }
+    if (!body.categoryId || !db.categories.some((item: any) => item.id === body.categoryId)) {
+      return fail(config, 400, "Selecione uma categoria para o produto.");
+    }
+    product.name = String(body.name).trim();
+    product.description = String(body.description || "").trim();
+    product.categoryId = body.categoryId;
+    product.minStock = Math.max(0, Number(body.minStock) || 0);
+    product.image = body.image || null;
+    persistDb();
+    return ok(config, buildProduct(db, product));
+  }
   if (method === "get" && productMatch) {
     const product = db.products.find((item: any) => item.id === productMatch[1]);
     if (!product) return fail(config, 404, "Produto não encontrado.");
@@ -480,32 +556,121 @@ async function route(config: any) {
     );
   }
 
+  const donationMatch = path.match(/^\/donations\/([^/]+)$/);
+  if (donationMatch && (method === "put" || method === "delete")) {
+    const donation = db.donations.find(
+      (item: any) => item.id === donationMatch[1],
+    );
+    if (!donation) return fail(config, 404, "Doação não encontrada.");
+
+    if (method === "delete") {
+      db.donations = db.donations.filter(
+        (item: any) => item.id !== donationMatch[1],
+      );
+      persistDb();
+      return ok(config, { ok: true });
+    }
+
+    if (!db.events.some((event: any) => event.id === body.eventId)) {
+      return fail(config, 400, "Selecione o evento destinado à doação.");
+    }
+    if (!["ready", "money", "ingredient"].includes(body.type)) {
+      return fail(config, 400, "Selecione o tipo de doação.");
+    }
+    if (body.type === "ready") {
+      const product = db.products.find(
+        (item: any) => item.id === body.productId,
+      );
+      if (!product) {
+        return fail(config, 400, "Selecione o produto doado.");
+      }
+      const quantity = Number(body.quantity);
+      if (!Number.isInteger(quantity) || quantity <= 0) {
+        return fail(config, 400, "Informe uma quantidade inteira maior que zero.");
+      }
+    }
+    if (
+      body.type === "ingredient" &&
+      !String(body.itemName || "").trim()
+    ) {
+      return fail(config, 400, "Informe o item doado.");
+    }
+    if (
+      body.type === "money" &&
+      (!Number.isFinite(Number(body.amount)) || Number(body.amount) <= 0)
+    ) {
+      return fail(config, 400, "Informe um valor maior que zero.");
+    }
+    const ticketValue = Number(body.ticketValue);
+    if (!Number.isFinite(ticketValue) || ticketValue < 0) {
+      return fail(config, 400, "O valor não pode ser negativo.");
+    }
+
+    donation.eventId = body.eventId;
+    donation.type = body.type;
+    donation.productId = body.type === "ready" ? body.productId : null;
+    donation.itemName =
+      body.type === "ready"
+        ? db.products.find((item: any) => item.id === body.productId)?.name
+        : body.type === "ingredient"
+          ? String(body.itemName).trim()
+          : null;
+    donation.quantity =
+      body.type === "ready" ? Number(body.quantity) : null;
+    donation.donor = String(body.donor || "").trim();
+    donation.paymentMethod =
+      body.type === "money" ? body.paymentMethod || "PIX" : null;
+    donation.amount =
+      body.type === "money" ? Number(body.amount) : null;
+    donation.ticketValue = ticketValue;
+    persistDb();
+    return ok(config, {
+      ...donation,
+      eventName: eventName(db, donation.eventId),
+    });
+  }
+
   /* Eventos */
   if (method === "get" && path === "/events/ongoing") {
     const ongoing = db.events.find((event: any) => event.status === "Em andamento");
     return ok(config, { event: ongoing ? buildEvent(db, ongoing) : null });
   }
 
-  if (method === "get" && path === "/events") {
-    const term = params.get("search") || "";
-    const statuses = listParam(params, "statuses");
-    const types = listParam(params, "types");
-    const from = params.get("from") || "";
-    const to = params.get("to") || "";
-    let items = db.events
-      .filter((event: any) => search(event.name, term))
-      .filter((event: any) => statuses.length === 0 || statuses.includes(event.status))
-      .filter((event: any) => types.length === 0 || types.includes(event.type))
-      .filter((event: any) => {
-        if (!from && !to) return true;
-        return inDateRange(event.start, from, to) || inDateRange(event.end, from, to);
-      })
-      .map((event: any) => buildEvent(db, event))
-      .sort((a: any, b: any) => {
-        if (a.status === "Em andamento" && b.status !== "Em andamento") return -1;
-        if (b.status === "Em andamento" && a.status !== "Em andamento") return 1;
-        return String(b.start).localeCompare(String(a.start));
+  if (method === "get" && path === "/reports/top-products") {
+    const eventParams = new URLSearchParams(params);
+    eventParams.set("statuses", "Em andamento,Encerrado");
+    const events = filtrarEventos(db, eventParams);
+    const eventIds = new Set(events.map((event: any) => event.id));
+    const grouped = new Map<string, any>();
+
+    db.menu
+      .filter((item: any) => eventIds.has(item.eventId) && Number(item.sold) > 0)
+      .forEach((item: any) => {
+        const key = item.productId
+          ? `product:${item.productId}`
+          : `name:${item.name}`;
+        const current = grouped.get(key) || {
+          name: item.name,
+          sold: 0,
+          revenue: 0,
+        };
+        current.sold += Number(item.sold) || 0;
+        current.revenue +=
+          Number(item.price) * Number(item.sold) - Number(item.discounts || 0);
+        grouped.set(key, current);
       });
+
+    const parsedLimit = Number(params.get("limit"));
+    const limit = Number.isInteger(parsedLimit) && parsedLimit > 0 ? parsedLimit : 5;
+    const items = [...grouped.values()]
+      .sort((a: any, b: any) => b.sold - a.sold)
+      .slice(0, limit);
+    return ok(config, { items });
+  }
+
+  if (method === "get" && path === "/events") {
+    const items = filtrarEventos(db, params)
+      .map((event: any) => buildEvent(db, event));
     return ok(config, paginate(items, params, 8));
   }
 
@@ -538,6 +703,38 @@ async function route(config: any) {
     db.events.unshift(event);
     persistDb();
     return ok(config, buildEvent(db, event), 201);
+  }
+
+  const eventUpdateMatch = path.match(/^\/events\/([^/]+)$/);
+  if (method === "put" && eventUpdateMatch) {
+    const event = db.events.find((item: any) => item.id === eventUpdateMatch[1]);
+    if (!event) return fail(config, 404, "Evento não encontrado.");
+    if (!String(body.name || "").trim()) {
+      return fail(config, 400, "Informe o nome do evento.");
+    }
+    if (!body.start || !body.end) {
+      return fail(config, 400, "Informe a data e hora de início e encerramento.");
+    }
+    const start = new Date(body.start);
+    const end = new Date(body.end);
+    if (
+      Number.isNaN(start.getTime()) ||
+      Number.isNaN(end.getTime()) ||
+      end <= start
+    ) {
+      return fail(
+        config,
+        400,
+        "A data de encerramento deve ser posterior à data de início.",
+      );
+    }
+    event.name = String(body.name).trim();
+    event.type = body.type || "Evento";
+    event.notes = String(body.notes || "").trim();
+    event.start = body.start;
+    event.end = body.end;
+    persistDb();
+    return ok(config, buildEvent(db, event));
   }
 
   const statusMatch = path.match(/^\/events\/([^/]+)\/status$/);
@@ -574,6 +771,36 @@ async function route(config: any) {
     return ok(config, buildEvent(db, event, true), 201);
   }
 
+  const eventCostMatch = path.match(/^\/events\/([^/]+)\/costs\/([^/]+)$/);
+  if (eventCostMatch && (method === "put" || method === "patch" || method === "delete")) {
+    const event = db.events.find((item: any) => item.id === eventCostMatch[1]);
+    if (!event) return fail(config, 404, "Evento não encontrado.");
+    const cost = (event.costs || []).find(
+      (item: any) => item.id === eventCostMatch[2],
+    );
+    if (!cost) return fail(config, 404, "Custo não encontrado.");
+
+    if (method === "delete") {
+      event.costs = event.costs.filter(
+        (item: any) => item.id !== eventCostMatch[2],
+      );
+    } else {
+      if (!String(body.name || "").trim()) {
+        return fail(config, 400, "Informe o nome do custo.");
+      }
+      const value = Number(body.value);
+      if (!Number.isFinite(value) || value <= 0) {
+        return fail(config, 400, "Informe um valor maior que zero.");
+      }
+      cost.name = String(body.name).trim();
+      cost.value = value;
+      cost.description = String(body.description || "").trim();
+    }
+
+    persistDb();
+    return ok(config, buildEvent(db, event, true));
+  }
+
   const menuMatch = path.match(/^\/events\/([^/]+)\/menu$/);
   if (method === "get" && menuMatch) {
     const event = db.events.find((item: any) => item.id === menuMatch[1]);
@@ -585,7 +812,7 @@ async function route(config: any) {
         availableQuantity:
           item.type === "ready"
             ? db.products.find((product: any) => product.id === item.productId)?.quantity ??
-              0
+            0
             : null,
       }))
       .sort((a: any, b: any) => a.name.localeCompare(b.name, "pt-BR"));
@@ -643,16 +870,16 @@ async function route(config: any) {
       unitCost:
         type === "ready"
           ? Number(body.unitCost) ||
-            db.products.find((product: any) => product.id === body.productId)?.lots?.[0]
-              ?.unitCost ||
-            0
+          db.products.find((product: any) => product.id === body.productId)?.lots?.[0]
+            ?.unitCost ||
+          0
           : Number(body.ingredientCost) || 0,
       costTotal:
         type === "ready"
           ? (Number(body.unitCost) ||
-              db.products.find((product: any) => product.id === body.productId)?.lots?.[0]
-                ?.unitCost ||
-              0) * Number(body.quantity)
+            db.products.find((product: any) => product.id === body.productId)?.lots?.[0]
+              ?.unitCost ||
+            0) * Number(body.quantity)
           : Number(body.ingredientCost) || 0,
       sold: 0,
       discounts: 0,
@@ -661,6 +888,63 @@ async function route(config: any) {
     db.menu.push(item);
     persistDb();
     return ok(config, item, 201);
+  }
+
+  const menuItemMatch = path.match(/^\/events\/([^/]+)\/menu\/([^/]+)$/);
+  if (
+    menuItemMatch &&
+    (method === "put" || method === "patch" || method === "delete")
+  ) {
+    const event = db.events.find((item: any) => item.id === menuItemMatch[1]);
+    if (!event) return fail(config, 404, "Evento não encontrado.");
+    const item = db.menu.find(
+      (menuItem: any) =>
+        menuItem.id === menuItemMatch[2] && menuItem.eventId === event.id,
+    );
+    if (!item) return fail(config, 404, "Produto do cardápio não encontrado.");
+
+    if (method === "delete") {
+      db.menu = db.menu.filter(
+        (menuItem: any) => menuItem.id !== menuItemMatch[2],
+      );
+      persistDb();
+      return ok(config, { ok: true });
+    }
+
+    const price = Number(body.price);
+    if (
+      !Number.isFinite(price) ||
+      (item.type === "ready" ? price <= 0 : price < 0)
+    ) {
+      return fail(config, 400, "Confira o preço de venda informado.");
+    }
+    if (item.type === "ready") {
+      const quantity = Number(body.quantity);
+      if (!Number.isInteger(quantity) || quantity <= 0) {
+        return fail(config, 400, "Informe uma quantidade inteira maior que zero.");
+      }
+      item.price = price;
+      item.expected = quantity;
+      item.costTotal = Number(item.unitCost || 0) * quantity;
+    } else {
+      const name = String(body.name || "").trim();
+      const category = String(body.category || "").trim();
+      const ingredientCost = Number(body.ingredientCost);
+      if (!name) return fail(config, 400, "Informe o nome do produto.");
+      if (!category) return fail(config, 400, "Selecione uma categoria.");
+      if (!Number.isFinite(ingredientCost) || ingredientCost < 0) {
+        return fail(config, 400, "Confira os valores informados.");
+      }
+      item.price = price;
+      item.name = name;
+      item.description = String(body.description || "").trim();
+      item.category = category;
+      item.unitCost = ingredientCost;
+      item.costTotal = ingredientCost;
+      item.image = body.image || null;
+    }
+    persistDb();
+    return ok(config, item);
   }
 
   const eventMatch = path.match(/^\/events\/([^/]+)$/);
@@ -899,11 +1183,21 @@ async function route(config: any) {
 
   if (method === "get" && path === "/fiados") {
     const eventId = params.get("eventId") || "";
+    const eventIds = listParam(params, "eventIds");
     const status = params.get("status") || "";
+    const term = params.get("search") || "";
     const items = db.fiados
       .filter((fiado: any) => !eventId || fiado.eventId === eventId)
+      .filter(
+        (fiado: any) =>
+          eventIds.length === 0 || eventIds.includes(fiado.eventId),
+      )
       .filter((fiado: any) => !status || fiado.status === status)
-      .map((fiado: any) => settleFiado(fiado))
+      .filter((fiado: any) => search(fiado.debtorName, term))
+      .map((fiado: any) => ({
+        ...settleFiado(fiado),
+        eventName: eventName(db, fiado.eventId),
+      }))
       .sort((a: any, b: any) => String(b.createdAt).localeCompare(String(a.createdAt)));
     return ok(config, {
       pendingCount: items.filter((item: any) => item.status === "pending").length,
