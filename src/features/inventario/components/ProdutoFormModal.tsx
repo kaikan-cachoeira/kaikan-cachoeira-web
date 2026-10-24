@@ -1,5 +1,5 @@
 import type { ChangeEvent } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SubmitHandler } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import { mensagemErro } from "@/shared/api/erros";
@@ -25,19 +25,25 @@ interface ProdutoFormValues {
 }
 
 interface ProdutoFormModalProps {
+  produto?: Produto; // se vier preenchido, o modal funciona em modo edição
   onClose: () => void;
-  onCreated: (produto: Produto) => void;
+  onCreated?: (produto: Produto) => void;
+  onUpdated?: (produto: Produto) => void;
 }
 
 export default function ProdutoFormModal({
+  produto,
   onClose,
   onCreated,
+  onUpdated,
 }: ProdutoFormModalProps) {
+  const isEdit = Boolean(produto);
   const { data: categories, isLoading: categoriesLoading } =
     useCategoriasQuery();
-  const { criarProduto } = useProdutoMutations();
+  const { criarProduto, atualizarProduto } = useProdutoMutations();
+  const mutation = isEdit ? atualizarProduto : criarProduto;
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const [image, setImage] = useState<string | null>(null);
+  const [image, setImage] = useState<string | null>(produto?.image ?? null);
   const [imageName, setImageName] = useState("");
   const [serverError, setServerError] = useState("");
   const {
@@ -47,8 +53,20 @@ export default function ProdutoFormModal({
     formState: { errors },
   } = useForm<ProdutoFormValues>({
     mode: "onTouched",
-    defaultValues: { minStock: 0 },
+    defaultValues: {
+      name: produto?.name ?? "",
+      description: produto?.description ?? "",
+      categoryId: produto?.categoryId ?? "",
+      minStock: produto?.minStock ?? 0,
+      image: produto?.image ?? null,
+    },
   });
+
+  useEffect(() => {
+    if (!categoriesLoading && produto?.categoryId) {
+      setValue("categoryId", produto.categoryId);
+    }
+  }, [categoriesLoading, produto?.categoryId, setValue]);
 
   function handleFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -71,11 +89,24 @@ export default function ProdutoFormModal({
   const onSubmit: SubmitHandler<ProdutoFormValues> = async (values) => {
     setServerError("");
     try {
-      const product = await criarProduto.mutateAsync({ ...values, image });
-      onCreated(product);
+      if (produto) {
+        const atualizado = await atualizarProduto.mutateAsync({
+          id: produto.id,
+          payload: { ...values, image },
+        });
+        onUpdated?.(atualizado);
+      } else {
+        const criado = await criarProduto.mutateAsync({ ...values, image });
+        onCreated?.(criado);
+      }
     } catch (error) {
       setServerError(
-        mensagemErro(error, "Não foi possível criar o produto."),
+        mensagemErro(
+          error,
+          isEdit
+            ? "Não foi possível atualizar o produto."
+            : "Não foi possível criar o produto.",
+        ),
       );
     }
   };
@@ -87,31 +118,31 @@ export default function ProdutoFormModal({
 
   return (
     <Modal
-      title="Criar Produto"
-      onClose={criarProduto.isPending ? undefined : onClose}
-      showClose={!criarProduto.isPending}
-      closeOnOverlay={!criarProduto.isPending}
+      title={isEdit ? "Editar Produto" : "Criar Produto"}
+      onClose={mutation.isPending ? undefined : onClose}
+      showClose={!mutation.isPending}
+      closeOnOverlay={!mutation.isPending}
       footer={
         <>
           <Botao
             variant="secondary"
             onClick={onClose}
-            disabled={criarProduto.isPending}
+            disabled={mutation.isPending}
           >
             Cancelar
           </Botao>
           <Botao
             type="submit"
-            form="form-criar-produto"
-            loading={criarProduto.isPending}
+            form="form-produto"
+            loading={mutation.isPending}
           >
-            Criar Produto
+            {isEdit ? "Salvar alterações" : "Criar Produto"}
           </Botao>
         </>
       }
     >
       <form
-        id="form-criar-produto"
+        id="form-produto"
         className={styles.form}
         onSubmit={handleSubmit(onSubmit)}
         noValidate
@@ -136,7 +167,10 @@ export default function ProdutoFormModal({
                 Upload
               </Botao>
               <p className={styles.hint}>
-                {imageName || "PNG, JPG ou WEBP. A imagem é opcional."}
+                {imageName ||
+                  (isEdit && image
+                    ? "Imagem atual. Clique em Upload para trocar."
+                    : "PNG, JPG ou WEBP. A imagem é opcional.")}
               </p>
             </div>
             <input

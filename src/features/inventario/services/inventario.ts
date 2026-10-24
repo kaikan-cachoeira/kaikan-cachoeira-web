@@ -5,6 +5,7 @@ import type {
   ParametrosProdutos,
   Produto,
   RespostaProdutos,
+  AtualizarProdutoPayload,
 } from "../models";
 
 export async function listarProdutos(
@@ -34,5 +35,13 @@ export async function criarMovimentacao(
     `/products/${productId}/movements`,
     payload,
   );
+  return data;
+}
+
+export async function atualizarProduto(
+  id: string,
+  payload: AtualizarProdutoPayload,
+): Promise<Produto> {
+  const { data } = await api.put<Produto>(`/products/${id}`, payload);
   return data;
 }

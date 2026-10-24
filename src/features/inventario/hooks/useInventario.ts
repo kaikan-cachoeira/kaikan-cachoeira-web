@@ -8,6 +8,7 @@ import type {
   CriarProdutoPayload,
   ParametrosProdutos,
   Produto,
+  AtualizarProdutoPayload,
 } from "../models";
 import {
   atualizarCategoria,
@@ -20,6 +21,7 @@ import {
   criarProduto,
   listarProdutos,
   obterProduto,
+  atualizarProduto,
 } from "../services/inventario";
 
 export function useProdutosQuery(params: ParametrosProdutos) {
@@ -54,6 +56,19 @@ export function useProdutoMutations() {
     },
   });
 
+  const atualizar = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: AtualizarProdutoPayload;
+    }) => atualizarProduto(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.produtos });
+    },
+  });
+
   const movimentar = useMutation({
     mutationFn: ({
       productId,
@@ -70,7 +85,11 @@ export function useProdutoMutations() {
     },
   });
 
-  return { criarProduto: criar, criarMovimentacao: movimentar };
+  return {
+    criarProduto: criar,
+    atualizarProduto: atualizar,
+    criarMovimentacao: movimentar,
+  };
 }
 
 export function useCategoriaMutations() {
@@ -126,6 +145,9 @@ export function useInventario() {
   const [movementProduct, setMovementProduct] = useState<Produto | null>(null);
   const [movementSuccess, setMovementSuccess] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
+
+  const [editProduct, setEditProduct] = useState<Produto | null>(null);
+  const [updatedProduct, setUpdatedProduct] = useState<Produto | null>(null);
 
   const params = useMemo<ParametrosProdutos>(
     () => ({
@@ -210,5 +232,9 @@ export function useInventario() {
     clearAll,
     openMovement,
     handleMovementSuccess,
+    editProduct, 
+    setEditProduct, 
+    updatedProduct, 
+    setUpdatedProduct,
   };
 }

@@ -165,7 +165,7 @@ function buildEvent(db: any, event: any, includeRelations = false) {
         availableQuantity:
           item.type === "ready"
             ? db.products.find((product: any) => product.id === item.productId)?.quantity ??
-              0
+            0
             : null,
       })),
     donations: db.donations
@@ -399,6 +399,23 @@ async function route(config: any) {
   }
 
   const productMatch = path.match(/^\/products\/([^/]+)$/);
+  if (method === "put" && productMatch) {
+    const product = db.products.find((item: any) => item.id === productMatch[1]);
+    if (!product) return fail(config, 404, "Produto não encontrado.");
+    if (!String(body.name || "").trim()) {
+      return fail(config, 400, "Informe o nome do produto.");
+    }
+    if (!body.categoryId || !db.categories.some((item: any) => item.id === body.categoryId)) {
+      return fail(config, 400, "Selecione uma categoria para o produto.");
+    }
+    product.name = String(body.name).trim();
+    product.description = String(body.description || "").trim();
+    product.categoryId = body.categoryId;
+    product.minStock = Math.max(0, Number(body.minStock) || 0);
+    product.image = body.image || null;
+    persistDb();
+    return ok(config, buildProduct(db, product));
+  }
   if (method === "get" && productMatch) {
     const product = db.products.find((item: any) => item.id === productMatch[1]);
     if (!product) return fail(config, 404, "Produto não encontrado.");
@@ -585,7 +602,7 @@ async function route(config: any) {
         availableQuantity:
           item.type === "ready"
             ? db.products.find((product: any) => product.id === item.productId)?.quantity ??
-              0
+            0
             : null,
       }))
       .sort((a: any, b: any) => a.name.localeCompare(b.name, "pt-BR"));
@@ -643,16 +660,16 @@ async function route(config: any) {
       unitCost:
         type === "ready"
           ? Number(body.unitCost) ||
-            db.products.find((product: any) => product.id === body.productId)?.lots?.[0]
-              ?.unitCost ||
-            0
+          db.products.find((product: any) => product.id === body.productId)?.lots?.[0]
+            ?.unitCost ||
+          0
           : Number(body.ingredientCost) || 0,
       costTotal:
         type === "ready"
           ? (Number(body.unitCost) ||
-              db.products.find((product: any) => product.id === body.productId)?.lots?.[0]
-                ?.unitCost ||
-              0) * Number(body.quantity)
+            db.products.find((product: any) => product.id === body.productId)?.lots?.[0]
+              ?.unitCost ||
+            0) * Number(body.quantity)
           : Number(body.ingredientCost) || 0,
       sold: 0,
       discounts: 0,

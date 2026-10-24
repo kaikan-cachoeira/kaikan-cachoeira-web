@@ -11,7 +11,6 @@ import SelecaoMultipla from "@/shared/components/Formulario/SelecaoMultipla";
 import PageHeader from "@/shared/components/PageHeader/PageHeader";
 import Paginacao from "@/shared/components/Paginacao/Paginacao";
 import SucessoDialog from "@/shared/components/SucessoDialog/SucessoDialog";
-import { useToast } from "@/shared/components/Toast/ToastProvider";
 import MovimentacaoModal from "../components/MovimentacaoModal";
 import ProdutoCard from "../components/ProdutoCard";
 import ProdutoDetalhesModal from "../components/ProdutoDetalhesModal";
@@ -28,7 +27,6 @@ const OPCOES_ESTOQUE = [
 ];
 
 export default function InventarioPage() {
-  const { addToast } = useToast();
   const {
     searchDraft,
     setSearchDraft,
@@ -60,6 +58,10 @@ export default function InventarioPage() {
     clearAll,
     openMovement,
     handleMovementSuccess,
+    editProduct,
+    setEditProduct,
+    updatedProduct,
+    setUpdatedProduct,
   } = useInventario();
 
   const { data, isLoading, isError, isFetching, refetch } = produtosQuery;
@@ -74,7 +76,7 @@ export default function InventarioPage() {
             <Botao
               variant="secondary"
               iconLeft="ticket"
-              onClick={ () => setCategoriesOpen(true)}
+              onClick={() => setCategoriesOpen(true)}
             >
               Menu de categorias
             </Botao>
@@ -140,12 +142,7 @@ export default function InventarioPage() {
                 produto={product}
                 onDetails={(item) => setDetailsId(item.id)}
                 onMovement={openMovement}
-                onPending={(label) =>
-                  addToast(
-                    `${label}: a tela de edição ainda não foi especificada no SDD.`,
-                    "info",
-                  )
-                }
+                onEdit={setEditProduct}
               />
             ))}
           </div>
@@ -195,6 +192,26 @@ export default function InventarioPage() {
         />
       ) : null}
 
+      {editProduct ? (
+        <ProdutoFormModal
+          produto={editProduct}
+          onClose={() => setEditProduct(null)}
+          onUpdated={(product) => {
+            setEditProduct(null);
+            setUpdatedProduct(product);
+          }}
+        />
+      ) : null}
+
+      {updatedProduct ? (
+        <SucessoDialog
+          title="Produto atualizado com sucesso!"
+          message={`As alterações em "${updatedProduct.name}" foram salvas.`}
+          buttonLabel="Voltar"
+          onClose={() => setUpdatedProduct(null)}
+        />
+      ) : null}
+      
       {detailsId ? (
         <ProdutoDetalhesModal
           productId={detailsId}
