@@ -44,7 +44,10 @@ export interface Fiado {
   createdAt: string;
 }
 
-export type RespostaFiados = Paginado<Fiado>;
+export interface RespostaFiados extends Paginado<Fiado> {
+  pendingCount: number;
+  openAmount: number;
+}
 
 export interface ParametrosFiados extends ParametrosPaginacao {
   eventId?: string;

@@ -110,6 +110,28 @@ function inDateRange(value: any, from: any, to: any) {
   return true;
 }
 
+function filtrarEventos(db: any, params: URLSearchParams) {
+  const term = params.get("search") || "";
+  const statuses = listParam(params, "statuses");
+  const types = listParam(params, "types");
+  const from = params.get("from") || "";
+  const to = params.get("to") || "";
+
+  return db.events
+    .filter((event: any) => search(event.name, term))
+    .filter((event: any) => statuses.length === 0 || statuses.includes(event.status))
+    .filter((event: any) => types.length === 0 || types.includes(event.type))
+    .filter((event: any) => {
+      if (!from && !to) return true;
+      return inDateRange(event.start, from, to) || inDateRange(event.end, from, to);
+    })
+    .sort((a: any, b: any) => {
+      if (a.status === "Em andamento" && b.status !== "Em andamento") return -1;
+      if (b.status === "Em andamento" && a.status !== "Em andamento") return 1;
+      return String(b.start).localeCompare(String(a.start));
+    });
+}
+
 function categoryName(db: any, categoryId: any) {
   return db.categories.find((category: any) => category.id === categoryId)?.name || "";
 }
@@ -614,26 +636,41 @@ async function route(config: any) {
     return ok(config, { event: ongoing ? buildEvent(db, ongoing) : null });
   }
 
-  if (method === "get" && path === "/events") {
-    const term = params.get("search") || "";
-    const statuses = listParam(params, "statuses");
-    const types = listParam(params, "types");
-    const from = params.get("from") || "";
-    const to = params.get("to") || "";
-    let items = db.events
-      .filter((event: any) => search(event.name, term))
-      .filter((event: any) => statuses.length === 0 || statuses.includes(event.status))
-      .filter((event: any) => types.length === 0 || types.includes(event.type))
-      .filter((event: any) => {
-        if (!from && !to) return true;
-        return inDateRange(event.start, from, to) || inDateRange(event.end, from, to);
-      })
-      .map((event: any) => buildEvent(db, event))
-      .sort((a: any, b: any) => {
-        if (a.status === "Em andamento" && b.status !== "Em andamento") return -1;
-        if (b.status === "Em andamento" && a.status !== "Em andamento") return 1;
-        return String(b.start).localeCompare(String(a.start));
+  if (method === "get" && path === "/reports/top-products") {
+    const eventParams = new URLSearchParams(params);
+    eventParams.set("statuses", "Em andamento,Encerrado");
+    const events = filtrarEventos(db, eventParams);
+    const eventIds = new Set(events.map((event: any) => event.id));
+    const grouped = new Map<string, any>();
+
+    db.menu
+      .filter((item: any) => eventIds.has(item.eventId) && Number(item.sold) > 0)
+      .forEach((item: any) => {
+        const key = item.productId
+          ? `product:${item.productId}`
+          : `name:${item.name}`;
+        const current = grouped.get(key) || {
+          name: item.name,
+          sold: 0,
+          revenue: 0,
+        };
+        current.sold += Number(item.sold) || 0;
+        current.revenue +=
+          Number(item.price) * Number(item.sold) - Number(item.discounts || 0);
+        grouped.set(key, current);
       });
+
+    const parsedLimit = Number(params.get("limit"));
+    const limit = Number.isInteger(parsedLimit) && parsedLimit > 0 ? parsedLimit : 5;
+    const items = [...grouped.values()]
+      .sort((a: any, b: any) => b.sold - a.sold)
+      .slice(0, limit);
+    return ok(config, { items });
+  }
+
+  if (method === "get" && path === "/events") {
+    const items = filtrarEventos(db, params)
+      .map((event: any) => buildEvent(db, event));
     return ok(config, paginate(items, params, 8));
   }
 
