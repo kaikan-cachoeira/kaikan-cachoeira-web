@@ -1,3 +1,4 @@
+import { useState } from "react";
 import PageHeader from "@/shared/components/PageHeader/PageHeader";
 import BarraPesquisa from "@/shared/components/BarraPesquisa/BarraPesquisa";
 import PainelFiltros from "@/shared/components/Filtros/PainelFiltros";
@@ -11,8 +12,8 @@ import {
   EstadoErro,
   EstadoCarregando,
 } from "@/shared/components/Estado/Estado";
-import { useToast } from "@/shared/components/Toast/ToastProvider";
 import { useEventos } from "../hooks/useEventos";
+import type { Evento } from "../models";
 import EventoCard from "../components/EventoCard";
 import EventoFormModal from "../components/EventoFormModal";
 import styles from "./EventosPage.module.css";
@@ -29,7 +30,6 @@ const TYPE_OPTIONS = [
 ];
 
 export default function EventosPage() {
-  const { addToast } = useToast();
   const {
     searchDraft,
     setSearchDraft,
@@ -58,6 +58,7 @@ export default function EventosPage() {
     clearFilters,
     clearAll,
   } = useEventos();
+  const [editTarget, setEditTarget] = useState<Evento | null>(null);
 
   const { data, isLoading, isError, refetch } = eventosQuery;
   const items = data?.items || [];
@@ -75,11 +76,7 @@ export default function EventosPage() {
   const cardProps = {
     onChangeStatus: handleStatus,
     onDelete: setDeleteTarget,
-    onPending: (label: string) =>
-      addToast(
-        `${label}: a tela de edição ainda não foi especificada no SDD.`,
-        "info",
-      ),
+    onEdit: setEditTarget,
   };
 
   return (
@@ -233,6 +230,13 @@ export default function EventosPage() {
 
       {createOpen ? (
         <EventoFormModal onClose={() => setCreateOpen(false)} />
+      ) : null}
+
+      {editTarget ? (
+        <EventoFormModal
+          evento={editTarget}
+          onClose={() => setEditTarget(null)}
+        />
       ) : null}
 
       {deleteTarget ? (

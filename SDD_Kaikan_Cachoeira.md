@@ -1083,14 +1083,14 @@ Os estados visuais devem ser implementados por tokens. Estados não desenhados n
 - **Objetivo:** Listar, pesquisar e filtrar os eventos e reuniões da associação, e permitir criar, iniciar, encerrar, reabrir, editar e excluir eventos.
 - **Perfil de acesso:** Usuário autenticado
 - **Entrada / retorno:** TL04 - Início.
-- **Saídas previstas:** TL18 - Criar evento, TL19 - Detalhes do evento - Não iniciado, TL20 - Detalhes do evento - Em andamento, Detalhes do evento encerrado (tela a definir), TL27 - Registro de venda, TL30 - Caixa - Histórico, Editar evento (tela a definir).
+- **Saídas previstas:** TL18 - Criar evento, TL19 - Detalhes do evento - Não iniciado, TL20 - Detalhes do evento - Em andamento, Detalhes do evento encerrado (tela a definir), TL27 - Registro de venda, TL30 - Caixa - Histórico, modal Editar Evento (baseado em TL18).
 - **Wireframe(s):** TL-17 Gestão de eventos.png.
 - **Prioridade:** Alta.
 
 **Layout (de cima para baixo, baseado no wireframe e na descrição da planilha)**
 1. **Estrutura principal:** área autenticada com navegação lateral e área de conteúdo principal.
 2. **Hierarquia:** título principal seguido de subtítulo quando listado; controles agrupados por tarefa; ações primárias destacadas com `vinho`; textos com `texto` e apoio com `texto-suave`.
-3. **Composição específica:** Título e subtítulo da página, botão 'Criar evento', campo de pesquisa com botões 'Pesquisar' e 'Filtrar', filtros por status, tipo do evento e período com botão 'Limpar filtros', seção 'Evento em andamento', cards de evento (nome, tipo, status, início, encerramento e botões de ação), paginação.
+3. **Composição específica:** Título e subtítulo da página, botão 'Criar evento', campo de pesquisa com botões 'Pesquisar' e 'Filtrar', filtros por status, tipo do evento e período com botão 'Limpar filtros', seção 'Evento em andamento', cards de evento (nome, tipo, status, início, encerramento e botões de ação), paginação. Editar evento abre um modal com o mesmo formulário e padrão visual de TL18, preenchido com os dados atuais.
 
 **Grid e responsividade (mobile-first)**
 - **360 px:** uma coluna; conteúdo e formulários em largura total; cards/listas empilhados; tabelas devem preservar leitura e ações por adaptação/rolagem horizontal (derivado, confirmar). Modais ocupam a largura disponível com margem `espaco-16` (derivado).
@@ -1123,7 +1123,7 @@ Os estados visuais devem ser implementados por tokens. Estados não desenhados n
   - Origem: Banco de dados.
   - Observação: O evento em andamento aparece em destaque no topo, separado dos demais por uma linha.
 - **Ações do evento em andamento** (Botão (CTA)): “Botão: 'Ver detalhes' | Botão: 'Registro de Pedidos' | Botão: 'Caixa' | Botão: 'Encerrar evento' | Botão: 'Desfazer início' | Botão: 'Editar evento' | Botão: 'Excluir evento'”
-  - Ação/destino: Ver detalhes abre TL20 - Detalhes do evento - Em andamento. Registro de Pedidos abre TL27 - Registro de venda. Caixa abre TL30 - Caixa - Histórico. Encerrar evento muda o status para Encerrado. Desfazer início volta o status para Não iniciado. Editar evento abre a edição (tela a definir). Excluir evento remove o evento (confirmação a definir).
+  - Ação/destino: Ver detalhes abre TL20 - Detalhes do evento - Em andamento. Registro de Pedidos abre TL27 - Registro de venda. Caixa abre TL30 - Caixa - Histórico. Encerrar evento muda o status para Encerrado. Desfazer início volta o status para Não iniciado. Editar evento abre o modal com os dados atuais preenchidos; Cancelar descarta as alterações e Salvar alterações atualiza o evento. Excluir evento remove o evento (confirmação a definir).
   - Origem: Estático.
   - Observação: Botões 'Registro de Pedidos', 'Caixa' e 'Encerrar evento' em destaque.
 - **Ações do evento não iniciado** (Botão (CTA)): “Botão: 'Ver detalhes' | Botão: 'Iniciar evento' | Botão: 'Editar evento' | Botão: 'Excluir evento'”
@@ -1146,11 +1146,11 @@ Os estados visuais devem ser implementados por tokens. Estados não desenhados n
 
 **Interações e destinos**
 - A tela é acessada a partir de: TL04 - Início.
-- Transições previstas: TL18 - Criar evento, TL19 - Detalhes do evento - Não iniciado, TL20 - Detalhes do evento - Em andamento, Detalhes do evento encerrado (tela a definir), TL27 - Registro de venda, TL30 - Caixa - Histórico, Editar evento (tela a definir).
+- Transições previstas: TL18 - Criar evento, TL19 - Detalhes do evento - Não iniciado, TL20 - Detalhes do evento - Em andamento, Detalhes do evento encerrado (tela a definir), TL27 - Registro de venda, TL30 - Caixa - Histórico, modal Editar Evento (baseado em TL18).
 - Botão de criação: Botão abre TL18 - Criar evento.
 - Pesquisa de eventos: Pesquisar filtra a lista pelo nome. Filtrar exibe ou oculta os filtros abaixo.
 - Filtros de eventos: Limpar filtros volta as seleções para 'Todos' e limpa as datas.
-- Ações do evento em andamento: Ver detalhes abre TL20 - Detalhes do evento - Em andamento. Registro de Pedidos abre TL27 - Registro de venda. Caixa abre TL30 - Caixa - Histórico. Encerrar evento muda o status para Encerrado. Desfazer início volta o status para Não iniciado. Editar evento abre a edição (tela a definir). Excluir evento remove o evento (confirmação a definir).
+- Ações do evento em andamento: Ver detalhes abre TL20 - Detalhes do evento - Em andamento. Registro de Pedidos abre TL27 - Registro de venda. Caixa abre TL30 - Caixa - Histórico. Encerrar evento muda o status para Encerrado. Desfazer início volta o status para Não iniciado. Editar evento abre o modal com os dados atuais preenchidos; Cancelar descarta as alterações e Salvar alterações atualiza o evento. Excluir evento remove o evento (confirmação a definir).
 - Ações do evento não iniciado: Ver detalhes abre TL19 - Detalhes do evento - Não iniciado. Iniciar evento muda o status para Em andamento. Demais ações iguais às do evento em andamento.
 - Ações do evento encerrado: Ver detalhes abre os detalhes do evento encerrado (tela a definir). Reabrir evento muda o status para Em andamento (regra a confirmar). Demais ações iguais às do evento em andamento.
 - Paginação: Anterior e Próxima trocam a página da lista.

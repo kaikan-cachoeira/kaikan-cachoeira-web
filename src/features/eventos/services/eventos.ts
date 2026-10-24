@@ -34,6 +34,14 @@ export async function criarEvento(
   return data;
 }
 
+export async function atualizarEvento(
+  id: string,
+  payload: CriarEventoPayload,
+): Promise<Evento> {
+  const { data } = await api.put<Evento>(`/events/${id}`, payload);
+  return data;
+}
+
 export async function alterarStatusEvento(
   id: string,
   status: string,

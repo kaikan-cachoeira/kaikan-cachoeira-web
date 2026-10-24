@@ -594,6 +594,38 @@ async function route(config: any) {
     return ok(config, buildEvent(db, event), 201);
   }
 
+  const eventUpdateMatch = path.match(/^\/events\/([^/]+)$/);
+  if (method === "put" && eventUpdateMatch) {
+    const event = db.events.find((item: any) => item.id === eventUpdateMatch[1]);
+    if (!event) return fail(config, 404, "Evento não encontrado.");
+    if (!String(body.name || "").trim()) {
+      return fail(config, 400, "Informe o nome do evento.");
+    }
+    if (!body.start || !body.end) {
+      return fail(config, 400, "Informe a data e hora de início e encerramento.");
+    }
+    const start = new Date(body.start);
+    const end = new Date(body.end);
+    if (
+      Number.isNaN(start.getTime()) ||
+      Number.isNaN(end.getTime()) ||
+      end <= start
+    ) {
+      return fail(
+        config,
+        400,
+        "A data de encerramento deve ser posterior à data de início.",
+      );
+    }
+    event.name = String(body.name).trim();
+    event.type = body.type || "Evento";
+    event.notes = String(body.notes || "").trim();
+    event.start = body.start;
+    event.end = body.end;
+    persistDb();
+    return ok(config, buildEvent(db, event));
+  }
+
   const statusMatch = path.match(/^\/events\/([^/]+)\/status$/);
   if (method === "patch" && statusMatch) {
     const event = db.events.find((item: any) => item.id === statusMatch[1]);

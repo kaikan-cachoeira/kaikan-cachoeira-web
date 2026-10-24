@@ -13,6 +13,7 @@ import type {
 import {
   adicionarProdutoCardapio,
   alterarStatusEvento,
+  atualizarEvento,
   criarCustoEvento,
   criarEvento,
   excluirEvento,
@@ -65,6 +66,17 @@ export function useEventoMutations() {
 
   const criar = useMutation({
     mutationFn: (payload: CriarEventoPayload) => criarEvento(payload),
+    onSuccess: invalidarEventos,
+  });
+
+  const atualizar = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: CriarEventoPayload;
+    }) => atualizarEvento(id, payload),
     onSuccess: invalidarEventos,
   });
 
@@ -121,6 +133,7 @@ export function useEventoMutations() {
 
   return {
     criarEvento: criar,
+    atualizarEvento: atualizar,
     alterarStatus,
     excluirEvento: excluir,
     criarCusto,
