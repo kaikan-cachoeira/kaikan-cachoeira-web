@@ -2,7 +2,7 @@ import type { ElementType, ReactNode } from "react";
 import styles from "./PageHeader.module.css";
 
 interface PageHeaderProps {
-  title: ReactNode;
+  title?: ReactNode;
   subtitle?: ReactNode;
   actions?: ReactNode;
   breadcrumb?: ReactNode;
@@ -25,7 +25,7 @@ export default function PageHeader({
         {breadcrumb ? <div className={styles.breadcrumb}>{breadcrumb}</div> : null}
         <div className={styles.headingRow}>
           <div>
-            <Heading className={styles.title}>{title}</Heading>
+            {title ? <Heading className={styles.title}>{title}</Heading> : null}
             {subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
           </div>
           {actions ? <div className={styles.actions}>{actions}</div> : null}

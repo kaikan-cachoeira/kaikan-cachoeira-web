@@ -80,7 +80,6 @@ export default function DoacoesPage() {
   return (
     <div className={styles.stack}>
       <PageHeader
-        title="Doações"
         subtitle="Doações destinadas e consumidas em cada evento"
         actions={
           <Botao iconLeft="plus" onClick={() => setModalOpen(true)}>

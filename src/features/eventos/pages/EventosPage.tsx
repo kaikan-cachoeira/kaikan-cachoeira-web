@@ -85,7 +85,6 @@ export default function EventosPage() {
   return (
     <div className={styles.stack}>
       <PageHeader
-        title="Eventos"
         subtitle="Gerencie eventos e reuniões da associação"
         actions={
           <Botao iconLeft="plus" onClick={() => setCreateOpen(true)}>

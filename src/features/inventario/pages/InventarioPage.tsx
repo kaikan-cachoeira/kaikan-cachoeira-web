@@ -68,14 +68,13 @@ export default function InventarioPage() {
   return (
     <div className={styles.stack}>
       <PageHeader
-        title="Estoque"
         subtitle="Controle por lotes com baixa FIFO/PEPS"
         actions={
           <>
             <Botao
               variant="secondary"
               iconLeft="ticket"
-              onClick={() => setCategoriesOpen(true)}
+              onClick={ () => setCategoriesOpen(true)}
             >
               Menu de categorias
             </Botao>
