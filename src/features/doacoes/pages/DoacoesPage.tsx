@@ -24,6 +24,7 @@ import {
 } from "@/shared/components/Estado/Estado";
 import ConfirmacaoDialog from "@/shared/components/ConfirmacaoDialog/ConfirmacaoDialog";
 import { mensagemErro } from "@/shared/api/erros";
+import { useEventoQuery } from "@/features/eventos";
 import type { Doacao } from "../models";
 import { useDoacoes } from "../hooks/useDoacoes";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
@@ -59,10 +60,14 @@ function donationLabel(donation: Doacao) {
 export default function DoacoesPage() {
   const location = useLocation();
   const navigationState = location.state as { fromEventId?: unknown } | null;
+  const eventIdCandidate = navigationState?.fromEventId;
   const eventId =
-    typeof navigationState?.fromEventId === "string"
-      ? navigationState.fromEventId
+    typeof eventIdCandidate === "string" &&
+    /^[A-Za-z0-9_-]+$/.test(eventIdCandidate.trim())
+      ? eventIdCandidate.trim()
       : null;
+  const sourceEventQuery = useEventoQuery(eventId);
+  const hasValidSourceEvent = sourceEventQuery.data?.id === eventId;
   const { addToast } = useToast();
   const [actionsMenu, setActionsMenu] = useState<{
     donation: Doacao;
@@ -226,11 +231,17 @@ export default function DoacoesPage() {
   return (
     <div className={styles.stack}>
       <Link
-        to={eventId ? `/eventos/${eventId}` : "/eventos"}
+        to={
+          hasValidSourceEvent && eventId
+            ? `/eventos/${eventId}`
+            : "/eventos"
+        }
         className={styles.backLink}
       >
         <Icone name="arrow-left" size={18} />
-        Voltar para o evento
+        {hasValidSourceEvent
+          ? "Voltar para o evento"
+          : "Voltar para eventos"}
       </Link>
       <PageHeader
         subtitle="Doações destinadas e consumidas em cada evento"
