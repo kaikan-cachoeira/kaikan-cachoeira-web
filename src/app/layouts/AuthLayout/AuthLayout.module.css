@@ -1,6 +1,6 @@
 .shell {
   display: grid;
-  grid-template-columns: minmax(360px, 32.5%) minmax(0, 1fr);
+  grid-template-columns: minmax(360px, 2fr) minmax(0, 3fr);
   min-height: 100vh;
 }
 
@@ -9,7 +9,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 40px;
+  padding: var(--espaco-32);
   background: rgba(233, 224, 224, 0.614);
 }
 
