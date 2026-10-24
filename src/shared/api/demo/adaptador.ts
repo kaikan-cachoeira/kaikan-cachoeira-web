@@ -534,6 +534,80 @@ async function route(config: any) {
     );
   }
 
+  const donationMatch = path.match(/^\/donations\/([^/]+)$/);
+  if (donationMatch && (method === "put" || method === "delete")) {
+    const donation = db.donations.find(
+      (item: any) => item.id === donationMatch[1],
+    );
+    if (!donation) return fail(config, 404, "Doação não encontrada.");
+
+    if (method === "delete") {
+      db.donations = db.donations.filter(
+        (item: any) => item.id !== donationMatch[1],
+      );
+      persistDb();
+      return ok(config, { ok: true });
+    }
+
+    if (!db.events.some((event: any) => event.id === body.eventId)) {
+      return fail(config, 400, "Selecione o evento destinado à doação.");
+    }
+    if (!["ready", "money", "ingredient"].includes(body.type)) {
+      return fail(config, 400, "Selecione o tipo de doação.");
+    }
+    if (body.type === "ready") {
+      const product = db.products.find(
+        (item: any) => item.id === body.productId,
+      );
+      if (!product) {
+        return fail(config, 400, "Selecione o produto doado.");
+      }
+      const quantity = Number(body.quantity);
+      if (!Number.isInteger(quantity) || quantity <= 0) {
+        return fail(config, 400, "Informe uma quantidade inteira maior que zero.");
+      }
+    }
+    if (
+      body.type === "ingredient" &&
+      !String(body.itemName || "").trim()
+    ) {
+      return fail(config, 400, "Informe o item doado.");
+    }
+    if (
+      body.type === "money" &&
+      (!Number.isFinite(Number(body.amount)) || Number(body.amount) <= 0)
+    ) {
+      return fail(config, 400, "Informe um valor maior que zero.");
+    }
+    const ticketValue = Number(body.ticketValue);
+    if (!Number.isFinite(ticketValue) || ticketValue < 0) {
+      return fail(config, 400, "O valor não pode ser negativo.");
+    }
+
+    donation.eventId = body.eventId;
+    donation.type = body.type;
+    donation.productId = body.type === "ready" ? body.productId : null;
+    donation.itemName =
+      body.type === "ready"
+        ? db.products.find((item: any) => item.id === body.productId)?.name
+        : body.type === "ingredient"
+          ? String(body.itemName).trim()
+          : null;
+    donation.quantity =
+      body.type === "ready" ? Number(body.quantity) : null;
+    donation.donor = String(body.donor || "").trim();
+    donation.paymentMethod =
+      body.type === "money" ? body.paymentMethod || "PIX" : null;
+    donation.amount =
+      body.type === "money" ? Number(body.amount) : null;
+    donation.ticketValue = ticketValue;
+    persistDb();
+    return ok(config, {
+      ...donation,
+      eventName: eventName(db, donation.eventId),
+    });
+  }
+
   /* Eventos */
   if (method === "get" && path === "/events/ongoing") {
     const ongoing = db.events.find((event: any) => event.status === "Em andamento");

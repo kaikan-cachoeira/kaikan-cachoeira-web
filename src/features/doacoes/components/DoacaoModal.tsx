@@ -13,7 +13,7 @@ import { useEventosQuery } from "@/features/eventos";
 import { useProdutosQuery } from "@/features/inventario";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
 import { mensagemErro } from "@/shared/api/erros";
-import type { CriarDoacaoPayload } from "../models";
+import type { CriarDoacaoPayload, Doacao } from "../models";
 import { formatarNumero } from "@/shared/lib/formatacao";
 import styles from "./DoacaoModal.module.css";
 
@@ -31,6 +31,7 @@ const PAYMENT_OPTIONS = [
 ];
 
 interface DoacaoModalProps {
+  doacao?: Doacao;
   initialType?: string;
   onClose: () => void;
 }
@@ -47,13 +48,19 @@ interface DoacaoFormValues {
 }
 
 export default function DoacaoModal({
+  doacao,
   initialType = "ready",
   onClose,
 }: DoacaoModalProps) {
-  const [type, setType] = useState(initialType);
+  const isEdit = Boolean(doacao);
+  const [type, setType] = useState(doacao?.type ?? initialType);
   const [serverError, setServerError] = useState("");
   const { addToast } = useToast();
-  const { criarDoacao: createDonation } = useDoacaoMutations();
+  const {
+    criarDoacao: createDonation,
+    atualizarDoacao: updateDonation,
+  } = useDoacaoMutations();
+  const mutation = isEdit ? updateDonation : createDonation;
   const { data: eventsData } = useEventosQuery({ pageSize: 100 });
   const { data: productsData, isLoading: productsLoading } = useProdutosQuery({
     pageSize: 100,
@@ -69,14 +76,14 @@ export default function DoacaoModal({
   } = useForm<DoacaoFormValues>({
     mode: "onTouched",
     defaultValues: {
-      eventId: "",
-      productId: "",
-      quantity: 1,
-      donor: "",
-      ticketValue: 0,
-      amount: 0,
-      paymentMethod: "PIX",
-      itemName: "",
+      eventId: doacao?.eventId ?? "",
+      productId: doacao?.productId ?? "",
+      quantity: doacao?.quantity ?? 1,
+      donor: doacao?.donor ?? "",
+      ticketValue: doacao?.ticketValue ?? 0,
+      amount: doacao?.amount ?? 0,
+      paymentMethod: doacao?.paymentMethod ?? "PIX",
+      itemName: doacao?.itemName ?? "",
     },
   });
 
@@ -88,6 +95,27 @@ export default function DoacaoModal({
     value: event.id,
     label: event.name,
   }));
+  if (
+    doacao &&
+    !eventOptions.some((option) => option.value === doacao.eventId)
+  ) {
+    eventOptions.push({ value: doacao.eventId, label: doacao.eventName });
+  }
+
+  const productOptions = (productsData?.items || []).map((product) => ({
+    value: product.id,
+    label: `${product.name} (${formatarNumero(product.quantity)} un.)`,
+  }));
+  if (
+    doacao?.type === "ready" &&
+    doacao.productId &&
+    !productOptions.some((option) => option.value === doacao.productId)
+  ) {
+    productOptions.push({
+      value: doacao.productId,
+      label: `${doacao.itemName || "Produto"} (indisponível)`,
+    });
+  }
 
   function changeType(nextType: string) {
     setType(nextType);
@@ -119,38 +147,48 @@ export default function DoacaoModal({
     }
 
     try {
-      await createDonation.mutateAsync(payload);
-      addToast("Doação registrada com sucesso.");
-      onClose?.();
+      if (doacao) {
+        await updateDonation.mutateAsync({ id: doacao.id, payload });
+        addToast("Doação atualizada com sucesso.");
+      } else {
+        await createDonation.mutateAsync(payload);
+        addToast("Doação registrada com sucesso.");
+      }
+      onClose();
     } catch (error) {
       setServerError(
-        mensagemErro(error, "Não foi possível registrar a doação."),
+        mensagemErro(
+          error,
+          isEdit
+            ? "Não foi possível atualizar a doação."
+            : "Não foi possível registrar a doação.",
+        ),
       );
     }
   };
 
   return (
     <Modal
-      title="Registrar doação"
+      title={isEdit ? "Editar doação" : "Registrar doação"}
       subtitle="Toda doação deve ser vinculada a um evento."
-      onClose={createDonation.isPending ? undefined : onClose}
-      showClose={!createDonation.isPending}
-      closeOnOverlay={!createDonation.isPending}
+      onClose={mutation.isPending ? undefined : onClose}
+      showClose={!mutation.isPending}
+      closeOnOverlay={!mutation.isPending}
       footer={
         <>
           <Botao
             variant="secondary"
             onClick={onClose}
-            disabled={createDonation.isPending}
+            disabled={mutation.isPending}
           >
             Cancelar
           </Botao>
           <Botao
             type="submit"
             form="form-doacao"
-            loading={createDonation.isPending}
+            loading={mutation.isPending}
           >
-            Registrar
+            {isEdit ? "Salvar alterações" : "Registrar"}
           </Botao>
         </>
       }
@@ -187,10 +225,7 @@ export default function DoacaoModal({
               id="doacao-produto"
               label="Produto / item"
               placeholder="Selecione o produto"
-              options={(productsData?.items || []).map((product) => ({
-                value: product.id,
-                label: `${product.name} (${formatarNumero(product.quantity)} un.)`,
-              }))}
+              options={productOptions}
               disabled={productsLoading}
               required
               error={errors.productId?.message}

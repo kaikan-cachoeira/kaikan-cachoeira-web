@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import PageHeader from "@/shared/components/PageHeader/PageHeader";
 import BarraPesquisa from "@/shared/components/BarraPesquisa/BarraPesquisa";
@@ -20,6 +22,8 @@ import {
   EstadoErro,
   EstadoCarregando,
 } from "@/shared/components/Estado/Estado";
+import ConfirmacaoDialog from "@/shared/components/ConfirmacaoDialog/ConfirmacaoDialog";
+import { mensagemErro } from "@/shared/api/erros";
 import type { Doacao } from "../models";
 import { useDoacoes } from "../hooks/useDoacoes";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
@@ -60,6 +64,16 @@ export default function DoacoesPage() {
       ? navigationState.fromEventId
       : null;
   const { addToast } = useToast();
+  const [actionsMenu, setActionsMenu] = useState<{
+    donation: Doacao;
+    top: number;
+    left: number;
+  } | null>(null);
+  const [editTarget, setEditTarget] = useState<Doacao | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Doacao | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const menuDonationRef = useRef<Doacao | null>(null);
   const {
     searchDraft,
     setSearchDraft,
@@ -74,6 +88,7 @@ export default function DoacoesPage() {
     modalOpen,
     setModalOpen,
     doacoesQuery,
+    excluirDoacao,
     eventOptions,
     runSearch,
     clearFilters,
@@ -83,6 +98,130 @@ export default function DoacoesPage() {
 
   const hasFilters =
     Boolean(search) || selectedEvents.length > 0 || selectedTypes.length > 0;
+
+  function closeActionsMenu(returnFocus = false) {
+    setActionsMenu(null);
+    menuDonationRef.current = null;
+    if (returnFocus) triggerRef.current?.focus();
+  }
+
+  function toggleActionsMenu(
+    donation: Doacao,
+    trigger: HTMLButtonElement,
+  ) {
+    if (actionsMenu?.donation.id === donation.id) {
+      closeActionsMenu();
+      return;
+    }
+    const rect = trigger.getBoundingClientRect();
+    const width = 184;
+    const height = 96;
+    const left = Math.max(
+      8,
+      Math.min(rect.right - width, window.innerWidth - width - 8),
+    );
+    let top = rect.bottom + 4;
+    if (top + height > window.innerHeight - 8) {
+      top = Math.max(8, rect.top - height - 4);
+    }
+    triggerRef.current = trigger;
+    menuDonationRef.current = donation;
+    setActionsMenu({ donation, top, left });
+  }
+
+  const activeMenuDonationId = actionsMenu?.donation.id;
+
+  useEffect(() => {
+    if (!activeMenuDonationId) return undefined;
+
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target as Node;
+      if (
+        !menuRef.current?.contains(target) &&
+        !triggerRef.current?.contains(target)
+      ) {
+        closeActionsMenu();
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeActionsMenu(true);
+        return;
+      }
+      if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+      const options = menuRef.current?.querySelectorAll<HTMLButtonElement>(
+        '[role="menuitem"]',
+      );
+      if (!options?.length) return;
+      event.preventDefault();
+      const currentIndex = Array.from(options).indexOf(
+        document.activeElement as HTMLButtonElement,
+      );
+      const nextIndex =
+        event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? options.length - 1
+            : event.key === "ArrowDown"
+              ? (currentIndex + 1) % options.length
+              : (currentIndex - 1 + options.length) % options.length;
+      options[nextIndex]?.focus();
+    }
+
+    function updatePosition() {
+      const donation = menuDonationRef.current;
+      const trigger = triggerRef.current;
+      if (!donation || !trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      const width = 184;
+      const height = 96;
+      const left = Math.max(
+        8,
+        Math.min(rect.right - width, window.innerWidth - width - 8),
+      );
+      let top = rect.bottom + 4;
+      if (top + height > window.innerHeight - 8) {
+        top = Math.max(8, rect.top - height - 4);
+      }
+      setActionsMenu({ donation, top, left });
+    }
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      menuRef.current
+        ?.querySelector<HTMLButtonElement>('[role="menuitem"]')
+        ?.focus();
+    });
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [activeMenuDonationId]);
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    try {
+      await excluirDoacao.mutateAsync(deleteTarget.id);
+      addToast("Doação excluída com sucesso.");
+      setDeleteTarget(null);
+      if (data?.items.length === 1 && data.page > 1) {
+        setPage(data.page - 1);
+      }
+    } catch (error) {
+      addToast(
+        mensagemErro(error, "Não foi possível excluir a doação."),
+        "error",
+      );
+    }
+  }
 
   return (
     <div className={styles.stack}>
@@ -176,12 +315,17 @@ export default function DoacoesPage() {
                     <button
                       type="button"
                       className={styles.moreButton}
+                      id={`menu-trigger-doacao-${donation.id}`}
                       aria-label={`Mais opções da doação de ${donation.donor || donation.itemName}`}
-                      onClick={() =>
-                        addToast(
-                          "O menu de opções da doação ainda não foi especificado no SDD.",
-                          "info",
-                        )
+                      aria-haspopup="menu"
+                      aria-expanded={actionsMenu?.donation.id === donation.id}
+                      aria-controls={
+                        actionsMenu?.donation.id === donation.id
+                          ? `menu-doacao-${donation.id}`
+                          : undefined
+                      }
+                      onClick={(event) =>
+                        toggleActionsMenu(donation, event.currentTarget)
                       }
                     >
                       <Icone name="more-vertical" size={20} />
@@ -227,6 +371,63 @@ export default function DoacoesPage() {
       {modalOpen ? (
         <DoacaoModal onClose={() => setModalOpen(false)} />
       ) : null}
+
+      {editTarget ? (
+        <DoacaoModal
+          doacao={editTarget}
+          onClose={() => setEditTarget(null)}
+        />
+      ) : null}
+
+      {deleteTarget ? (
+        <ConfirmacaoDialog
+          title="Excluir doação"
+          message={`Deseja excluir "${donationLabel(deleteTarget)}", doada por "${deleteTarget.donor || "Não informado"}"?`}
+          confirmLabel="Excluir doação"
+          destructive
+          loading={excluirDoacao.isPending}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={confirmDelete}
+        />
+      ) : null}
+
+      {actionsMenu
+        ? createPortal(
+            <div
+              ref={menuRef}
+              id={`menu-doacao-${actionsMenu.donation.id}`}
+              className={styles.actionsMenu}
+              role="menu"
+              aria-labelledby={`menu-trigger-doacao-${actionsMenu.donation.id}`}
+              style={{ top: actionsMenu.top, left: actionsMenu.left }}
+            >
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setEditTarget(actionsMenu.donation);
+                  closeActionsMenu();
+                }}
+              >
+                <Icone name="edit" size={16} />
+                Editar doação
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className={styles.dangerMenuItem}
+                onClick={() => {
+                  setDeleteTarget(actionsMenu.donation);
+                  closeActionsMenu();
+                }}
+              >
+                <Icone name="trash" size={16} />
+                Excluir doação
+              </button>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

@@ -815,7 +815,7 @@ Os estados visuais devem ser implementados por tokens. Estados não desenhados n
 - **Objetivo:** Listar as doações recebidas e destinadas aos eventos, com pesquisa e filtros, e permitir registrar novas doações.
 - **Perfil de acesso:** Usuário autenticado
 - **Entrada / retorno:** TL04 - Início.
-- **Saídas previstas:** TL14 - Registrar doação - Produto pronto, TL15 - Registrar doação - Dinheiro, TL16 - Registrar doação - Ingrediente, Menu de opções da doação (tela a definir).
+- **Saídas previstas:** TL14 - Registrar doação - Produto pronto, TL15 - Registrar doação - Dinheiro, TL16 - Registrar doação - Ingrediente, edição e exclusão de doação.
 - **Wireframe(s):** TL-13 Doações.png.
 - **Prioridade:** Alta.
 
@@ -848,7 +848,7 @@ Os estados visuais devem ser implementados por tokens. Estados não desenhados n
   - Origem: Entrada do usuário.
   - Observação: Exibidos ao clicar em 'Filtrar'. Seleção múltipla com caixas de marcação. Eventos vêm do cadastro de eventos. Tipos: Todos, Dinheiro, Produto, Ingrediente.
 - **Lista de doações** (Lista): “Doação: '[Item] · [X] unidades' ou 'Doação em dinheiro · [Forma de pagamento]' | Doador: '[Nome]' | Evento destinado: '[Nome do evento]' | Custo da ficha: 'R$ [valor]' | Menu de opções (três pontos)”
-  - Ação/destino: Menu de opções (a definir).
+  - Ação/destino: Menu de opções abre Editar doação ou Excluir doação. A edição abre o formulário preenchido; a exclusão solicita confirmação.
   - Origem: Banco de dados.
   - Observação: Doações em dinheiro mostram a forma de pagamento no lugar da quantidade.
 - **Paginação** (Botão (CTA)): “Botão: 'Anterior' | Texto: 'Página [X] de [Y]' | Botão: 'Próxima'”
@@ -863,11 +863,11 @@ Os estados visuais devem ser implementados por tokens. Estados não desenhados n
 
 **Interações e destinos**
 - A tela é acessada a partir de: TL04 - Início.
-- Transições previstas: TL14 - Registrar doação - Produto pronto, TL15 - Registrar doação - Dinheiro, TL16 - Registrar doação - Ingrediente, Menu de opções da doação (tela a definir).
+- Transições previstas: TL14 - Registrar doação - Produto pronto, TL15 - Registrar doação - Dinheiro, TL16 - Registrar doação - Ingrediente, edição e exclusão de doação.
 - Botão de registro: Botão abre TL14 - Registrar doação - Produto pronto (tipo padrão).
 - Pesquisa de doações: Pesquisar filtra a lista por doador ou item. Filtrar exibe ou oculta os filtros abaixo.
 - Filtros de doações: Limpar filtros volta as duas seleções para 'Todos'.
-- Lista de doações: Menu de opções (a definir).
+- Lista de doações: Menu de opções abre Editar doação ou Excluir doação. A exclusão remove o registro somente após confirmação.
 - Paginação: Anterior e Próxima trocam a página da lista.
 
 **Rastreabilidade**

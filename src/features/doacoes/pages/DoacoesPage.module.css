@@ -35,3 +35,48 @@
   background: var(--branco-suave);
   color: var(--texto);
 }
+
+.moreButton:focus-visible {
+  outline: 2px solid var(--vinho);
+  outline-offset: 2px;
+}
+
+.actionsMenu {
+  position: fixed;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  width: 184px;
+  max-width: calc(100vw - 16px);
+  padding: var(--espaco-4);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-campo);
+  background: var(--branco-suave);
+  box-shadow: var(--sombra-2);
+}
+
+.actionsMenu button {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-8);
+  width: 100%;
+  min-height: 40px;
+  padding: var(--espaco-8) var(--espaco-12);
+  border: 0;
+  border-radius: var(--raio-campo);
+  background: transparent;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.actionsMenu button:hover,
+.actionsMenu button:focus-visible {
+  outline: none;
+  background: var(--fundo);
+}
+
+.actionsMenu .dangerMenuItem {
+  color: var(--cor-erro);
+}

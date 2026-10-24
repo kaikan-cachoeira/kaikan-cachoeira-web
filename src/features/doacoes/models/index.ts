@@ -1,4 +1,5 @@
 export type {
+  AtualizarDoacaoPayload,
   CriarDoacaoPayload,
   Doacao,
   ParametrosDoacoes,
