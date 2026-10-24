@@ -23,7 +23,12 @@ const TYPE_OPTIONS = [
   { value: "ingredient", label: "Ingrediente" },
 ];
 
-const PAYMENT_OPTIONS = [{ value: "PIX", label: "PIX" }];
+const PAYMENT_OPTIONS = [
+  { value: "PIX", label: "PIX" },
+  { value: "Débito", label: "Débito" },
+  { value: "Crédito", label: "Crédito" },
+  { value: "Dinheiro", label: "Dinheiro" },
+];
 
 interface DoacaoModalProps {
   initialType?: string;
