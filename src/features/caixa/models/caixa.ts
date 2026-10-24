@@ -35,6 +35,7 @@ export interface ParametrosCaixa extends ParametrosPaginacao {
 export interface Fiado {
   id: string;
   eventId: string;
+  eventName?: string;
   amount: number;
   paidAmount: number;
   remaining: number;
@@ -51,7 +52,9 @@ export interface RespostaFiados extends Paginado<Fiado> {
 
 export interface ParametrosFiados extends ParametrosPaginacao {
   eventId?: string;
+  eventIds?: string;
   status?: string;
+  search?: string;
 }
 
 export interface CriarLancamentoCaixaPayload {

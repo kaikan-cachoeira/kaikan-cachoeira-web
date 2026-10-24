@@ -1183,11 +1183,21 @@ async function route(config: any) {
 
   if (method === "get" && path === "/fiados") {
     const eventId = params.get("eventId") || "";
+    const eventIds = listParam(params, "eventIds");
     const status = params.get("status") || "";
+    const term = params.get("search") || "";
     const items = db.fiados
       .filter((fiado: any) => !eventId || fiado.eventId === eventId)
+      .filter(
+        (fiado: any) =>
+          eventIds.length === 0 || eventIds.includes(fiado.eventId),
+      )
       .filter((fiado: any) => !status || fiado.status === status)
-      .map((fiado: any) => settleFiado(fiado))
+      .filter((fiado: any) => search(fiado.debtorName, term))
+      .map((fiado: any) => ({
+        ...settleFiado(fiado),
+        eventName: eventName(db, fiado.eventId),
+      }))
       .sort((a: any, b: any) => String(b.createdAt).localeCompare(String(a.createdAt)));
     return ok(config, {
       pendingCount: items.filter((item: any) => item.status === "pending").length,

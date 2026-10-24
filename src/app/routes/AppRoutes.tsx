@@ -23,7 +23,7 @@ import {
   RegistroVendasPage,
   VendasPorHora,
 } from "@/features/vendas";
-import { CaixaPage, FiadosPage } from "@/features/caixa";
+import { CaixaPage, FiadosGeraisPage, FiadosPage } from "@/features/caixa";
 import { RelatorioGeralPage } from "@/features/relatorio";
 
 export default function AppRoutes() {
@@ -64,6 +64,10 @@ export default function AppRoutes() {
           <Route path="/caixa/fiado" element={<CaixaPage />} />
           <Route path="/caixa/fiados" element={<FiadosPage />} />
           <Route path="/relatorio-geral" element={<RelatorioGeralPage />} />
+          <Route
+            path="/relatorio-geral/fiados"
+            element={<FiadosGeraisPage />}
+          />
           <Route
             path="/em-definicao/painel-de-controle"
             element={<Navigate to="/relatorio-geral" replace />}

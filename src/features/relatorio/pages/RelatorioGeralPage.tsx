@@ -345,7 +345,9 @@ export default function RelatorioGeralPage() {
                   ) : (
                     <Link className={styles.alertLink} to="/estoque">
                       {estoqueBaixoQuery.data
-                        ? `${formatarNumero(estoqueBaixoQuery.data)} produtos com estoque baixo`
+                        ? `${formatarNumero(estoqueBaixoQuery.data)} ${
+                            estoqueBaixoQuery.data === 1 ? "produto" : "produtos"
+                          } com estoque baixo`
                         : "Nenhum produto com estoque baixo"}
                     </Link>
                   )}
@@ -359,7 +361,9 @@ export default function RelatorioGeralPage() {
                   ) : (
                     <Link className={styles.alertLink} to="/estoque">
                       {semEstoqueQuery.data
-                        ? `${formatarNumero(semEstoqueQuery.data)} produtos sem estoque`
+                        ? `${formatarNumero(semEstoqueQuery.data)} ${
+                            semEstoqueQuery.data === 1 ? "produto" : "produtos"
+                          } sem estoque`
                         : "Nenhum produto sem estoque"}
                     </Link>
                   )}
@@ -371,10 +375,15 @@ export default function RelatorioGeralPage() {
                       onRetry={fiadosQuery.refetch}
                     />
                   ) : (
-                    <Link className={styles.alertLink} to="/caixa/fiados">
+                    <Link
+                      className={styles.alertLink}
+                      to="/relatorio-geral/fiados"
+                    >
                       Fiados em aberto:{" "}
                       {formatarMoeda(fiadosQuery.data?.openAmount)} (
-                      {formatarNumero(fiadosQuery.data?.pendingCount)} fiados)
+                      {formatarNumero(fiadosQuery.data?.pendingCount)}{" "}
+                      {fiadosQuery.data?.pendingCount === 1 ? "fiado" : "fiados"}
+                      )
                     </Link>
                   )}
                 </div>
