@@ -1,18 +1,16 @@
 export interface Usuario {
-  id?: string;
-  name: string;
-  email: string;
-  initials?: string;
-  accountLabel?: string;
-  role?: string;
+  nome: string;
+  cargo: string;
+  permissoes: string[]
 }
 
 export interface Sessao {
-  token: string;
-  user: Usuario;
+  accessToken: string;
+  refreshToken: string;
+  usuario: Usuario;
 }
 
 export interface Credenciais {
   email: string;
-  password: string;
+  senha: string;
 }

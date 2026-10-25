@@ -11,7 +11,7 @@ import styles from "./AuthPages.module.css";
 
 interface LoginFormValues {
   email: string;
-  password: string;
+  senha: string;
 }
 
 export default function LoginPage() {
@@ -75,9 +75,9 @@ export default function LoginPage() {
             type="password"
             autoComplete="current-password"
             placeholder="Digite sua senha"
-            error={errors.password?.message}
+            error={errors.senha?.message}
             required
-            {...register("password", {
+            {...register("senha", {
               required: "Informe sua senha.",
             })}
           />

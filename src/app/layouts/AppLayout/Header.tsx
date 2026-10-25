@@ -21,6 +21,7 @@ interface HeaderProps {
 
 export default function Header({ onOpenMenu }: HeaderProps) {
   const { usuario, sair } = useAutenticacao();
+  const initials:string | undefined = usuario?.nome.slice(0, 2).toUpperCase() || "AD";
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -78,14 +79,14 @@ export default function Header({ onOpenMenu }: HeaderProps) {
         >
           <span className={styles.userText}>
             <span className={styles.userName}>
-              {usuario?.name || "Administrador"}
+              {usuario?.nome || "Administrador"}
             </span>
             <span className={styles.userEmail}>
               {usuario?.email || "conta compartilhada"}
             </span>
           </span>
           <span className={styles.avatar} aria-hidden="true">
-            {usuario?.initials || "AD"}
+            {initials || "AD"}
           </span>
           <Icone name={menuOpen ? "chevron-up" : "chevron-down"} size={18} />
         </button>
@@ -94,11 +95,11 @@ export default function Header({ onOpenMenu }: HeaderProps) {
           <div className={styles.popover}>
             <div className={styles.popoverIdentity}>
               <span className={styles.avatar} aria-hidden="true">
-                {usuario?.initials || "AD"}
+                {initials || "AD"}
               </span>
               <div>
                 <p className={styles.popoverName}>
-                  {usuario?.name || "Administrador"}
+                  {usuario?.nome || "Administrador"}
                 </p>
                 <p className={styles.popoverEmail}>
                   {usuario?.email || "conta compartilhada"}
