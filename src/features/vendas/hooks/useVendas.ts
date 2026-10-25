@@ -37,13 +37,13 @@ export function useVendasQuery(params: ParametrosVendas) {
 }
 
 export function useVendasEventoQuery(
-  id?: string | null,
+  id?: number | null,
   params: Omit<ParametrosVendasEvento, "eventId"> = {},
 ) {
   return useQuery({
     queryKey: comporChave(queryKeys.vendas, "evento", id, params),
-    queryFn: () => listarVendas({ ...params, eventId: id as string }),
-    enabled: Boolean(id),
+    queryFn: () => listarVendas({ ...params, eventId: id as number }),
+    enabled: typeof id === "number" && Number.isFinite(id),
   });
 }
 
@@ -110,7 +110,9 @@ export function useVendas({ carregarCardapio = false }: UseVendasOptions = {}) {
   const categories = useMemo<string[]>(() => {
     const names: string[] = [];
     items.forEach((item) => {
-      if (!names.includes(item.category)) names.push(item.category);
+      if (item.categoria && !names.includes(item.categoria)) {
+        names.push(item.categoria);
+      }
     });
     return ["Todos", ...names];
   }, [items]);
@@ -121,10 +123,10 @@ export function useVendas({ carregarCardapio = false }: UseVendasOptions = {}) {
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
     return items
-      .filter((item) => category === "Todos" || item.category === category)
+      .filter((item) => category === "Todos" || item.categoria === category)
       .filter((item) =>
         term
-          ? item.name
+          ? item.nome
               .toLowerCase()
               .normalize("NFD")
               .replace(/[\u0300-\u036f]/g, "")
@@ -162,12 +164,12 @@ export function useVendas({ carregarCardapio = false }: UseVendasOptions = {}) {
 
   function aplicarDescontoNoItem(price: number) {
     if (!discountItem) return;
-    aplicarDesconto(discountItem.id, price);
+    aplicarDesconto(String(discountItem.id), price);
     setDiscountItem(null);
   }
 
   const subtitle = event
-    ? `Evento em andamento: ${event.name}`
+    ? `Evento em andamento: ${event.nome}`
     : "Nenhum evento em andamento";
 
   return {
@@ -196,7 +198,7 @@ export function useVendas({ carregarCardapio = false }: UseVendasOptions = {}) {
   };
 }
 
-export function useHistoricoVendas(eventId?: string, pageSize = 8) {
+export function useHistoricoVendas(eventId?: number, pageSize = 8) {
   const { addToast } = useToast();
   const [searchDraft, setSearchDraft] = useState("");
   const [search, setSearch] = useState("");

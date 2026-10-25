@@ -34,7 +34,7 @@ const STATUS_OPTIONS = [
 ];
 
 interface HistoricoVendasViewProps {
-  eventId?: string;
+  eventId?: number;
   pageSize?: number;
   className?: string;
 }

@@ -155,7 +155,7 @@ export default function RegistroVendasPage() {
       {discountItem ? (
         <DescontoModal
           item={discountItem}
-          basePrice={discountItem.price}
+          basePrice={discountItem.precoComDesconto}
           onClose={() => setDiscountItem(null)}
           onApply={aplicarDescontoNoItem}
         />

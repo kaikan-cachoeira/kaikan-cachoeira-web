@@ -5,7 +5,7 @@ import type {
 
 export interface LancamentoCaixa {
   id: string;
-  eventId: string;
+  eventId: number;
   type: string;
   value: number;
   payment: string;
@@ -27,14 +27,14 @@ export interface RespostaCaixa extends Paginado<LancamentoCaixa> {
 }
 
 export interface ParametrosCaixa extends ParametrosPaginacao {
-  eventId?: string;
+  eventId?: number;
   types?: string;
   payments?: string;
 }
 
 export interface Fiado {
   id: string;
-  eventId: string;
+  eventId: number;
   eventName?: string;
   amount: number;
   paidAmount: number;
@@ -51,14 +51,14 @@ export interface RespostaFiados extends Paginado<Fiado> {
 }
 
 export interface ParametrosFiados extends ParametrosPaginacao {
-  eventId?: string;
+  eventId?: number;
   eventIds?: string;
   status?: string;
   search?: string;
 }
 
 export interface CriarLancamentoCaixaPayload {
-  eventId: string;
+  eventId: number;
   type: string;
   value: number;
   payment: string;

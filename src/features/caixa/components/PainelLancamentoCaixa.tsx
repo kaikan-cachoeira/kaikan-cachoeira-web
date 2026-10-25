@@ -43,7 +43,7 @@ const EMPTY: CaixaFormValues = {
 };
 
 interface PainelLancamentoCaixaProps {
-  eventId: string;
+  eventId: number;
 }
 
 export default function PainelLancamentoCaixa({

@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import PageHeader from "@/shared/components/PageHeader/PageHeader";
 import Botao from "@/shared/components/Botao/Botao";
@@ -21,43 +21,245 @@ import {
 import { useEventoDetalhes } from "../hooks/useEventoDetalhes";
 import { obterConfirmacaoStatus } from "../utils/confirmacaoStatus";
 import {
+  formatarDataHora,
   formatarMoeda,
   formatarNumero,
   formatarPeriodo,
 } from "@/shared/lib/formatacao";
 import { rotuloTipoDoacao } from "@/shared/lib/tiposDoacao";
-import type { DoacaoEvento } from "../models";
+import type {
+  CustoAdicionalRelatorio,
+  ItemCardapio,
+  MovimentacaoRelatorio,
+  OrigemProdutoEvento,
+  ProdutoRelatorio,
+  VendasPorHoraRelatorio,
+} from "../models";
+import {
+  rotuloTipoEvento,
+  varianteStatus,
+} from "../utils/statusEvento";
 import CustoModal from "../components/CustoModal";
-import CustosEventoModal from "../components/CustosEventoModal";
 import AdicionarProdutoCardapioModal from "../components/AdicionarProdutoCardapioModal";
 import styles from "./EventoDetalhesPage.module.css";
-
-function donationDescription(donation: DoacaoEvento) {
-  if (donation.type === "money") {
-    return `Doação em dinheiro · ${donation.paymentMethod || "PIX"}`;
-  }
-  return `${donation.itemName || "Doação"}${
-    donation.quantity ? ` · ${formatarNumero(donation.quantity)} un.` : ""
-  }`;
-}
 
 function InlineEmpty({ children }: { children: ReactNode }) {
   return <p className={styles.inlineEmpty}>{children}</p>;
 }
 
-interface EventoDetalhesPageProps {
-  vendasPorHora?: ComponentType<{ eventId: string }>;
+function rotuloOrigem(origem: OrigemProdutoEvento): string {
+  return origem === "PRODUZIDO" ? "Produzido" : "Estoque";
 }
 
-export default function EventoDetalhesPage({
-  vendasPorHora: VendasPorHora,
-}: EventoDetalhesPageProps) {
-  const { id } = useParams();
+function TabelaProdutosRelatorio({
+  produtos,
+}: {
+  produtos: ProdutoRelatorio[];
+}) {
+  return (
+    <Tabela caption="Produtos e desempenho do evento">
+      <Cabecalho>
+        <Linha>
+          <CelulaCabecalho>Produto</CelulaCabecalho>
+          <CelulaCabecalho numeric>Previsto</CelulaCabecalho>
+          <CelulaCabecalho numeric>Vendido</CelulaCabecalho>
+          <CelulaCabecalho numeric>Preço vendido</CelulaCabecalho>
+          <CelulaCabecalho numeric>Receita</CelulaCabecalho>
+          <CelulaCabecalho numeric>Custo total</CelulaCabecalho>
+          <CelulaCabecalho numeric>Descontos</CelulaCabecalho>
+          <CelulaCabecalho numeric>Lucro líquido</CelulaCabecalho>
+        </Linha>
+      </Cabecalho>
+      <Corpo>
+        {produtos.map((item) => (
+          <Linha key={item.produtoEventoId}>
+            <Celula>
+              <span className={styles.productName}>{item.nome}</span>
+              <span className={styles.produced}>
+                · {rotuloOrigem(item.origem).toLowerCase()}
+              </span>
+            </Celula>
+            <Celula numeric>
+              {item.quantidadePrevista === null ||
+              item.quantidadePrevista === undefined
+                ? "—"
+                : formatarNumero(item.quantidadePrevista)}
+            </Celula>
+            <Celula numeric>{formatarNumero(item.quantidadeVendida)}</Celula>
+            <Celula numeric>{formatarMoeda(item.precoVendido)}</Celula>
+            <Celula numeric>{formatarMoeda(item.receitaVendas)}</Celula>
+            <Celula numeric>{formatarMoeda(item.custoTotal)}</Celula>
+            <Celula numeric>{formatarMoeda(item.totalDescontos)}</Celula>
+            <Celula numeric>
+              <span
+                className={
+                  item.lucroLiquido >= 0 ? styles.positive : styles.negative
+                }
+              >
+                {formatarMoeda(item.lucroLiquido)}
+              </span>
+            </Celula>
+          </Linha>
+        ))}
+      </Corpo>
+    </Tabela>
+  );
+}
+
+function TabelaProdutosPrevistos({
+  produtos,
+}: {
+  produtos: ItemCardapio[];
+}) {
+  return (
+    <Tabela caption="Cardápio previsto do evento">
+      <Cabecalho>
+        <Linha>
+          <CelulaCabecalho>Produto</CelulaCabecalho>
+          <CelulaCabecalho>Origem</CelulaCabecalho>
+          <CelulaCabecalho numeric>Previsto</CelulaCabecalho>
+          <CelulaCabecalho numeric>Restante</CelulaCabecalho>
+          <CelulaCabecalho numeric>Preço de venda</CelulaCabecalho>
+          <CelulaCabecalho numeric>Desconto</CelulaCabecalho>
+          <CelulaCabecalho numeric>Custo ingredientes</CelulaCabecalho>
+        </Linha>
+      </Cabecalho>
+      <Corpo>
+        {produtos.map((item) => (
+          <Linha key={item.id}>
+            <Celula>
+              <span className={styles.productName}>{item.nome}</span>
+            </Celula>
+            <Celula>{rotuloOrigem(item.origem)}</Celula>
+            <Celula numeric>
+              {item.quantidadePrevista === null ||
+              item.quantidadePrevista === undefined
+                ? "—"
+                : formatarNumero(item.quantidadePrevista)}
+            </Celula>
+            <Celula numeric>
+              {item.restantePrevisto === null ||
+              item.restantePrevisto === undefined
+                ? "—"
+                : formatarNumero(item.restantePrevisto)}
+            </Celula>
+            <Celula numeric>{formatarMoeda(item.precoComDesconto)}</Celula>
+            <Celula numeric>{formatarMoeda(item.desconto)}</Celula>
+            <Celula numeric>
+              {item.custoTotalIngredientes === null ||
+              item.custoTotalIngredientes === undefined
+                ? "—"
+                : formatarMoeda(item.custoTotalIngredientes)}
+            </Celula>
+          </Linha>
+        ))}
+      </Corpo>
+    </Tabela>
+  );
+}
+
+function ListaCustos({ custos }: { custos: CustoAdicionalRelatorio[] }) {
+  if (!custos.length) {
+    return <InlineEmpty>Nenhum custo adicional registrado.</InlineEmpty>;
+  }
+
+  return (
+    <ul className={styles.costList}>
+      {custos.map((custo, index) => (
+        <li key={`${custo.nome}-${index}`}>
+          <span>
+            <strong>{custo.nome}</strong>
+            {custo.descricao ? <small>{custo.descricao}</small> : null}
+          </span>
+          <span>{formatarMoeda(custo.valor)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function TabelaMovimentacoes({
+  movimentacoes,
+}: {
+  movimentacoes: MovimentacaoRelatorio[];
+}) {
+  return (
+    <Tabela caption="Movimentações da reunião">
+      <Cabecalho>
+        <Linha>
+          <CelulaCabecalho>Produto</CelulaCabecalho>
+          <CelulaCabecalho numeric>Quantidade</CelulaCabecalho>
+          <CelulaCabecalho numeric>Custo unitário</CelulaCabecalho>
+          <CelulaCabecalho numeric>Custo total</CelulaCabecalho>
+          <CelulaCabecalho>Observações</CelulaCabecalho>
+          <CelulaCabecalho>Data</CelulaCabecalho>
+        </Linha>
+      </Cabecalho>
+      <Corpo>
+        {movimentacoes.map((item) => (
+          <Linha key={item.id}>
+            <Celula>{item.produtoNome}</Celula>
+            <Celula numeric>{formatarNumero(item.quantidade)}</Celula>
+            <Celula numeric>{formatarMoeda(item.custoUnitario)}</Celula>
+            <Celula numeric>{formatarMoeda(item.custoTotal)}</Celula>
+            <Celula>{item.observacoes || "—"}</Celula>
+            <Celula>{formatarDataHora(item.criadoEm)}</Celula>
+          </Linha>
+        ))}
+      </Corpo>
+    </Tabela>
+  );
+}
+
+function VendasPorHoraChart({ data }: { data: VendasPorHoraRelatorio }) {
+  if (!data.ranking.length) {
+    return <InlineEmpty>Nenhuma venda registrada.</InlineEmpty>;
+  }
+
+  const maiorQuantidade = Math.max(
+    1,
+    ...data.ranking.map((item) => item.quantidadeVendas),
+  );
+
+  return (
+    <div className={styles.chart}>
+      <div className={styles.chartBars}>
+        {data.ranking.map((item) => (
+          <div className={styles.chartColumn} key={item.hora}>
+            <span className={styles.chartValue}>
+              {formatarNumero(item.quantidadeVendas)}
+            </span>
+            <div className={styles.chartTrack}>
+              <span
+                className={styles.chartBar}
+                style={{
+                  height: `${(item.quantidadeVendas / maiorQuantidade) * 100}%`,
+                }}
+              />
+            </div>
+            <span className={styles.chartLabel}>
+              {String(item.hora).padStart(2, "0")}h
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className={styles.chartLegend}>
+        Quantidade de vendas · Total:{" "}
+        {formatarNumero(data.quantidadeVendasTotais)}{" "}
+        {data.quantidadeVendasTotais === 1 ? "venda" : "vendas"}
+      </p>
+    </div>
+  );
+}
+
+export default function EventoDetalhesPage() {
+  const { id: paramId } = useParams();
+  const id = Number(paramId);
+  const idValido = Number.isFinite(id) && id > 0;
+
   const {
     costOpen,
     setCostOpen,
-    costsListOpen,
-    setCostsListOpen,
     addProductOpen,
     setAddProductOpen,
     startConfirm,
@@ -65,13 +267,18 @@ export default function EventoDetalhesPage({
     closeConfirm,
     setCloseConfirm,
     eventoQuery,
-    categoriasQuery,
+    relatorioQuery,
+    produtosQuery,
     alterarStatus: changeStatus,
     confirmStart,
     closeEvent,
-  } = useEventoDetalhes(id);
+  } = useEventoDetalhes(idValido ? id : null);
+
   const { data: event, isLoading, isError, refetch } = eventoQuery;
-  const categoriesData = categoriasQuery.data;
+
+  if (!idValido) {
+    return <EstadoErro message="Evento inválido." />;
+  }
 
   if (isLoading) {
     return <EstadoCarregando message="Carregando evento..." />;
@@ -86,24 +293,50 @@ export default function EventoDetalhesPage({
     );
   }
 
-  const isOngoing = event.status === "Em andamento";
-  const isNotStarted = event.status === "Não iniciado";
-  const startConfirmation = obterConfirmacaoStatus(event, "Em andamento");
-  const menu = event.menu || [];
-  const donations = event.donations || [];
-  const costs = event.costs || [];
-  const metrics = event.metrics || {
-    revenue: 0,
-    costs: 0,
-    profit: 0,
-    sales: 0,
+  const isReuniao = event.tipoEvento === "REUNIAO";
+  const isNotStarted = event.status.codigo === "NAO_INICIADO";
+  const isOngoing = event.status.codigo === "EM_ANDAMENTO";
+  const startConfirmation = obterConfirmacaoStatus(event, "EM_ANDAMENTO");
+
+  const relatorio = isNotStarted ? undefined : relatorioQuery.data;
+  const relatorioEvento =
+    relatorio?.tipoEvento === "EVENTO" ? relatorio : undefined;
+  const relatorioReuniao =
+    relatorio?.tipoEvento === "REUNIAO" ? relatorio : undefined;
+
+  const resumoEvento = relatorioEvento?.resumo;
+  const resumoReuniao = relatorioReuniao?.resumo;
+  const metrics = {
+    revenue: resumoEvento?.receitaTotal ?? 0,
+    costs: resumoEvento?.custoTotal ?? 0,
+    profit: resumoEvento?.lucro ?? 0,
+    sales: resumoEvento?.vendas ?? 0,
   };
 
-  const topProducts = [...menu]
-    .filter((item) => item.sold > 0)
-    .sort((a, b) => b.sold - a.sold)
-    .slice(0, 5);
-  const topMax = topProducts[0]?.sold || 1;
+  const custos =
+    relatorioEvento?.custosAdicionais ??
+    relatorioReuniao?.custosAdicionais ??
+    [];
+  const produtosRelatorio = relatorioEvento?.produtos ?? [];
+  const produtosPrevistos = produtosQuery.data ?? [];
+  const categoriasPrevistas = Array.from(
+    new Set(
+      produtosPrevistos
+        .map((item) => item.categoria)
+        .filter((categoria): categoria is string => Boolean(categoria)),
+    ),
+  );
+  const topProducts = relatorioEvento?.produtosMaisVendidos.ranking ?? [];
+  const topMax = topProducts[0]?.quantidadeVendida || 1;
+  const doacoes = relatorioEvento?.doacoes;
+  const movimentacoes = relatorioReuniao?.itens ?? [];
+
+  const doacoesItens = doacoes?.itens ?? [];
+  const doacoesDinheiro = doacoes?.emDinheiro ?? [];
+  const totalDoacoes = doacoesItens.length + doacoesDinheiro.length;
+
+  const relatorioCarregando = !isNotStarted && relatorioQuery.isLoading;
+  const relatorioIndisponivel = !isNotStarted && relatorioQuery.isError;
 
   return (
     <div className={styles.stack}>
@@ -115,88 +348,203 @@ export default function EventoDetalhesPage({
       <PageHeader
         title={
           <span className={styles.titleRow}>
-            {event.name}
-            <Etiqueta
-              variant={isOngoing ? "success" : isNotStarted ? "warning" : "muted"}
-              dot
-            >
-              {event.status}
+            {event.nome}
+            <Etiqueta variant={varianteStatus(event.status.codigo)} dot>
+              {event.status.descricao}
             </Etiqueta>
           </span>
         }
-        subtitle={`${event.type || "Evento"} · ${formatarPeriodo(
-          event.start,
-          event.end,
+        subtitle={`${rotuloTipoEvento(event.tipoEvento)} · ${formatarPeriodo(
+          event.dataHoraInicio,
+          event.dataHoraEncerramento,
         )}`}
         actions={
           <>
+            {isNotStarted && !isReuniao ? (
+              <Botao
+                variant="secondary"
+                iconLeft="plus"
+                onClick={() => setAddProductOpen(true)}
+              >
+                Adicionar produto
+              </Botao>
+            ) : null}
+            {isNotStarted || isOngoing ? (
+              <Botao
+                variant="secondary"
+                iconLeft="cash"
+                onClick={() => setCostOpen(true)}
+              >
+                Registrar custo
+              </Botao>
+            ) : null}
             {isNotStarted ? (
-              <>
-                <Botao
-                  variant="secondary"
-                  iconLeft="plus"
-                  onClick={() => setAddProductOpen(true)}
-                >
-                  Adicionar produto
-                </Botao>
-                <Botao
-                  variant="secondary"
-                  iconLeft="cash"
-                  onClick={() => setCostOpen(true)}
-                >
-                  Registrar custo
-                </Botao>
-                <Botao
-                  loading={changeStatus.isPending}
-                  onClick={() => setStartConfirm(true)}
-                >
-                  Iniciar evento
-                </Botao>
-              </>
+              <Botao
+                loading={changeStatus.isPending}
+                onClick={() => setStartConfirm(true)}
+              >
+                Iniciar evento
+              </Botao>
             ) : null}
             {isOngoing ? (
-              <>
-                <Botao
-                  variant="secondary"
-                  iconLeft="cash"
-                  onClick={() => setCostOpen(true)}
-                >
-                  Registrar custo
-                </Botao>
-                <Botao
-                  variant="danger"
-                  loading={changeStatus.isPending}
-                  onClick={() => setCloseConfirm(true)}
-                >
-                  Encerrar evento
-                </Botao>
-              </>
+              <Botao
+                variant="danger"
+                loading={changeStatus.isPending}
+                onClick={() => setCloseConfirm(true)}
+              >
+                Encerrar evento
+              </Botao>
             ) : null}
           </>
         }
       >
         <div className={styles.notes}>
           <span className={styles.notesLabel}>Observações</span>
-          <p>{event.notes || "Nenhuma observação registrada."}</p>
+          <p>{event.observacoes || "Nenhuma observação registrada."}</p>
         </div>
       </PageHeader>
 
-      <section className={styles.statsGrid} aria-label="Indicadores do evento">
-        <EstatisticaCard label="Receita" value={formatarMoeda(metrics.revenue)} />
-        <EstatisticaCard label="Custos" value={formatarMoeda(metrics.costs)} />
-        <EstatisticaCard
-          label="Lucro líquido"
-          value={formatarMoeda(metrics.profit)}
-          variant={metrics.profit >= 0 ? "success" : "danger"}
-        />
-        <EstatisticaCard label="Vendas" value={formatarNumero(metrics.sales)} />
-      </section>
+      {isReuniao ? (
+        <section
+          className={styles.statsGrid}
+          aria-label="Indicadores da reunião"
+        >
+          <EstatisticaCard
+            label="Custo de compras"
+            value={formatarMoeda(resumoReuniao?.custoCompras ?? 0)}
+          />
+          <EstatisticaCard
+            label="Consumo interno"
+            value={formatarMoeda(resumoReuniao?.custoConsumoInterno ?? 0)}
+          />
+          <EstatisticaCard
+            label="Custos adicionais"
+            value={formatarMoeda(resumoReuniao?.totalCustosAdicionais ?? 0)}
+          />
+          <EstatisticaCard
+            label="Custo total"
+            value={formatarMoeda(resumoReuniao?.custoTotal ?? 0)}
+            variant="danger"
+          />
+        </section>
+      ) : (
+        <section
+          className={styles.statsGrid}
+          aria-label="Indicadores do evento"
+        >
+          <EstatisticaCard
+            label="Receita"
+            value={formatarMoeda(metrics.revenue)}
+          />
+          <EstatisticaCard label="Custos" value={formatarMoeda(metrics.costs)} />
+          <EstatisticaCard
+            label="Lucro líquido"
+            value={formatarMoeda(metrics.profit)}
+            variant={metrics.profit >= 0 ? "success" : "danger"}
+          />
+          <EstatisticaCard
+            label="Vendas"
+            value={formatarNumero(metrics.sales)}
+          />
+        </section>
+      )}
 
-      {isOngoing ? (
-        <div className={styles.insightsGrid}>
+      {relatorioCarregando ? (
+        <EstadoCarregando message="Carregando relatório do evento..." />
+      ) : relatorioIndisponivel ? (
+        <EstadoErro
+          message="Não foi possível carregar o relatório do evento. O cabeçalho e o resumo continuam disponíveis."
+          onRetry={relatorioQuery.refetch}
+        />
+      ) : isReuniao ? (
+        <>
           <SecaoCard
-            title="Produtos mais vendidos"
-            subtitle="Por quantidade no evento"
+            title="Movimentações"
+            subtitle="Itens e custos registrados na reunião"
+          >
+            {movimentacoes.length ? (
+              <TabelaMovimentacoes movimentacoes={movimentacoes} />
+            ) : (
+              <InlineEmpty>
+                Nenhuma movimentação registrada para esta reunião.
+              </InlineEmpty>
+            )}
+          </SecaoCard>
+
+          <SecaoCard
+            title="Custos adicionais"
+            subtitle="Custos lançados no relatório da reunião"
+          >
+            <ListaCustos custos={custos} />
+          </SecaoCard>
+        </>
+      ) : (
+        <>
+          {isOngoing || event.status.codigo === "ENCERRADO" ? (
+            <div className={styles.insightsGrid}>
+              <SecaoCard
+                title="Produtos mais vendidos"
+                subtitle="Por quantidade no evento"
+              >
+                {topProducts.length ? (
+                  <ol className={styles.ranking}>
+                    {topProducts.slice(0, 5).map((item, index) => (
+                      <li
+                        key={item.produtoEventoId}
+                        className={styles.rankingItem}
+                      >
+                        <span className={styles.rank}>{index + 1}</span>
+                        <div className={styles.rankingMain}>
+                          <div className={styles.rankingHeader}>
+                            <span className={styles.rankingName}>
+                              {item.nome}
+                            </span>
+                            <span className={styles.rankingValue}>
+                              {formatarNumero(item.quantidadeVendida)}
+                            </span>
+                          </div>
+                          <div className={styles.barTrack} aria-hidden="true">
+                            <span
+                              className={styles.bar}
+                              style={{
+                                width: `${(item.quantidadeVendida / topMax) * 100}%`,
+                              }}
+                            />
+                          </div>
+                          <span className={styles.rankingCategory}>
+                            {item.categoria || "Sem categoria"}
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <InlineEmpty>
+                    Nenhum produto vendido até o momento.
+                  </InlineEmpty>
+                )}
+              </SecaoCard>
+
+              <SecaoCard
+                title="Vendas por hora"
+                subtitle="Visualize os horários de maior e menor pico"
+              >
+                {relatorioEvento ? (
+                  <VendasPorHoraChart data={relatorioEvento.vendasPorHora} />
+                ) : (
+                  <InlineEmpty>Nenhuma venda registrada.</InlineEmpty>
+                )}
+              </SecaoCard>
+            </div>
+          ) : null}
+
+          <SecaoCard
+            title="Produtos e desempenho"
+            subtitle={
+              isNotStarted
+                ? "Cardápio previsto para o evento"
+                : "Cardápio, vendas, custos e resultados em um só lugar"
+            }
             action={
               <Botao
                 as={Link}
@@ -204,239 +552,142 @@ export default function EventoDetalhesPage({
                 variant="tertiary"
                 size="compact"
               >
+                Ver cardápio
+              </Botao>
+            }
+          >
+            {isNotStarted ? (
+              produtosQuery.isLoading ? (
+                <EstadoCarregando message="Carregando cardápio..." />
+              ) : produtosQuery.isError ? (
+                <EstadoErro
+                  message="Não foi possível carregar o cardápio do evento."
+                  onRetry={produtosQuery.refetch}
+                />
+              ) : produtosPrevistos.length ? (
+                <TabelaProdutosPrevistos produtos={produtosPrevistos} />
+              ) : (
+                <InlineEmpty>
+                  Nenhum produto adicionado ao cardápio do evento.
+                </InlineEmpty>
+              )
+            ) : produtosRelatorio.length ? (
+              <TabelaProdutosRelatorio produtos={produtosRelatorio} />
+            ) : (
+              <InlineEmpty>
+                Nenhum produto adicionado ao cardápio do evento.
+              </InlineEmpty>
+            )}
+          </SecaoCard>
+
+          <SecaoCard
+            title="Doações"
+            subtitle="Doações do evento"
+            action={
+              <Botao
+                as={Link}
+                to={`/doacoes?evento=${id}`}
+                state={{ fromEventId: id }}
+                variant="tertiary"
+                size="compact"
+              >
                 Ver todos
               </Botao>
             }
           >
-            {topProducts.length ? (
-              <ol className={styles.ranking}>
-                {topProducts.map((item, index) => (
-                  <li key={item.id} className={styles.rankingItem}>
-                    <span className={styles.rank}>{index + 1}</span>
-                    <div className={styles.rankingMain}>
-                      <div className={styles.rankingHeader}>
-                        <span className={styles.rankingName}>{item.name}</span>
-                        <span className={styles.rankingValue}>
-                          {formatarNumero(item.sold)}
-                        </span>
-                      </div>
-                      <div className={styles.barTrack} aria-hidden="true">
-                        <span
-                          className={styles.bar}
-                          style={{ width: `${(item.sold / topMax) * 100}%` }}
-                        />
-                      </div>
-                      <span className={styles.rankingCategory}>
-                        {item.category}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ol>
+            {totalDoacoes ? (
+              <Tabela caption="Doações do evento">
+                <Cabecalho>
+                  <Linha>
+                    <CelulaCabecalho>Doação</CelulaCabecalho>
+                    <CelulaCabecalho>Doador</CelulaCabecalho>
+                    <CelulaCabecalho>Tipo</CelulaCabecalho>
+                    <CelulaCabecalho numeric>Valor</CelulaCabecalho>
+                    <CelulaCabecalho numeric>
+                      Fichas de agradecimento
+                    </CelulaCabecalho>
+                  </Linha>
+                </Cabecalho>
+                <Corpo>
+                  {doacoesItens.slice(0, 5).map((item, index) => (
+                    <Linha key={`item-${index}`}>
+                      <Celula>
+                        {item.nome}
+                        {item.quantidade
+                          ? ` · ${formatarNumero(item.quantidade)} un.`
+                          : ""}
+                      </Celula>
+                      <Celula>{item.doador || "Não informado"}</Celula>
+                      <Celula>{rotuloTipoDoacao(item.tipo)}</Celula>
+                      <Celula numeric>—</Celula>
+                      <Celula numeric>{formatarMoeda(item.valorFicha)}</Celula>
+                    </Linha>
+                  ))}
+                  {doacoesDinheiro.slice(0, 5).map((item, index) => (
+                    <Linha key={`dinheiro-${index}`}>
+                      <Celula>
+                        Doação em dinheiro · {item.formaPagamento || "PIX"}
+                      </Celula>
+                      <Celula>{item.doador || "Não informado"}</Celula>
+                      <Celula>Dinheiro</Celula>
+                      <Celula numeric>{formatarMoeda(item.valor)}</Celula>
+                      <Celula numeric>{formatarMoeda(item.valorFicha)}</Celula>
+                    </Linha>
+                  ))}
+                </Corpo>
+              </Tabela>
             ) : (
-              <InlineEmpty>Nenhum produto vendido até o momento.</InlineEmpty>
+              <InlineEmpty>
+                Nenhuma doação registrada para este evento.
+              </InlineEmpty>
             )}
           </SecaoCard>
 
-          {VendasPorHora && id ? <VendasPorHora eventId={id} /> : null}
-        </div>
-      ) : null}
-
-      <SecaoCard
-        title="Produtos e desempenho"
-        subtitle="Cardápio, vendas, custos e resultados em um só lugar"
-        action={
-          <Botao
-            as={Link}
-            to={`/eventos/${id}/cardapio`}
-            variant="tertiary"
-            size="compact"
-          >
-            Ver todos
-          </Botao>
-        }
-      >
-        {menu.length ? (
-          <Tabela caption="Produtos e desempenho do evento">
-            <Cabecalho>
-              <Linha>
-                <CelulaCabecalho>Produto</CelulaCabecalho>
-                <CelulaCabecalho numeric>Previsto</CelulaCabecalho>
-                <CelulaCabecalho numeric>Vendido</CelulaCabecalho>
-                <CelulaCabecalho numeric>Preço de venda</CelulaCabecalho>
-                <CelulaCabecalho numeric>Receita</CelulaCabecalho>
-                <CelulaCabecalho numeric>Custo total</CelulaCabecalho>
-                <CelulaCabecalho numeric>Descontos</CelulaCabecalho>
-                <CelulaCabecalho numeric>Lucro líquido</CelulaCabecalho>
-              </Linha>
-            </Cabecalho>
-            <Corpo>
-              {menu.map((item) => {
-                const revenue = Math.max(
-                  0,
-                  item.price * item.sold - item.discounts,
-                );
-                const profit = revenue - item.costTotal;
-                return (
-                  <Linha key={item.id}>
-                    <Celula>
-                      <span className={styles.productName}>{item.name}</span>
-                      {item.type === "made" ? (
-                        <span className={styles.produced}>· produzido</span>
-                      ) : null}
-                    </Celula>
-                    <Celula numeric>
-                      {item.expected === null || item.expected === undefined
-                        ? "—"
-                        : formatarNumero(item.expected)}
-                    </Celula>
-                    <Celula numeric>{formatarNumero(item.sold)}</Celula>
-                    <Celula numeric>{formatarMoeda(item.price)}</Celula>
-                    <Celula numeric>{formatarMoeda(revenue)}</Celula>
-                    <Celula numeric>{formatarMoeda(item.costTotal)}</Celula>
-                    <Celula numeric>{formatarMoeda(item.discounts)}</Celula>
-                    <Celula numeric>
-                      <span
-                        className={
-                          profit >= 0 ? styles.positive : styles.negative
-                        }
-                      >
-                        {formatarMoeda(profit)}
-                      </span>
-                    </Celula>
-                  </Linha>
-                );
-              })}
-            </Corpo>
-          </Tabela>
-        ) : (
-          <InlineEmpty>
-            Nenhum produto adicionado ao cardápio do evento.
-          </InlineEmpty>
-        )}
-      </SecaoCard>
-
-      <SecaoCard
-        title="Doações"
-        subtitle="Doações do evento"
-        action={
-          <Botao
-            as={Link}
-            to={`/doacoes?evento=${id}`}
-            state={{ fromEventId: id }}
-            variant="tertiary"
-            size="compact"
-          >
-            Ver todos
-          </Botao>
-        }
-      >
-        {donations.length ? (
-          <Tabela caption="Doações do evento">
-            <Cabecalho>
-              <Linha>
-                <CelulaCabecalho>Doação</CelulaCabecalho>
-                <CelulaCabecalho>Doador</CelulaCabecalho>
-                <CelulaCabecalho>Tipo</CelulaCabecalho>
-                <CelulaCabecalho numeric>Fichas de agradecimento</CelulaCabecalho>
-              </Linha>
-            </Cabecalho>
-            <Corpo>
-              {donations.slice(0, 5).map((donation) => (
-                <Linha key={donation.id}>
-                  <Celula>{donationDescription(donation)}</Celula>
-                  <Celula>{donation.donor || "Não informado"}</Celula>
-                  <Celula>{rotuloTipoDoacao(donation.type)}</Celula>
-                  <Celula numeric>
-                    {donation.type === "money"
-                      ? "—"
-                      : formatarMoeda(donation.ticketValue)}
-                  </Celula>
-                </Linha>
-              ))}
-            </Corpo>
-          </Tabela>
-        ) : (
-          <InlineEmpty>Nenhuma doação registrada para este evento.</InlineEmpty>
-        )}
-      </SecaoCard>
-
-      <div className={styles.bottomGrid}>
-        <SecaoCard
-          title="Histórico de vendas"
-          subtitle="Últimas vendas e cancelamentos do evento."
-        >
-          <p className={styles.historyText}>
-            {metrics.sales > 0
-              ? `${formatarNumero(metrics.sales)} ${
-                  metrics.sales === 1 ? "venda registrada" : "vendas registradas"
-                } no evento.`
-              : "Ainda não há vendas registradas neste evento."}
-          </p>
-          <Botao
-            as={Link}
-            to={`/eventos/${id}/vendas`}
-            variant="secondary"
-            size="compact"
-          >
-            {metrics.sales > 0
-              ? `Ver ${formatarNumero(metrics.sales)} vendas`
-              : "Ver vendas"}
-          </Botao>
-        </SecaoCard>
-
-        <SecaoCard
-          title="Custos adicionais"
-          action={
-            costs.length ? (
+          <div className={styles.bottomGrid}>
+            <SecaoCard
+              title="Histórico de vendas"
+              subtitle="Últimas vendas e cancelamentos do evento."
+            >
+              <p className={styles.historyText}>
+                {metrics.sales > 0
+                  ? `${formatarNumero(metrics.sales)} ${
+                      metrics.sales === 1
+                        ? "venda registrada"
+                        : "vendas registradas"
+                    } no evento.`
+                  : "Ainda não há vendas registradas neste evento."}
+              </p>
               <Botao
-                variant="tertiary"
+                as={Link}
+                to={`/eventos/${id}/vendas`}
+                variant="secondary"
                 size="compact"
-                onClick={() => setCostsListOpen(true)}
               >
-                Ver todos
+                {metrics.sales > 0
+                  ? `Ver ${formatarNumero(metrics.sales)} vendas`
+                  : "Ver vendas"}
               </Botao>
-            ) : undefined
-          }
-        >
-          {costs.length ? (
-            <ul className={styles.costList}>
-              {costs.slice(0, 3).map((cost) => (
-                <li key={cost.id}>
-                  <span>
-                    <strong>{cost.name}</strong>
-                    {cost.description ? (
-                      <small>{cost.description}</small>
-                    ) : null}
-                  </span>
-                  <span>{formatarMoeda(cost.value)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <InlineEmpty>Nenhum custo adicional registrado.</InlineEmpty>
-          )}
-        </SecaoCard>
-      </div>
+            </SecaoCard>
 
-      {costOpen && id ? (
+            <SecaoCard
+              title="Custos adicionais"
+              subtitle="Custos lançados no relatório do evento"
+            >
+              <ListaCustos custos={custos} />
+            </SecaoCard>
+          </div>
+        </>
+      )}
+
+      {costOpen && idValido ? (
         <CustoModal eventId={id} onClose={() => setCostOpen(false)} />
       ) : null}
 
-      {costsListOpen && id ? (
-        <CustosEventoModal
-          eventId={id}
-          custos={costs}
-          somenteLeitura={event.status === "Encerrado"}
-          onClose={() => setCostsListOpen(false)}
-        />
-      ) : null}
-
-      {addProductOpen && id ? (
+      {addProductOpen && idValido && !isReuniao ? (
         <AdicionarProdutoCardapioModal
           eventId={id}
-          categories={categoriesData?.items || []}
-          initialType="ready"
+          categories={categoriasPrevistas}
+          initialType="ESTOQUE"
           onClose={() => setAddProductOpen(false)}
         />
       ) : null}
@@ -444,7 +695,7 @@ export default function EventoDetalhesPage({
       {closeConfirm ? (
         <ConfirmacaoDialog
           title="Encerrar evento"
-          message={`Deseja encerrar o evento "${event.name}"? Novas vendas e lançamentos deixarão de ser associados ao evento em andamento.`}
+          message={`Deseja encerrar o evento "${event.nome}"? Novas vendas e lançamentos deixarão de ser associados ao evento em andamento.`}
           confirmLabel="Encerrar evento"
           loading={changeStatus.isPending}
           onCancel={() => setCloseConfirm(false)}

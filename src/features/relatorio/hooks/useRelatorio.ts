@@ -26,9 +26,12 @@ export interface FiltrosRelatorio {
 }
 
 export function useRelatorio(filtros: FiltrosRelatorio) {
+  const eventTypes = filtros.types.map((tipo) =>
+    tipo === "Reunião" ? "REUNIAO" : "EVENTO",
+  );
   const eventParams = {
-    statuses: "Em andamento,Encerrado",
-    types: filtros.types.length ? filtros.types.join(",") : undefined,
+    statuses: "EM_ANDAMENTO,ENCERRADO",
+    types: eventTypes.length ? eventTypes.join(",") : undefined,
     from: filtros.from || undefined,
     to: filtros.to || undefined,
     pageSize: 100,
@@ -36,7 +39,7 @@ export function useRelatorio(filtros: FiltrosRelatorio) {
   const eventosQuery = useEventosQuery(eventParams);
 
   const productsParams = {
-    types: eventParams.types,
+    types: filtros.types.length ? filtros.types.join(",") : undefined,
     from: eventParams.from,
     to: eventParams.to,
     limit: 5,

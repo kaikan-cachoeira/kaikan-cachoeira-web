@@ -18,7 +18,7 @@ export interface ItemVenda extends ItemVendaPayload {
 
 export interface Venda {
   id: string;
-  eventId: string;
+  eventId: number;
   eventName?: string;
   status: string;
   productsLabel?: string;
@@ -30,7 +30,7 @@ export interface Venda {
 }
 
 export interface ParametrosVendas extends ParametrosPaginacao {
-  eventId?: string;
+  eventId?: number;
   statuses?: string;
   from?: string;
   to?: string;
@@ -39,10 +39,10 @@ export interface ParametrosVendas extends ParametrosPaginacao {
 export type RespostaVendas = Paginado<Venda>;
 
 export interface CriarVendaPayload {
-  eventId: string;
+  eventId: number;
   items: ItemVendaPayload[];
 }
 
 export type ParametrosVendasEvento = Omit<ParametrosVendas, "eventId"> & {
-  eventId: string;
+  eventId: number;
 };

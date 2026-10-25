@@ -82,7 +82,7 @@ export default function Header({ onOpenMenu }: HeaderProps) {
               {usuario?.nome || "Administrador"}
             </span>
             <span className={styles.userEmail}>
-              {usuario?.email || "conta compartilhada"}
+              {usuario?.cargo || "conta compartilhada"}
             </span>
           </span>
           <span className={styles.avatar} aria-hidden="true">
@@ -102,12 +102,12 @@ export default function Header({ onOpenMenu }: HeaderProps) {
                   {usuario?.nome || "Administrador"}
                 </p>
                 <p className={styles.popoverEmail}>
-                  {usuario?.email || "conta compartilhada"}
+                  {usuario?.cargo || "conta compartilhada"}
                 </p>
               </div>
             </div>
             <p className={styles.accountLabel}>
-              {usuario?.accountLabel || "Conta compartilhada"}
+              {usuario?.cargo ? `Perfil: ${usuario.cargo}` : "Conta compartilhada"}
             </p>
             <button type="button" className={styles.logout} onClick={sair}>
               <Icone name="logout" size={18} />

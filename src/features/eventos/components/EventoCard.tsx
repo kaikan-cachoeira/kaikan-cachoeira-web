@@ -3,20 +3,15 @@ import Etiqueta from "@/shared/components/Etiqueta/Etiqueta";
 import Botao from "@/shared/components/Botao/Botao";
 import Icone from "@/shared/components/Icone/Icone";
 import { formatarDataHora } from "@/shared/lib/formatacao";
-import type { Evento } from "../models";
+import type { Evento, StatusEventoCodigo } from "../models";
+import { rotuloTipoEvento, varianteStatus } from "../utils/statusEvento";
 import styles from "./EventoCard.module.css";
-
-const STATUS_VARIANT: Record<string, string> = {
-  "Em andamento": "success",
-  "Não iniciado": "warning",
-  Encerrado: "muted",
-};
 
 interface EventoCardProps {
   event: Evento;
   highlighted?: boolean;
   busy?: boolean;
-  onChangeStatus: (event: Evento, status: string) => void;
+  onChangeStatus: (event: Evento, status: StatusEventoCodigo) => void;
   onDelete: (event: Evento) => void;
   onEdit: (event: Evento) => void;
 }
@@ -30,8 +25,9 @@ export default function EventoCard({
   onEdit,
 }: EventoCardProps) {
   const status = event.status;
-  const isOngoing = status === "Em andamento";
-  const isClosed = status === "Encerrado";
+  const isOngoing = status.codigo === "EM_ANDAMENTO";
+  const isClosed = status.codigo === "ENCERRADO";
+  const isNotStarted = status.codigo === "NAO_INICIADO";
 
   return (
     <article
@@ -39,16 +35,16 @@ export default function EventoCard({
     >
       <div className={styles.header}>
         <div className={styles.titleGroup}>
-          <h2 className={styles.name}>{event.name}</h2>
+          <h2 className={styles.name}>{event.nome}</h2>
           <div className={styles.badges}>
-            <Etiqueta>{event.type || "Evento"}</Etiqueta>
-            <Etiqueta variant={STATUS_VARIANT[status] || "neutral"} dot>
-              {status}
+            <Etiqueta>{rotuloTipoEvento(event.tipoEvento)}</Etiqueta>
+            <Etiqueta variant={varianteStatus(status.codigo)} dot>
+              {status.descricao}
             </Etiqueta>
           </div>
         </div>
         <Icone
-          name={event.type === "Reunião" ? "users" : "ticket"}
+          name={event.tipoEvento === "REUNIAO" ? "users" : "ticket"}
           size={24}
           className={styles.icon}
         />
@@ -57,11 +53,11 @@ export default function EventoCard({
       <dl className={styles.dates}>
         <div>
           <dt>Início</dt>
-          <dd>{formatarDataHora(event.start)}</dd>
+          <dd>{formatarDataHora(event.dataHoraInicio)}</dd>
         </div>
         <div>
           <dt>Encerramento</dt>
-          <dd>{formatarDataHora(event.end)}</dd>
+          <dd>{formatarDataHora(event.dataHoraEncerramento)}</dd>
         </div>
       </dl>
 
@@ -98,7 +94,7 @@ export default function EventoCard({
               variant="secondary"
               size="compact"
               loading={busy}
-              onClick={() => onChangeStatus(event, "Encerrado")}
+              onClick={() => onChangeStatus(event, "ENCERRADO")}
             >
               Encerrar evento
             </Botao>
@@ -106,18 +102,18 @@ export default function EventoCard({
               variant="tertiary"
               size="compact"
               disabled={busy}
-              onClick={() => onChangeStatus(event, "Não iniciado")}
+              onClick={() => onChangeStatus(event, "NAO_INICIADO")}
             >
               Desfazer início
             </Botao>
           </>
         ) : null}
 
-        {status === "Não iniciado" ? (
+        {isNotStarted ? (
           <Botao
             size="compact"
             loading={busy}
-            onClick={() => onChangeStatus(event, "Em andamento")}
+            onClick={() => onChangeStatus(event, "EM_ANDAMENTO")}
           >
             Iniciar evento
           </Botao>
@@ -127,7 +123,7 @@ export default function EventoCard({
           <Botao
             size="compact"
             loading={busy}
-            onClick={() => onChangeStatus(event, "Em andamento")}
+            onClick={() => onChangeStatus(event, "EM_ANDAMENTO")}
           >
             Reabrir evento
           </Botao>

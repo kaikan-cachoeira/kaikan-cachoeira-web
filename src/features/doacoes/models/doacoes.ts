@@ -5,7 +5,7 @@ import type {
 
 export interface Doacao {
   id: string;
-  eventId: string;
+  eventId: number;
   eventName: string;
   type: string;
   itemName?: string;
@@ -26,7 +26,7 @@ export interface ParametrosDoacoes extends ParametrosPaginacao {
 export type RespostaDoacoes = Paginado<Doacao>;
 
 export interface CriarDoacaoPayload {
-  eventId: string;
+  eventId: number;
   type: string;
   donor?: string;
   ticketValue: number;

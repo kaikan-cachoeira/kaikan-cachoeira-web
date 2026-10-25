@@ -11,61 +11,67 @@ import CampoMoeda from "@/shared/components/Formulario/CampoMoeda";
 import Icone from "@/shared/components/Icone/Icone";
 import { useEventoMutations } from "../hooks/useEventos";
 import { useProdutosQuery } from "@/features/inventario";
-import type { Categoria } from "@/features/inventario";
+import { resolverUrlApi } from "@/shared/api/urls";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
 import { mensagemErro } from "@/shared/api/erros";
 import { formatarNumero } from "@/shared/lib/formatacao";
 import type {
   AdicionarProdutoCardapioPayload,
   ItemCardapio,
-  AtualizarProdutoCardapioPayload,
+  OrigemProdutoEvento,
 } from "../models";
 import styles from "./AdicionarProdutoCardapioModal.module.css";
 
-const TYPE_OPTIONS = [
-  { value: "ready", label: "Produto pronto" },
-  { value: "made", label: "Produto feito na hora" },
+const ORIGEM_OPTIONS = [
+  { value: "ESTOQUE", label: "Produto do estoque" },
+  { value: "PRODUZIDO", label: "Produzido no evento" },
 ];
 
+const MIME_PERMITIDOS = new Set(["image/jpeg", "image/png", "image/webp"]);
+
 interface AdicionarProdutoCardapioModalProps {
-  eventId: string;
+  eventId: number;
   item?: ItemCardapio;
-  categories?: Categoria[];
-  initialType?: "ready" | "made";
+  categories?: string[];
+  initialType?: OrigemProdutoEvento;
   onClose: () => void;
 }
 
 interface ProdutoCardapioFormValues {
   productId: string;
-  quantity: number;
-  price: number;
-  name: string;
-  description: string;
-  category: string;
-  ingredientCost: number;
+  quantidadePrevista: number;
+  precoVenda: number;
+  nome: string;
+  descricao: string;
+  categoria: string;
+  custoTotalIngredientes: number;
 }
 
 export default function AdicionarProdutoCardapioModal({
   eventId,
   item,
   categories = [],
-  initialType = "ready",
+  initialType = "ESTOQUE",
   onClose,
 }: AdicionarProdutoCardapioModalProps) {
   const isEdit = Boolean(item);
-  const [type, setType] = useState<"ready" | "made">(
-    item?.type ?? initialType,
+  const [origem, setOrigem] = useState<OrigemProdutoEvento>(
+    item?.origem ?? initialType,
   );
   const [serverError, setServerError] = useState("");
-  const [image, setImage] = useState<string | null>(item?.image ?? null);
+  const [image, setImage] = useState<string | null>(
+    resolverUrlApi(item?.fotoUrl) ?? null,
+  );
   const [imageName, setImageName] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [salvando, setSalvando] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
   const {
     adicionarProduto: addProduct,
     atualizarProduto: updateProduct,
+    enviarFoto,
   } = useEventoMutations();
-  const mutation = isEdit ? updateProduct : addProduct;
   const { data: productsData, isLoading: productsLoading } = useProdutosQuery({
     pageSize: 100,
   });
@@ -80,13 +86,13 @@ export default function AdicionarProdutoCardapioModal({
   } = useForm<ProdutoCardapioFormValues>({
     mode: "onTouched",
     defaultValues: {
-      productId: item?.productId ?? "",
-      quantity: item?.expected ?? 1,
-      price: item?.price ?? 0,
-      name: item?.name ?? "",
-      description: item?.description ?? "",
-      category: item?.category ?? "",
-      ingredientCost: item?.unitCost ?? 0,
+      productId: item?.produtoId ? String(item.produtoId) : "",
+      quantidadePrevista: item?.quantidadePrevista ?? 1,
+      precoVenda: item?.precoVenda ?? 0,
+      nome: item?.nome ?? "",
+      descricao: item?.descricao ?? "",
+      categoria: item?.categoria ?? "",
+      custoTotalIngredientes: item?.custoTotalIngredientes ?? 0,
     },
   });
 
@@ -94,123 +100,143 @@ export default function AdicionarProdutoCardapioModal({
   const selectedProduct = (productsData?.items || []).find(
     (product) => product.id === selectedProductId,
   );
-  const categoryOptions = categories.map((category) => ({
-    value: category.name,
-    label: category.name,
-  }));
+  const categoryOptions = [
+    { value: "", label: "Sem categoria" },
+    ...categories.map((categoria) => ({
+      value: categoria,
+      label: categoria,
+    })),
+  ];
+  const carregando = salvando || addProduct.isPending || updateProduct.isPending;
 
-  function changeType(nextType: string) {
-    setType(nextType as "ready" | "made");
+  function changeOrigem(nextOrigem: string) {
+    const novaOrigem = nextOrigem as OrigemProdutoEvento;
+    setOrigem(novaOrigem);
     setServerError("");
     setImage(null);
     setImageName("");
+    setFile(null);
     reset({
       productId: "",
-      quantity: 1,
-      price: 0,
-      name: "",
-      description: "",
-      category: "",
-      ingredientCost: 0,
+      quantidadePrevista: 1,
+      precoVenda: 0,
+      nome: "",
+      descricao: "",
+      categoria: "",
+      custoTotalIngredientes: 0,
     });
   }
 
   function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setServerError("Selecione um arquivo de imagem.");
+    const selected = event.target.files?.[0];
+    if (!selected) return;
+
+    if (!MIME_PERMITIDOS.has(selected.type)) {
+      setServerError("Selecione uma imagem PNG, JPG ou WEBP.");
+      event.target.value = "";
       return;
     }
+
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
         setImage(reader.result);
       }
-      setImageName(file.name);
+      setImageName(selected.name);
+      setFile(selected);
       setServerError("");
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(selected);
+  }
+
+  function montarPayload(values: ProdutoCardapioFormValues) {
+    if (origem === "ESTOQUE") {
+      const produtoId = item?.produtoId ?? Number(selectedProduct?.id);
+      if (!Number.isInteger(produtoId) || produtoId <= 0) {
+        setServerError(
+          "Selecione um produto do estoque com identificador válido.",
+        );
+        return null;
+      }
+
+      const payload: AdicionarProdutoCardapioPayload = {
+        origem: "ESTOQUE",
+        produtoId,
+        precoVenda: values.precoVenda,
+        quantidadePrevista: values.quantidadePrevista,
+      };
+      return payload;
+    }
+
+    const payload: AdicionarProdutoCardapioPayload = {
+      origem: "PRODUZIDO",
+      nome: values.nome.trim(),
+      descricao: values.descricao.trim() || undefined,
+      categoria: values.categoria.trim() || undefined,
+      precoVenda: values.precoVenda,
+      custoTotalIngredientes: values.custoTotalIngredientes,
+    };
+    return payload;
   }
 
   const onSubmit: SubmitHandler<ProdutoCardapioFormValues> = async (values) => {
     setServerError("");
-    if (item) {
-      const payload: AtualizarProdutoCardapioPayload =
-        item.type === "ready"
-          ? {
-              type: "ready",
-              productId: item.productId ?? undefined,
-              quantity: values.quantity,
-              price: values.price,
-            }
-          : {
-              type: "made",
-              name: values.name,
-              description: values.description,
-              category: values.category,
-              price: values.price,
-              ingredientCost: values.ingredientCost,
-              image,
-            };
-      try {
-        await updateProduct.mutateAsync({
+    const payload = montarPayload(values);
+    if (!payload) return;
+
+    setSalvando(true);
+    let salvo: ItemCardapio;
+    try {
+      if (item) {
+        salvo = await updateProduct.mutateAsync({
           eventId,
           itemId: item.id,
           payload,
         });
-        addToast("Produto atualizado no cardápio.");
-        onClose();
-      } catch (error) {
-        setServerError(
-          mensagemErro(error, "Não foi possível atualizar o produto."),
-        );
+      } else {
+        salvo = await addProduct.mutateAsync({ id: eventId, payload });
       }
-      return;
-    }
-
-    const payload: AdicionarProdutoCardapioPayload = {
-      type,
-      price: values.price,
-      name: values.name,
-      category: values.category,
-    };
-
-    if (type === "ready") {
-      if (!selectedProduct) {
-        setServerError("Selecione um produto do estoque.");
-        return;
-      }
-      Object.assign(payload, {
-        productId: selectedProduct.id,
-        name: selectedProduct.name,
-        description: selectedProduct.description || "",
-        category: selectedProduct.category,
-        quantity: values.quantity,
-        image: selectedProduct.image || null,
-      });
-    } else {
-      Object.assign(payload, {
-        name: values.name,
-        description: values.description,
-        category: values.category,
-        ingredientCost: values.ingredientCost,
-        image,
-      });
-    }
-
-    try {
-      await addProduct.mutateAsync({ id: eventId, payload });
-      addToast("Produto adicionado ao cardápio do evento.");
-      onClose?.();
     } catch (error) {
+      setSalvando(false);
       setServerError(
         mensagemErro(
           error,
-          "Não foi possível adicionar o produto ao evento.",
+          item
+            ? "Não foi possível atualizar o produto."
+            : "Não foi possível adicionar o produto ao evento.",
         ),
       );
+      return;
     }
+
+    if (file) {
+      try {
+        await enviarFoto.mutateAsync({
+          eventId,
+          itemId: salvo.id,
+          arquivo: file,
+        });
+      } catch (error) {
+        setSalvando(false);
+        addToast(
+          mensagemErro(
+            error,
+            "Produto salvo, mas não foi possível enviar a foto.",
+          ),
+          "error",
+        );
+        onClose();
+        return;
+      }
+    }
+
+    setSalvando(false);
+    addToast(
+      item
+        ? "Produto atualizado no cardápio."
+        : "Produto adicionado ao cardápio do evento.",
+    );
+    onClose();
   };
 
   return (
@@ -221,22 +247,22 @@ export default function AdicionarProdutoCardapioModal({
           ? "Atualize os dados do produto no cardápio do evento"
           : "Adiciona o produto no cardápio do evento para venda no baiten"
       }
-      onClose={mutation.isPending ? undefined : onClose}
-      showClose={!mutation.isPending}
-      closeOnOverlay={!mutation.isPending}
+      onClose={carregando ? undefined : onClose}
+      showClose={!carregando}
+      closeOnOverlay={!carregando}
       footer={
         <>
           <Botao
             variant="secondary"
             onClick={onClose}
-            disabled={mutation.isPending}
+            disabled={carregando}
           >
             Cancelar
           </Botao>
           <Botao
             type="submit"
             form="form-cardapio"
-            loading={mutation.isPending}
+            loading={carregando}
           >
             {isEdit ? "Salvar alterações" : "Registrar"}
           </Botao>
@@ -251,24 +277,27 @@ export default function AdicionarProdutoCardapioModal({
       >
         {isEdit ? (
           <p className={styles.hintBox}>
-            Tipo do produto:{" "}
-            {type === "ready" ? "Produto pronto do estoque" : "Feito na hora"}
+            Origem do produto:{" "}
+            {origem === "ESTOQUE"
+              ? "Produto do estoque"
+              : "Produzido no evento"}
           </p>
         ) : (
           <ControleSegmentado
-            label="Tipo de produto"
-            options={TYPE_OPTIONS}
-            value={type}
-            onChange={changeType}
+            label="Origem do produto"
+            options={ORIGEM_OPTIONS}
+            value={origem}
+            onChange={changeOrigem}
             columns={2}
           />
         )}
 
-        {type === "ready" ? (
+        {origem === "ESTOQUE" ? (
           <>
             {item ? (
               <p className={styles.hintBox}>
-                Produto: {item.name} · Categoria: {item.category}
+                Produto: {item.nome} · Categoria:{" "}
+                {item.categoria || "Sem categoria"}
               </p>
             ) : (
               <Selecao
@@ -292,14 +321,14 @@ export default function AdicionarProdutoCardapioModal({
             <div className={styles.twoColumns}>
               <Entrada
                 id="cardapio-quantidade"
-                label="Quantidade"
+                label="Quantidade prevista"
                 type="number"
                 min="1"
                 step="1"
                 inputMode="numeric"
                 required
-                error={errors.quantity?.message}
-                {...register("quantity", {
+                error={errors.quantidadePrevista?.message}
+                {...register("quantidadePrevista", {
                   valueAsNumber: true,
                   validate: (value) => {
                     if (!Number.isInteger(value) || value <= 0) {
@@ -317,7 +346,7 @@ export default function AdicionarProdutoCardapioModal({
                 })}
               />
               <Controller
-                name="price"
+                name="precoVenda"
                 control={control}
                 rules={{
                   validate: (value) =>
@@ -326,7 +355,7 @@ export default function AdicionarProdutoCardapioModal({
                 }}
                 render={({ field, fieldState }) => (
                   <CampoMoeda
-                    id="cardapio-preco"
+                    id="cardapio-preco-estoque"
                     label="Preço de venda"
                     value={field.value}
                     onChange={field.onChange}
@@ -374,7 +403,7 @@ export default function AdicionarProdutoCardapioModal({
                 <input
                   ref={fileRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/webp"
                   className="sr-only"
                   onChange={handleFile}
                   aria-label="Selecionar imagem do produto"
@@ -387,8 +416,8 @@ export default function AdicionarProdutoCardapioModal({
               label="Nome"
               placeholder="Nome do produto"
               required
-              error={errors.name?.message}
-              {...register("name", {
+              error={errors.nome?.message}
+              {...register("nome", {
                 required: "Informe o nome do produto.",
                 minLength: {
                   value: 2,
@@ -402,8 +431,8 @@ export default function AdicionarProdutoCardapioModal({
               label="Descrição"
               rows={3}
               placeholder="Descrição do produto (opcional)"
-              error={errors.description?.message}
-              {...register("description")}
+              error={errors.descricao?.message}
+              {...register("descricao")}
             />
 
             <Selecao
@@ -411,16 +440,13 @@ export default function AdicionarProdutoCardapioModal({
               label="Categoria"
               placeholder="Selecione"
               options={categoryOptions}
-              required
-              error={errors.category?.message}
-              {...register("category", {
-                required: "Selecione uma categoria.",
-              })}
+              error={errors.categoria?.message}
+              {...register("categoria")}
             />
 
             <div className={styles.twoColumns}>
               <Controller
-                name="price"
+                name="precoVenda"
                 control={control}
                 rules={{
                   validate: (value) =>
@@ -428,7 +454,7 @@ export default function AdicionarProdutoCardapioModal({
                 }}
                 render={({ field, fieldState }) => (
                   <CampoMoeda
-                    id="cardapio-preco-feito"
+                    id="cardapio-preco-produzido"
                     label="Preço de venda"
                     value={field.value}
                     onChange={field.onChange}
@@ -439,7 +465,7 @@ export default function AdicionarProdutoCardapioModal({
                 )}
               />
               <Controller
-                name="ingredientCost"
+                name="custoTotalIngredientes"
                 control={control}
                 rules={{
                   validate: (value) =>

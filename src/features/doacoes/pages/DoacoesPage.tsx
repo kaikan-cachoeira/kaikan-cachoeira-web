@@ -52,11 +52,10 @@ function donationLabel(donation: Doacao) {
 export default function DoacoesPage() {
   const location = useLocation();
   const navigationState = location.state as { fromEventId?: unknown } | null;
-  const eventIdCandidate = navigationState?.fromEventId;
+  const eventIdCandidate = Number(navigationState?.fromEventId);
   const eventId =
-    typeof eventIdCandidate === "string" &&
-    /^[A-Za-z0-9_-]+$/.test(eventIdCandidate.trim())
-      ? eventIdCandidate.trim()
+    Number.isInteger(eventIdCandidate) && eventIdCandidate > 0
+      ? eventIdCandidate
       : null;
   const sourceEventQuery = useEventoQuery(eventId);
   const hasValidSourceEvent = sourceEventQuery.data?.id === eventId;
@@ -258,9 +257,9 @@ export default function DoacoesPage() {
           <SelecaoMultipla
             label="Eventos"
             options={eventOptions}
-            value={selectedEvents}
+            value={selectedEvents.map(String)}
             onChange={(value) => {
-              setSelectedEvents(value);
+              setSelectedEvents(value.map(Number));
               setPage(1);
             }}
             placeholder="Todos"

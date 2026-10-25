@@ -71,7 +71,7 @@ export default function DoacaoModal({
   } = useForm<DoacaoFormValues>({
     mode: "onTouched",
     defaultValues: {
-      eventId: doacao?.eventId ?? "",
+      eventId: doacao ? String(doacao.eventId) : "",
       productId: doacao?.productId ?? "",
       quantity: doacao?.quantity ?? 1,
       donor: doacao?.donor ?? "",
@@ -87,14 +87,17 @@ export default function DoacaoModal({
     (product) => product.id === selectedProductId,
   );
   const eventOptions = (eventsData?.items || []).map((event) => ({
-    value: event.id,
-    label: event.name,
+    value: String(event.id),
+    label: event.nome,
   }));
   if (
     doacao &&
-    !eventOptions.some((option) => option.value === doacao.eventId)
+    !eventOptions.some((option) => option.value === String(doacao.eventId))
   ) {
-    eventOptions.push({ value: doacao.eventId, label: doacao.eventName });
+    eventOptions.push({
+      value: String(doacao.eventId),
+      label: doacao.eventName,
+    });
   }
 
   const productOptions = (productsData?.items || []).map((product) => ({
@@ -124,7 +127,7 @@ export default function DoacaoModal({
   const onSubmit: SubmitHandler<DoacaoFormValues> = async (values) => {
     setServerError("");
     const payload: CriarDoacaoPayload = {
-      eventId: values.eventId,
+      eventId: Number(values.eventId),
       type,
       donor: values.donor,
       ticketValue: values.ticketValue,
@@ -203,6 +206,8 @@ export default function DoacaoModal({
           error={errors.eventId?.message}
           {...register("eventId", {
             required: "Selecione o evento destinado à doação.",
+            validate: (value) =>
+              Number(value) > 0 || "Selecione o evento destinado à doação.",
           })}
         />
 

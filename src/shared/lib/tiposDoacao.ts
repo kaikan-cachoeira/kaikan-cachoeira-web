@@ -8,6 +8,9 @@ const ROTULOS_TIPO_DOACAO: Record<string, string> = {
   ready: "Produto pronto",
   money: "Dinheiro",
   ingredient: "Ingrediente",
+  DINHEIRO: "Dinheiro",
+  PRODUTO: "Produto",
+  REABASTECIMENTO: "Reabastecimento",
 };
 
 export function rotuloTipoDoacao(tipo: string): string {

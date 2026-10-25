@@ -3,7 +3,7 @@ import { useVendasEventoQuery } from "../hooks/useVendas";
 import styles from "./VendasPorHora.module.css";
 
 interface VendasPorHoraProps {
-  eventId: string;
+  eventId: number;
 }
 
 export default function VendasPorHora({ eventId }: VendasPorHoraProps) {

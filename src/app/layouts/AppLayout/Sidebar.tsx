@@ -75,7 +75,7 @@ export default function Sidebar({ open, onClose, onNavigate }: SidebarProps) {
           <span className={styles.userText}>
             <span className={styles.userName}>{usuario?.nome || "Administrador"}</span>
             <span className={styles.userEmail}>
-              {usuario?.email || "conta compartilhada"}
+              {usuario?.cargo || "conta compartilhada"}
             </span>
           </span>
         </div>

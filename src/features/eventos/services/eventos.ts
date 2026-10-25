@@ -2,63 +2,82 @@ import api from "@/shared/api/cliente";
 import type {
   AdicionarProdutoCardapioPayload,
   AtualizarCustoEventoPayload,
+  AtualizarEventoPayload,
   AtualizarProdutoCardapioPayload,
   CriarCustoEventoPayload,
   CriarEventoPayload,
   Evento,
+  EventoDetalhe,
   ItemCardapio,
   ParametrosEventos,
+  RelatorioEventoResponse,
   RespostaCardapio,
-  RespostaEventos,
 } from "../models";
+import { fimDoDiaISO, inicioDoDiaISO } from "../utils/datas";
 
 export async function listarEventos(
   params: ParametrosEventos,
-): Promise<RespostaEventos> {
-  const { data } = await api.get<RespostaEventos>("/events", { params });
+): Promise<Evento[]> {
+  const { data } = await api.get<Evento[]>("/eventos", {
+    params: {
+      q: params.search || undefined,
+      dataInicio: params.from ? inicioDoDiaISO(params.from) : undefined,
+      dataFim: params.to ? fimDoDiaISO(params.to) : undefined,
+    },
+  });
   return data;
 }
 
-export async function obterEventoAtual(): Promise<Evento> {
-  const { data } = await api.get<{ event: Evento }>("/events/ongoing");
-  return data.event;
+export async function obterEventoAtual(): Promise<Evento | null> {
+  const { data } = await api.get<Evento[]>("/eventos", {
+    params: { statusId: 2 },
+  });
+  return data.find((evento) => evento.tipoEvento === "EVENTO") ?? null;
 }
 
-export async function obterEvento(id: string): Promise<Evento> {
-  const { data } = await api.get<Evento>(`/events/${id}`);
+export async function obterEvento(id: number): Promise<EventoDetalhe> {
+  const { data } = await api.get<EventoDetalhe>(`/eventos/${id}`);
   return data;
 }
 
 export async function criarEvento(
   payload: CriarEventoPayload,
 ): Promise<Evento> {
-  const { data } = await api.post<Evento>("/events", payload);
+  const { data } = await api.post<Evento>("/eventos", payload);
   return data;
 }
 
 export async function atualizarEvento(
-  id: string,
-  payload: CriarEventoPayload,
+  id: number,
+  payload: AtualizarEventoPayload,
 ): Promise<Evento> {
-  const { data } = await api.put<Evento>(`/events/${id}`, payload);
+  const { data } = await api.put<Evento>(`/eventos/${id}`, payload);
   return data;
 }
 
 export async function alterarStatusEvento(
-  id: string,
-  status: string,
-): Promise<Evento> {
-  const { data } = await api.patch<Evento>(`/events/${id}/status`, { status });
+  id: number,
+  statusId: number,
+): Promise<void> {
+  await api.patch(`/eventos/${id}`, { status: statusId });
+}
+
+export async function obterRelatorioEvento(
+  id: number,
+): Promise<RelatorioEventoResponse> {
+  const { data } = await api.get<RelatorioEventoResponse>(
+    `/eventos/${id}/relatorio`,
+  );
   return data;
 }
 
-export async function excluirEvento(id: string): Promise<{ ok: boolean }> {
+export async function excluirEvento(id: number): Promise<{ ok: boolean }> {
   const { data } = await api.delete<{ ok: boolean }>(`/events/${id}`);
   return data;
 }
 
 export async function criarCustoEvento(
-  id: string,
+  id: number,
   payload: CriarCustoEventoPayload,
 ): Promise<Evento> {
   const { data } = await api.post<Evento>(`/events/${id}/costs`, payload);
@@ -66,7 +85,7 @@ export async function criarCustoEvento(
 }
 
 export async function atualizarCustoEvento(
-  id: string,
+  id: number,
   custoId: string,
   payload: AtualizarCustoEventoPayload,
 ): Promise<Evento> {
@@ -78,46 +97,76 @@ export async function atualizarCustoEvento(
 }
 
 export async function excluirCustoEvento(
-  id: string,
+  id: number,
   custoId: string,
 ): Promise<Evento> {
   const { data } = await api.delete<Evento>(`/events/${id}/costs/${custoId}`);
   return data;
 }
 
-export async function obterCardapioEvento(
-  id: string,
-): Promise<RespostaCardapio> {
-  const { data } = await api.get<RespostaCardapio>(`/events/${id}/menu`);
+export async function listarProdutosEvento(
+  id: number,
+): Promise<ItemCardapio[]> {
+  const { data } = await api.get<ItemCardapio[]>(`/eventos/${id}/produtos`);
   return data;
 }
 
+export async function obterCardapioEvento(
+  id: number,
+): Promise<RespostaCardapio> {
+  const [produtos, categorias] = await Promise.all([
+    listarProdutosEvento(id),
+    api.get<string[]>(`/eventos/${id}/produtos/categorias`),
+  ]);
+
+  return {
+    items: produtos,
+    categories: categorias.data,
+  };
+}
+
 export async function adicionarProdutoCardapio(
-  id: string,
+  id: number,
   payload: AdicionarProdutoCardapioPayload,
 ): Promise<ItemCardapio> {
-  const { data } = await api.post<ItemCardapio>(`/events/${id}/menu`, payload);
+  const { data } = await api.post<ItemCardapio>(
+    `/eventos/${id}/produtos`,
+    payload,
+  );
   return data;
 }
 
 export async function atualizarProdutoCardapio(
-  eventId: string,
-  itemId: string,
+  eventId: number,
+  itemId: number,
   payload: AtualizarProdutoCardapioPayload,
 ): Promise<ItemCardapio> {
   const { data } = await api.put<ItemCardapio>(
-    `/events/${eventId}/menu/${itemId}`,
+    `/eventos/${eventId}/produtos/${itemId}`,
     payload,
   );
   return data;
 }
 
 export async function excluirProdutoCardapio(
-  eventId: string,
-  itemId: string,
-): Promise<{ ok: boolean }> {
-  const { data } = await api.delete<{ ok: boolean }>(
-    `/events/${eventId}/menu/${itemId}`,
+  eventId: number,
+  itemId: number,
+): Promise<void> {
+  await api.delete(`/eventos/${eventId}/produtos/${itemId}`);
+}
+
+export async function enviarFotoProdutoCardapio(
+  eventId: number,
+  itemId: number,
+  arquivo: File,
+): Promise<string> {
+  const formData = new FormData();
+  formData.append("arquivo", arquivo);
+
+  const { data } = await api.post<{ url: string }>(
+    `/eventos/${eventId}/produtos/${itemId}/foto`,
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } },
   );
-  return data;
+  return data.url;
 }
