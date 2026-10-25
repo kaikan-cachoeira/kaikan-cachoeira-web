@@ -16,3 +16,8 @@ export interface Credenciais {
   email: string;
   password: string;
 }
+
+export interface RedefinirSenhaPayload {
+  token?: string;
+  password: string;
+}

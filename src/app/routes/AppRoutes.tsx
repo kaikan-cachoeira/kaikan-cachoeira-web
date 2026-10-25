@@ -7,7 +7,9 @@ import PaginaNaoEncontrada from "@/app/pages/PaginaNaoEncontrada";
 import {
   ConfirmacaoRecuperacaoPage,
   LoginPage,
+  NovaSenhaPage,
   RecuperarSenhaPage,
+  SenhaAlteradaPage,
 } from "@/features/auth";
 import { HomePage } from "@/features/home";
 import { InventarioPage, LoteMovimentacoesPage } from "@/features/inventario";
@@ -36,6 +38,8 @@ export default function AppRoutes() {
           path="/confirmacao-recuperacao"
           element={<ConfirmacaoRecuperacaoPage />}
         />
+        <Route path="/nova-senha" element={<NovaSenhaPage />} />
+        <Route path="/senha-alterada" element={<SenhaAlteradaPage />} />
       </Route>
 
       <Route element={<RotaProtegida />}>

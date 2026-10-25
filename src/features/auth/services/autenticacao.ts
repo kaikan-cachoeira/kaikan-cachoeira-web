@@ -1,5 +1,5 @@
 import api from "@/shared/api/cliente";
-import type { Credenciais, Sessao } from "../models";
+import type { Credenciais, RedefinirSenhaPayload, Sessao } from "../models";
 
 export async function entrar(credenciais: Credenciais): Promise<Sessao> {
   const { data } = await api.post<Sessao>("/auth/login", credenciais);
@@ -12,5 +12,15 @@ export async function solicitarRecuperacaoSenha(
   const { data } = await api.post<{ message?: string }>("/auth/recover", {
     email,
   });
+  return data;
+}
+
+export async function redefinirSenha(
+  payload: RedefinirSenhaPayload,
+): Promise<{ message?: string }> {
+  const { data } = await api.post<{ message?: string }>(
+    "/auth/reset-password",
+    payload,
+  );
   return data;
 }
