@@ -31,7 +31,7 @@ export default function NovaSenhaPage() {
   const onSubmit: SubmitHandler<NovaSenhaFormValues> = async (values) => {
     setServerError("");
     try {
-      await redefinirSenha({ token, password: values.novaSenha });
+      await redefinirSenha({ token, novaSenha: values.novaSenha });
       navigate("/senha-alterada", {
         replace: true,
         state: { senhaAlterada: true },

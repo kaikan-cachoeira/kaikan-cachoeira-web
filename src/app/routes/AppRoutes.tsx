@@ -38,7 +38,7 @@ export default function AppRoutes() {
           path="/confirmacao-recuperacao"
           element={<ConfirmacaoRecuperacaoPage />}
         />
-        <Route path="/nova-senha" element={<NovaSenhaPage />} />
+        <Route path="/redefinicao-senha" element={<NovaSenhaPage />} />
         <Route path="/senha-alterada" element={<SenhaAlteradaPage />} />
       </Route>
 

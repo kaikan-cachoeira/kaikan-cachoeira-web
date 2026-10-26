@@ -19,5 +19,5 @@ export interface Credenciais {
 
 export interface RedefinirSenhaPayload {
   token?: string;
-  password: string;
+  novaSenha: string;
 }

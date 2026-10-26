@@ -17,9 +17,9 @@ export async function solicitarRecuperacaoSenha(
 
 export async function redefinirSenha(
   payload: RedefinirSenhaPayload,
-): Promise<{ message?: string }> {
-  const { data } = await api.post<{ message?: string }>(
-    "/auth/reset-password",
+): Promise<void> {
+  const { data } = await api.post<void>(
+    "/auth/redefinicao-senha",
     payload,
   );
   return data;
