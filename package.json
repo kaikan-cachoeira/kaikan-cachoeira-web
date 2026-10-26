@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:homol": "vite --mode homol",
     "build": "vite build",
     "lint": "oxlint",
     "lint:boundaries": "depcruise src --config .dependency-cruiser.cjs --output-type err",

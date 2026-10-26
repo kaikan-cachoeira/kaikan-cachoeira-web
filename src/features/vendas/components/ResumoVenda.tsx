@@ -8,11 +8,21 @@ import styles from "./ResumoVenda.module.css";
 interface ResumoVendaProps {
   onConfirm: () => void;
   confirming?: boolean;
+  valorFinal: number;
+  valorFinalInvalido: boolean;
+  descontoVenda: number;
+  totalComDescontoDosItens: number;
+  onValorFinalChange: (valor: number) => void;
 }
 
 export default function ResumoVenda({
   onConfirm,
   confirming = false,
+  valorFinal,
+  valorFinalInvalido,
+  descontoVenda,
+  totalComDescontoDosItens,
+  onValorFinalChange,
 }: ResumoVendaProps) {
   const { resumo, definirQuantidade, removerItem } = useCarrinho();
 
@@ -69,19 +79,35 @@ export default function ResumoVenda({
 
       <div className={styles.finalValue}>
         <span>Valor final</span>
-        <div className={styles.valueBox} aria-live="polite">
-          {formatarMoeda(resumo.total)}
-        </div>
+        <input
+          className={`${styles.valueInput} ${valorFinalInvalido ? styles.valueInputError : ""}`.trim()}
+          type="number"
+          min={0}
+          max={totalComDescontoDosItens}
+          step="0.01"
+          value={Number.isFinite(valorFinal) ? valorFinal : 0}
+          onChange={(event) => onValorFinalChange(Number(event.target.value))}
+          aria-invalid={valorFinalInvalido}
+        />
+        {valorFinalInvalido ? (
+          <small className={styles.valueError}>
+            O valor final deve estar entre 0 e {formatarMoeda(totalComDescontoDosItens)}.
+          </small>
+        ) : null}
       </div>
 
       <dl className={styles.totals}>
         <div>
+          <dt>Total dos itens</dt>
+          <dd>{formatarMoeda(totalComDescontoDosItens)}</dd>
+        </div>
+        <div>
           <dt>Desconto</dt>
-          <dd>- {formatarMoeda(resumo.discount)}</dd>
+          <dd>- {formatarMoeda(descontoVenda)}</dd>
         </div>
         <div className={styles.totalRow}>
           <dt>Total</dt>
-          <dd>{formatarMoeda(resumo.total)}</dd>
+          <dd>{formatarMoeda(valorFinal)}</dd>
         </div>
       </dl>
 
@@ -89,7 +115,7 @@ export default function ResumoVenda({
         className={styles.confirm}
         onClick={onConfirm}
         loading={confirming}
-        disabled={resumo.items.length === 0}
+        disabled={resumo.items.length === 0 || valorFinalInvalido}
       >
         Confirmar venda
       </Botao>

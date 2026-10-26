@@ -6,11 +6,13 @@ import { comporChave, queryKeys } from "@/shared/query/keys";
 import type {
   AdicionarProdutoCardapioPayload,
   AtualizarCustoEventoPayload,
+  AtualizarEventoPayload,
   AtualizarProdutoCardapioPayload,
   CriarCustoEventoPayload,
   CriarEventoPayload,
   Evento,
   ParametrosEventos,
+  StatusEventoCodigo,
 } from "../models";
 import {
   adicionarProdutoCardapio,
@@ -20,19 +22,38 @@ import {
   atualizarProdutoCardapio,
   criarCustoEvento,
   criarEvento,
+  enviarFotoProdutoCardapio,
   excluirCustoEvento,
   excluirProdutoCardapio,
   excluirEvento,
   listarEventos,
+  listarProdutosEvento,
   obterCardapioEvento,
   obterEvento,
   obterEventoAtual,
+  obterRelatorioEvento,
 } from "../services/eventos";
+import { montarRespostaEventos } from "../utils/listagemEventos";
+import { idDoStatus } from "../utils/statusEvento";
+
+function idValido(id: number | null | undefined): id is number {
+  return typeof id === "number" && Number.isFinite(id);
+}
 
 export function useEventosQuery(params: ParametrosEventos) {
+  const consultaRemota = useMemo(
+    () => ({
+      search: params.search,
+      from: params.from,
+      to: params.to,
+    }),
+    [params.search, params.from, params.to],
+  );
+
   return useQuery({
-    queryKey: comporChave(queryKeys.eventos, params),
-    queryFn: () => listarEventos(params),
+    queryKey: comporChave(queryKeys.eventos, "lista", consultaRemota),
+    queryFn: () => listarEventos(consultaRemota),
+    select: (eventos: Evento[]) => montarRespostaEventos(eventos, params),
   });
 }
 
@@ -43,19 +64,45 @@ export function useEventoAtualQuery() {
   });
 }
 
-export function useEventoQuery(id?: string | null) {
+export function useEventoQuery(id?: number | null) {
   return useQuery({
     queryKey: comporChave(queryKeys.eventos, "detalhe", id),
-    queryFn: () => obterEvento(id as string),
-    enabled: Boolean(id),
+    queryFn: () => obterEvento(id as number),
+    enabled: idValido(id),
   });
 }
 
-export function useEventoCardapioQuery(id?: string | null) {
+export function useRelatorioEventoQuery(
+  id?: number | null,
+  statusCodigo?: StatusEventoCodigo,
+) {
+  return useQuery({
+    queryKey: comporChave(queryKeys.eventos, "relatorio", id),
+    queryFn: () => obterRelatorioEvento(id as number),
+    enabled:
+      idValido(id) &&
+      statusCodigo !== undefined &&
+      statusCodigo !== "NAO_INICIADO",
+    retry: false,
+  });
+}
+
+export function useEventoProdutosQuery(
+  id?: number | null,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: comporChave(queryKeys.eventos, "produtos", id),
+    queryFn: () => listarProdutosEvento(id as number),
+    enabled: idValido(id) && enabled,
+  });
+}
+
+export function useEventoCardapioQuery(id?: number | null) {
   return useQuery({
     queryKey: comporChave(queryKeys.eventos, "cardapio", id),
-    queryFn: () => obterCardapioEvento(id as string),
-    enabled: Boolean(id),
+    queryFn: () => obterCardapioEvento(id as number),
+    enabled: idValido(id),
   });
 }
 
@@ -70,6 +117,18 @@ export function useEventoMutations() {
     queryClient.invalidateQueries({ queryKey: queryKeys.doacoes });
   }
 
+  function invalidarDetalhe(id: number) {
+    queryClient.invalidateQueries({
+      queryKey: comporChave(queryKeys.eventos, "detalhe", id),
+    });
+    queryClient.invalidateQueries({
+      queryKey: comporChave(queryKeys.eventos, "relatorio", id),
+    });
+    queryClient.invalidateQueries({
+      queryKey: comporChave(queryKeys.eventos, "produtos", id),
+    });
+  }
+
   const criar = useMutation({
     mutationFn: (payload: CriarEventoPayload) => criarEvento(payload),
     onSuccess: invalidarEventos,
@@ -80,25 +139,26 @@ export function useEventoMutations() {
       id,
       payload,
     }: {
-      id: string;
-      payload: CriarEventoPayload;
+      id: number;
+      payload: AtualizarEventoPayload;
     }) => atualizarEvento(id, payload),
-    onSuccess: invalidarEventos,
+    onSuccess: (_data, variables) => {
+      invalidarEventos();
+      invalidarDetalhe(variables.id);
+    },
   });
 
   const alterarStatus = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
-      alterarStatusEvento(id, status),
+    mutationFn: ({ id, status }: { id: number; status: StatusEventoCodigo }) =>
+      alterarStatusEvento(id, idDoStatus(status)),
     onSuccess: (_data, variables) => {
       invalidarEventos();
-      queryClient.invalidateQueries({
-        queryKey: comporChave(queryKeys.eventos, "detalhe", variables.id),
-      });
+      invalidarDetalhe(variables.id);
     },
   });
 
   const excluir = useMutation({
-    mutationFn: (id: string) => excluirEvento(id),
+    mutationFn: (id: number) => excluirEvento(id),
     onSuccess: invalidarEventos,
   });
 
@@ -107,14 +167,12 @@ export function useEventoMutations() {
       id,
       payload,
     }: {
-      id: string;
+      id: number;
       payload: CriarCustoEventoPayload;
     }) => criarCustoEvento(id, payload),
     onSuccess: (_data, variables) => {
       invalidarEventos();
-      queryClient.invalidateQueries({
-        queryKey: comporChave(queryKeys.eventos, "detalhe", variables.id),
-      });
+      invalidarDetalhe(variables.id);
     },
   });
 
@@ -124,45 +182,43 @@ export function useEventoMutations() {
       custoId,
       payload,
     }: {
-      id: string;
+      id: number;
       custoId: string;
       payload: AtualizarCustoEventoPayload;
     }) => atualizarCustoEvento(id, custoId, payload),
     onSuccess: (_data, variables) => {
       invalidarEventos();
-      queryClient.invalidateQueries({
-        queryKey: comporChave(queryKeys.eventos, "detalhe", variables.id),
-      });
+      invalidarDetalhe(variables.id);
     },
   });
 
   const excluirCusto = useMutation({
-    mutationFn: ({ id, custoId }: { id: string; custoId: string }) =>
+    mutationFn: ({ id, custoId }: { id: number; custoId: string }) =>
       excluirCustoEvento(id, custoId),
     onSuccess: (_data, variables) => {
       invalidarEventos();
-      queryClient.invalidateQueries({
-        queryKey: comporChave(queryKeys.eventos, "detalhe", variables.id),
-      });
+      invalidarDetalhe(variables.id);
     },
   });
+
+  function invalidarCardapio(id: number) {
+    invalidarEventos();
+    invalidarDetalhe(id);
+    queryClient.invalidateQueries({
+      queryKey: comporChave(queryKeys.eventos, "cardapio", id),
+    });
+  }
 
   const adicionarProduto = useMutation({
     mutationFn: ({
       id,
       payload,
     }: {
-      id: string;
+      id: number;
       payload: AdicionarProdutoCardapioPayload;
     }) => adicionarProdutoCardapio(id, payload),
     onSuccess: (_data, variables) => {
-      invalidarEventos();
-      queryClient.invalidateQueries({
-        queryKey: comporChave(queryKeys.eventos, "detalhe", variables.id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: comporChave(queryKeys.eventos, "cardapio", variables.id),
-      });
+      invalidarCardapio(variables.id);
     },
   });
 
@@ -172,18 +228,12 @@ export function useEventoMutations() {
       itemId,
       payload,
     }: {
-      eventId: string;
-      itemId: string;
+      eventId: number;
+      itemId: number;
       payload: AtualizarProdutoCardapioPayload;
     }) => atualizarProdutoCardapio(eventId, itemId, payload),
     onSuccess: (_data, variables) => {
-      invalidarEventos();
-      queryClient.invalidateQueries({
-        queryKey: comporChave(queryKeys.eventos, "detalhe", variables.eventId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: comporChave(queryKeys.eventos, "cardapio", variables.eventId),
-      });
+      invalidarCardapio(variables.eventId);
     },
   });
 
@@ -192,17 +242,26 @@ export function useEventoMutations() {
       eventId,
       itemId,
     }: {
-      eventId: string;
-      itemId: string;
+      eventId: number;
+      itemId: number;
     }) => excluirProdutoCardapio(eventId, itemId),
     onSuccess: (_data, variables) => {
-      invalidarEventos();
-      queryClient.invalidateQueries({
-        queryKey: comporChave(queryKeys.eventos, "detalhe", variables.eventId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: comporChave(queryKeys.eventos, "cardapio", variables.eventId),
-      });
+      invalidarCardapio(variables.eventId);
+    },
+  });
+
+  const enviarFoto = useMutation({
+    mutationFn: ({
+      eventId,
+      itemId,
+      arquivo,
+    }: {
+      eventId: number;
+      itemId: number;
+      arquivo: File;
+    }) => enviarFotoProdutoCardapio(eventId, itemId, arquivo),
+    onSuccess: (_data, variables) => {
+      invalidarCardapio(variables.eventId);
     },
   });
 
@@ -217,6 +276,7 @@ export function useEventoMutations() {
     adicionarProduto,
     atualizarProduto,
     excluirProduto,
+    enviarFoto,
   };
 }
 
@@ -234,7 +294,7 @@ export function useEventos() {
   const [deleteTarget, setDeleteTarget] = useState<Evento | null>(null);
   const [statusTarget, setStatusTarget] = useState<{
     event: Evento;
-    status: string;
+    status: StatusEventoCodigo;
   } | null>(null);
 
   const { alterarStatus, excluirEvento } = useEventoMutations();
@@ -254,15 +314,15 @@ export function useEventos() {
 
   const eventosQuery = useEventosQuery(params);
 
-  async function handleStatus(event: Evento, nextStatus: string) {
+  async function handleStatus(event: Evento, nextStatus: StatusEventoCodigo) {
     try {
       await alterarStatus.mutateAsync({ id: event.id, status: nextStatus });
       addToast(
-        nextStatus === "Em andamento"
-          ? `Evento "${event.name}" iniciado.`
-          : nextStatus === "Encerrado"
-            ? `Evento "${event.name}" encerrado.`
-            : `Início do evento "${event.name}" desfeito.`,
+        nextStatus === "EM_ANDAMENTO"
+          ? `Evento "${event.nome}" iniciado.`
+          : nextStatus === "ENCERRADO"
+            ? `Evento "${event.nome}" encerrado.`
+            : `Início do evento "${event.nome}" desfeito.`,
       );
     } catch (error) {
       addToast(
@@ -272,7 +332,7 @@ export function useEventos() {
     }
   }
 
-  function requestStatus(event: Evento, status: string) {
+  function requestStatus(event: Evento, status: StatusEventoCodigo) {
     setStatusTarget({ event, status });
   }
 
@@ -289,7 +349,7 @@ export function useEventos() {
     if (!deleteTarget) return;
     try {
       await excluirEvento.mutateAsync(deleteTarget.id);
-      addToast(`Evento "${deleteTarget.name}" excluído.`);
+      addToast(`Evento "${deleteTarget.nome}" excluído.`);
       setDeleteTarget(null);
     } catch (error) {
       addToast(

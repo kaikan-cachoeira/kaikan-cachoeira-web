@@ -1,13 +1,13 @@
 export const OPCOES_TIPO_DOACAO = [
-  { value: "ready", label: "Produto pronto" },
-  { value: "money", label: "Dinheiro" },
-  { value: "ingredient", label: "Ingrediente" },
+  { value: "REABASTECIMENTO", label: "Produto pronto" },
+  { value: "DINHEIRO", label: "Dinheiro" },
+  { value: "PRODUTO", label: "Ingrediente" },
 ];
 
 const ROTULOS_TIPO_DOACAO: Record<string, string> = {
-  ready: "Produto pronto",
-  money: "Dinheiro",
-  ingredient: "Ingrediente",
+  DINHEIRO: "Dinheiro",
+  PRODUTO: "Ingrediente",
+  REABASTECIMENTO: "Produto pronto",
 };
 
 export function rotuloTipoDoacao(tipo: string): string {

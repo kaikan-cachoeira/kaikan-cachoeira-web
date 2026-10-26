@@ -4,7 +4,7 @@ import Botao from "@/shared/components/Botao/Botao";
 import Icone from "@/shared/components/Icone/Icone";
 import Etiqueta from "@/shared/components/Etiqueta/Etiqueta";
 import { EstadoCarregando, EstadoErro } from "@/shared/components/Estado/Estado";
-import type { Evento } from "@/features/eventos";
+import { varianteStatus, type Evento } from "@/features/eventos";
 import { formatarData, formatarHora } from "@/shared/lib/formatacao";
 import { useHome } from "../hooks/useHome";
 import styles from "./HomePage.module.css";
@@ -44,9 +44,9 @@ const ATALHOS: Atalho[] = [
 ];
 
 function periodoDoEvento(evento: Evento) {
-  return `${formatarData(evento.start)} ${formatarHora(evento.start)} – ${formatarData(
-    evento.end,
-  )} ${formatarHora(evento.end)}`;
+  return `${formatarData(evento.dataHoraInicio)} ${formatarHora(evento.dataHoraInicio)} – ${formatarData(
+    evento.dataHoraEncerramento,
+  )} ${formatarHora(evento.dataHoraEncerramento)}`;
 }
 
 export default function HomePage() {
@@ -68,11 +68,11 @@ export default function HomePage() {
           <div className={styles.eventHeading}>
             <div>
               <p className={styles.eyebrow}>Evento em andamento</p>
-              <h2 className={styles.eventName}>{evento.name}</h2>
+              <h2 className={styles.eventName}>{evento.nome}</h2>
               <p className={styles.eventPeriod}>{periodoDoEvento(evento)}</p>
             </div>
-            <Etiqueta variant="success" dot>
-              Em andamento
+            <Etiqueta variant={varianteStatus(evento.status.codigo)} dot>
+              {evento.status.descricao}
             </Etiqueta>
           </div>
           <div className={styles.eventActions}>

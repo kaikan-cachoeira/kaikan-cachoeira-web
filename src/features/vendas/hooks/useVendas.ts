@@ -13,11 +13,15 @@ import type {
   ParametrosVendas,
   ParametrosVendasEvento,
   Venda,
+  VendaDetalhe,
 } from "../models";
 import {
+  aplicarDescontoProduto,
   cancelarVenda,
   criarVenda,
+  detalharVenda,
   listarVendas,
+  removerDescontoProduto,
 } from "../services/vendas";
 import { VendaContexto } from "../providers/vendaContexto";
 
@@ -37,13 +41,13 @@ export function useVendasQuery(params: ParametrosVendas) {
 }
 
 export function useVendasEventoQuery(
-  id?: string | null,
+  id?: number | null,
   params: Omit<ParametrosVendasEvento, "eventId"> = {},
 ) {
   return useQuery({
     queryKey: comporChave(queryKeys.vendas, "evento", id, params),
-    queryFn: () => listarVendas({ ...params, eventId: id as string }),
-    enabled: Boolean(id),
+    queryFn: () => listarVendas({ ...params, eventId: id as number }),
+    enabled: typeof id === "number" && Number.isFinite(id),
   });
 }
 
@@ -64,11 +68,36 @@ export function useVendaMutations() {
   });
 
   const cancelar = useMutation({
-    mutationFn: (id: string) => cancelarVenda(id),
+    mutationFn: ({ eventId, id }: { eventId: number; id: number }) =>
+      cancelarVenda(eventId, id),
     onSuccess: invalidarVendas,
   });
 
-  return { criarVenda: criar, cancelarVenda: cancelar };
+  const aplicarDesconto = useMutation({
+    mutationFn: ({
+      eventId,
+      produtoEventoId,
+      novoPreco,
+    }: {
+      eventId: number;
+      produtoEventoId: number;
+      novoPreco: number;
+    }) => aplicarDescontoProduto(eventId, produtoEventoId, novoPreco),
+    onSuccess: invalidarVendas,
+  });
+
+  const removerDesconto = useMutation({
+    mutationFn: ({ eventId, produtoEventoId }: { eventId: number; produtoEventoId: number }) =>
+      removerDescontoProduto(eventId, produtoEventoId),
+    onSuccess: invalidarVendas,
+  });
+
+  return {
+    criarVenda: criar,
+    cancelarVenda: cancelar,
+    aplicarDesconto,
+    removerDesconto,
+  };
 }
 
 interface UseVendasOptions {
@@ -77,7 +106,7 @@ interface UseVendasOptions {
 
 export function useVendas({ carregarCardapio = false }: UseVendasOptions = {}) {
   const { addToast } = useToast();
-  const { resumo, limpar, aplicarDesconto } = useCarrinho();
+  const { resumo, limpar } = useCarrinho();
   const {
     data: event,
     isLoading: eventLoading,
@@ -87,17 +116,23 @@ export function useVendas({ carregarCardapio = false }: UseVendasOptions = {}) {
   const cardapioQuery = useEventoCardapioQuery(
     carregarCardapio ? event?.id : undefined,
   );
-  const { criarVenda: createSale } = useVendaMutations();
+  const {
+    criarVenda: createSale,
+    aplicarDesconto,
+    removerDesconto,
+  } = useVendaMutations();
 
   const [searchDraft, setSearchDraft] = useState("");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todos");
   const [discountItem, setDiscountItem] = useState<ItemCardapio | null>(null);
+  const [valorFinal, setValorFinal] = useState<number | null>(null);
   const lastEventId = useRef(event?.id);
 
   useEffect(() => {
     if (lastEventId.current !== event?.id) {
       limpar();
+      setValorFinal(null);
       lastEventId.current = event?.id;
     }
   }, [event?.id, limpar]);
@@ -110,7 +145,9 @@ export function useVendas({ carregarCardapio = false }: UseVendasOptions = {}) {
   const categories = useMemo<string[]>(() => {
     const names: string[] = [];
     items.forEach((item) => {
-      if (!names.includes(item.category)) names.push(item.category);
+      if (item.categoria && !names.includes(item.categoria)) {
+        names.push(item.categoria);
+      }
     });
     return ["Todos", ...names];
   }, [items]);
@@ -121,10 +158,10 @@ export function useVendas({ carregarCardapio = false }: UseVendasOptions = {}) {
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
     return items
-      .filter((item) => category === "Todos" || item.category === category)
+      .filter((item) => category === "Todos" || item.categoria === category)
       .filter((item) =>
         term
-          ? item.name
+          ? item.nome
               .toLowerCase()
               .normalize("NFD")
               .replace(/[\u0300-\u036f]/g, "")
@@ -137,21 +174,27 @@ export function useVendas({ carregarCardapio = false }: UseVendasOptions = {}) {
     setSearch(searchDraft.trim());
   }
 
+  const totalComDescontoDosItens = resumo.total;
+  const valorFinalEfetivo = valorFinal ?? totalComDescontoDosItens;
+  const valorFinalInvalido =
+    valorFinalEfetivo < 0 || valorFinalEfetivo > totalComDescontoDosItens;
+  const descontoVenda = Math.max(0, totalComDescontoDosItens - valorFinalEfetivo);
+
   async function confirmSale() {
     if (!event || resumo.items.length === 0) return;
+    if (valorFinalInvalido) return;
     try {
       await createSale.mutateAsync({
         eventId: event.id,
-        items: resumo.items.map((item) => ({
-          menuItemId: item.menuItemId,
-          name: item.name,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          originalPrice: item.originalPrice,
+        itens: resumo.items.map((item) => ({
+          produtoEventoId: Number(item.menuItemId),
+          quantidade: item.quantity,
         })),
+        valorFinal: valorFinal !== null ? valorFinal : undefined,
       });
       addToast("Venda registrada com sucesso.");
       limpar();
+      setValorFinal(null);
     } catch (error) {
       addToast(
         mensagemErro(error, "Não foi possível registrar a venda."),
@@ -160,14 +203,50 @@ export function useVendas({ carregarCardapio = false }: UseVendasOptions = {}) {
     }
   }
 
-  function aplicarDescontoNoItem(price: number) {
-    if (!discountItem) return;
-    aplicarDesconto(discountItem.id, price);
-    setDiscountItem(null);
+  async function aplicarDescontoNoItem(price: number) {
+    if (!discountItem || !event) return;
+    try {
+      await aplicarDesconto.mutateAsync({
+        eventId: event.id,
+        produtoEventoId: discountItem.id,
+        novoPreco: price,
+      });
+      addToast("Desconto aplicado com sucesso.");
+      setDiscountItem(null);
+    } catch (error) {
+      addToast(
+        mensagemErro(error, "Não foi possível aplicar o desconto."),
+        "error",
+      );
+    }
+  }
+
+  async function removerDescontoNoItem(item: ItemCardapio) {
+    if (!event) return;
+    try {
+      await removerDesconto.mutateAsync({
+        eventId: event.id,
+        produtoEventoId: item.id,
+      });
+      addToast("Desconto removido com sucesso.");
+    } catch (error) {
+      addToast(
+        mensagemErro(error, "Não foi possível remover o desconto."),
+        "error",
+      );
+    }
+  }
+
+  function setValorFinalEditavel(next: number) {
+    if (!Number.isFinite(next)) {
+      setValorFinal(null);
+      return;
+    }
+    setValorFinal(next);
   }
 
   const subtitle = event
-    ? `Evento em andamento: ${event.name}`
+    ? `Evento em andamento: ${event.nome}`
     : "Nenhum evento em andamento";
 
   return {
@@ -189,6 +268,14 @@ export function useVendas({ carregarCardapio = false }: UseVendasOptions = {}) {
     discountItem,
     setDiscountItem,
     aplicarDescontoNoItem,
+    removerDescontoNoItem,
+    descontoLoading:
+      aplicarDesconto.isPending || removerDesconto.isPending,
+    totalComDescontoDosItens,
+    valorFinal: valorFinalEfetivo,
+    setValorFinal: setValorFinalEditavel,
+    valorFinalInvalido,
+    descontoVenda,
     resumo,
     createSale,
     confirmSale,
@@ -196,7 +283,7 @@ export function useVendas({ carregarCardapio = false }: UseVendasOptions = {}) {
   };
 }
 
-export function useHistoricoVendas(eventId?: string, pageSize = 8) {
+export function useHistoricoVendas(eventId?: number, pageSize = 8) {
   const { addToast } = useToast();
   const [searchDraft, setSearchDraft] = useState("");
   const [search, setSearch] = useState("");
@@ -210,20 +297,33 @@ export function useHistoricoVendas(eventId?: string, pageSize = 8) {
 
   const { cancelarVenda: cancelar } = useVendaMutations();
 
+  const cancelada = useMemo(() => {
+    if (statuses.length !== 1) return undefined;
+    return statuses[0] === "cancelled" ? true : statuses[0] === "active" ? false : undefined;
+  }, [statuses]);
+
   const params = useMemo<ParametrosVendas>(
     () => ({
       eventId,
       search,
       page,
       pageSize,
-      statuses: statuses.length ? statuses.join(",") : undefined,
       from: from || undefined,
       to: to || undefined,
+      cancelada,
     }),
-    [eventId, search, page, pageSize, statuses, from, to],
+    [eventId, search, page, pageSize, from, to, cancelada],
   );
 
   const vendasQuery = useVendasQuery(params);
+
+  const detalhesQuery = useQuery<VendaDetalhe>({
+    queryKey: comporChave(queryKeys.vendas, "detalhe", eventId, detailsSale?.id),
+    queryFn: () => detalharVenda(eventId as number, detailsSale?.id as number),
+    enabled:
+      typeof eventId === "number" && Number.isFinite(eventId) &&
+      typeof detailsSale?.id === "number",
+  });
 
   function runSearch() {
     setSearch(searchDraft.trim());
@@ -244,9 +344,9 @@ export function useHistoricoVendas(eventId?: string, pageSize = 8) {
   }
 
   async function confirmCancel() {
-    if (!cancelTarget) return;
+    if (!cancelTarget || !eventId) return;
     try {
-      await cancelar.mutateAsync(cancelTarget.id);
+      await cancelar.mutateAsync({ eventId, id: cancelTarget.id });
       addToast(
         "Venda cancelada. Os itens foram devolvidos ao desempenho do evento.",
       );
@@ -276,6 +376,7 @@ export function useHistoricoVendas(eventId?: string, pageSize = 8) {
     setTo,
     detailsSale,
     setDetailsSale,
+    detalhesQuery,
     cancelTarget,
     setCancelTarget,
     vendasQuery,

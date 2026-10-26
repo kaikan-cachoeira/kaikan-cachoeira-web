@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
 import { mensagemErro } from "@/shared/api/erros";
-import { useCategoriasQuery } from "@/features/inventario";
-import { useEventoMutations, useEventoQuery } from "./useEventos";
+import {
+  useEventoMutations,
+  useEventoProdutosQuery,
+  useEventoQuery,
+  useRelatorioEventoQuery,
+} from "./useEventos";
 
-export function useEventoDetalhes(id?: string | null) {
+export function useEventoDetalhes(id?: number | null) {
   const { addToast } = useToast();
   const [costOpen, setCostOpen] = useState(false);
   const [costsListOpen, setCostsListOpen] = useState(false);
@@ -13,13 +17,16 @@ export function useEventoDetalhes(id?: string | null) {
   const [closeConfirm, setCloseConfirm] = useState(false);
 
   const eventoQuery = useEventoQuery(id);
-  const categoriasQuery = useCategoriasQuery();
+  const statusCodigo = eventoQuery.data?.status.codigo;
+  const isNotStarted = statusCodigo === "NAO_INICIADO";
+  const relatorioQuery = useRelatorioEventoQuery(id, statusCodigo);
+  const produtosQuery = useEventoProdutosQuery(id, isNotStarted);
   const { alterarStatus } = useEventoMutations();
 
   async function startEvent() {
     if (!id) return;
     try {
-      await alterarStatus.mutateAsync({ id, status: "Em andamento" });
+      await alterarStatus.mutateAsync({ id, status: "EM_ANDAMENTO" });
       addToast("Evento iniciado com sucesso.");
     } catch (error) {
       addToast(
@@ -40,7 +47,7 @@ export function useEventoDetalhes(id?: string | null) {
   async function closeEvent() {
     if (!id) return;
     try {
-      await alterarStatus.mutateAsync({ id, status: "Encerrado" });
+      await alterarStatus.mutateAsync({ id, status: "ENCERRADO" });
       addToast("Evento encerrado com sucesso.");
       setCloseConfirm(false);
     } catch (error) {
@@ -63,8 +70,10 @@ export function useEventoDetalhes(id?: string | null) {
     closeConfirm,
     setCloseConfirm,
     eventoQuery,
-    categoriasQuery,
+    relatorioQuery,
+    produtosQuery,
     alterarStatus,
+    isNotStarted,
     startEvent,
     confirmStart,
     closeEvent,

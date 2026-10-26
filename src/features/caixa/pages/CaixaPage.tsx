@@ -14,29 +14,49 @@ import {
 } from "@/shared/components/Estado/Estado";
 import { useCaixa } from "../hooks/useCaixa";
 import { formatarMoeda, formatarHoraHoje } from "@/shared/lib/formatacao";
-import type { LancamentoCaixa } from "../models";
+import type {
+  FormaPagamentoCaixa,
+  LancamentoCaixa,
+  TipoLancamentoCaixa,
+} from "../models";
 import PainelLancamentoCaixa from "../components/PainelLancamentoCaixa";
 import styles from "./Caixa.module.css";
 
 const TYPE_OPTIONS = [
   { value: "", label: "Todos" },
-  { value: "Venda de fichas", label: "Venda de fichas" },
-  { value: "Devolução", label: "Devolução" },
+  { value: "VENDA_FICHA", label: "Venda de fichas" },
+  { value: "DEVOLUCAO_FICHA", label: "Devolução" },
+  { value: "QUITACAO_FIADO", label: "Quitação de fiado" },
 ];
 
 const PAYMENT_OPTIONS = [
   { value: "", label: "Todos" },
   { value: "PIX", label: "PIX" },
-  { value: "Débito", label: "Débito" },
-  { value: "Crédito", label: "Crédito" },
-  { value: "Dinheiro", label: "Dinheiro" },
-  { value: "Fiado", label: "Fiado" },
+  { value: "DEBITO", label: "Débito" },
+  { value: "CREDITO", label: "Crédito" },
+  { value: "DINHEIRO", label: "Dinheiro" },
+  { value: "FIADO", label: "Fiado" },
 ];
 
+function tipoLabel(tipo: LancamentoCaixa["tipo"]) {
+  if (tipo === "VENDA_FICHA") return "Venda";
+  if (tipo === "DEVOLUCAO_FICHA") return "Devolução";
+  return "Quitação";
+}
+
+function pagamentoLabel(formaPagamento: LancamentoCaixa["formaPagamento"]) {
+  if (formaPagamento === "DEBITO") return "Débito";
+  if (formaPagamento === "CREDITO") return "Crédito";
+  if (formaPagamento === "DINHEIRO") return "Dinheiro";
+  if (formaPagamento === "FIADO") return "Fiado";
+  return "PIX";
+}
+
 function cancelLabel(entry: LancamentoCaixa) {
-  if (entry.payment === "Fiado") return "Cancelar fiado";
-  if (entry.type === "Venda de fichas") return "Cancelar venda";
-  return "Cancelar devolução";
+  if (entry.formaPagamento === "FIADO") return "Cancelar fiado";
+  if (entry.tipo === "VENDA_FICHA") return "Cancelar venda";
+  if (entry.tipo === "DEVOLUCAO_FICHA") return "Cancelar devolução";
+  return "Cancelar quitação";
 }
 
 export default function CaixaPage() {
@@ -93,14 +113,17 @@ export default function CaixaPage() {
       />
 
       <section className={styles.statsGrid} aria-label="Resumo do caixa">
-        <EstatisticaCard label="Fichas vendidas" value={formatarMoeda(summary.sold)} />
+        <EstatisticaCard
+          label="Fichas vendidas"
+          value={formatarMoeda(summary.fichasVendidas)}
+        />
         <EstatisticaCard
           label="Fichas devolvidas"
-          value={formatarMoeda(summary.returned)}
+          value={formatarMoeda(summary.fichasDevolvidas)}
         />
         <EstatisticaCard
           label="Fiados em aberto"
-          value={formatarMoeda(summary.openFiados)}
+          value={formatarMoeda(summary.fiadosEmAberto)}
         />
       </section>
 
@@ -114,21 +137,21 @@ export default function CaixaPage() {
               label="Tipo de registro"
               options={TYPE_OPTIONS}
               value={type}
-              onChange={(changeEvent) => {
-                setType(changeEvent.target.value);
-                setPage(1);
-              }}
-            />
+                onChange={(changeEvent) => {
+                  setType(changeEvent.target.value as TipoLancamentoCaixa | "");
+                  setPage(1);
+                }}
+              />
             <Selecao
               id="caixa-filtro-pagamento"
               label="Forma de pagamento"
               options={PAYMENT_OPTIONS}
               value={payment}
-              onChange={(changeEvent) => {
-                setPayment(changeEvent.target.value);
-                setPage(1);
-              }}
-            />
+                onChange={(changeEvent) => {
+                  setPayment(changeEvent.target.value as FormaPagamentoCaixa | "");
+                  setPage(1);
+                }}
+              />
             <Botao
               variant="secondary"
               className={styles.clearButton}
@@ -155,16 +178,13 @@ export default function CaixaPage() {
                 {entries.map((entry) => (
                   <li className={styles.row} key={entry.id}>
                     <strong className={styles.rowValue}>
-                      {formatarMoeda(entry.value)}
+                      {formatarMoeda(entry.valor)}
                     </strong>
                     <span className={styles.rowPayment}>
-                      {entry.type === "Venda de fichas"
-                        ? "Venda"
-                        : "Devolução"}{" "}
-                      - {entry.paymentLabel}
+                      {tipoLabel(entry.tipo)} - {pagamentoLabel(entry.formaPagamento)}
                     </span>
                     <span className={styles.rowDate}>
-                      {formatarHoraHoje(entry.createdAt)}
+                      {formatarHoraHoje(entry.criadoEm)}
                     </span>
                     <div className={styles.rowAction}>
                       <Botao
@@ -214,9 +234,9 @@ export default function CaixaPage() {
         <ConfirmacaoDialog
           title={cancelLabel(cancelTarget)}
           message={`Deseja cancelar este lançamento de ${formatarMoeda(
-            cancelTarget.value,
+            cancelTarget.valor,
           )}? ${
-            cancelTarget.payment === "Fiado"
+            cancelTarget.formaPagamento === "FIADO"
               ? "O fiado correspondente também será removido."
               : "O valor deixará de ser considerado no resumo do caixa."
           }`}

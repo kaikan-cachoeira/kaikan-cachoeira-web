@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
+import type { OrigemProdutoEvento } from "../models";
 import { useEventoCardapioQuery, useEventoQuery } from "./useEventos";
 
 const PAGE_SIZE = 8;
 
-export function useEventoCardapio(id?: string) {
+export function useEventoCardapio(id?: number) {
   const { data: event } = useEventoQuery(id);
   const { data, isLoading, isError, refetch } = useEventoCardapioQuery(id);
   const [searchDraft, setSearchDraft] = useState("");
@@ -13,7 +14,7 @@ export function useEventoCardapio(id?: string) {
   const [type, setType] = useState("");
   const [page, setPage] = useState(1);
   const [addOpen, setAddOpen] = useState(false);
-  const [addType, setAddType] = useState<"ready" | "made">("ready");
+  const [addType, setAddType] = useState<OrigemProdutoEvento>("ESTOQUE");
   const [categoriesOpen, setCategoriesOpen] = useState(false);
 
   const items = useMemo(() => data?.items || [], [data]);
@@ -25,11 +26,11 @@ export function useEventoCardapio(id?: string) {
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
     return items
-      .filter((item) => !category || item.category === category)
-      .filter((item) => !type || item.type === type)
+      .filter((item) => !category || item.categoria === category)
+      .filter((item) => !type || item.origem === type)
       .filter((item) =>
         term
-          ? item.name
+          ? item.nome
               .toLowerCase()
               .normalize("NFD")
               .replace(/[\u0300-\u036f]/g, "")
@@ -72,7 +73,7 @@ export function useEventoCardapio(id?: string) {
     setPage(1);
   }
 
-  function openAdd(nextType: "ready" | "made" = "ready") {
+  function openAdd(nextType: OrigemProdutoEvento = "ESTOQUE") {
     setAddType(nextType);
     setAddOpen(true);
   }

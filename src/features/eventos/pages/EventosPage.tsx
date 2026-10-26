@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import PageHeader from "@/shared/components/PageHeader/PageHeader";
 import BarraPesquisa from "@/shared/components/BarraPesquisa/BarraPesquisa";
 import PainelFiltros from "@/shared/components/Filtros/PainelFiltros";
@@ -16,19 +17,16 @@ import { useEventos } from "../hooks/useEventos";
 import type { Evento } from "../models";
 import EventoCard from "../components/EventoCard";
 import EventoFormModal from "../components/EventoFormModal";
+import { obterEvento } from "../services/eventos";
 import { obterConfirmacaoStatus } from "../utils/confirmacaoStatus";
+import {
+  STATUS_OPTIONS,
+  TIPO_EVENTO_OPTIONS,
+} from "../utils/statusEvento";
+import { comporChave, queryKeys } from "@/shared/query/keys";
+import { useToast } from "@/shared/components/Toast/ToastProvider";
+import { mensagemErro } from "@/shared/api/erros";
 import styles from "./EventosPage.module.css";
-
-const STATUS_OPTIONS = [
-  { value: "Em andamento", label: "Em andamento" },
-  { value: "Não iniciado", label: "Não iniciado" },
-  { value: "Encerrado", label: "Encerrado" },
-];
-
-const TYPE_OPTIONS = [
-  { value: "Evento", label: "Evento" },
-  { value: "Reunião", label: "Reunião" },
-];
 
 export default function EventosPage() {
   const {
@@ -63,10 +61,14 @@ export default function EventosPage() {
     clearAll,
   } = useEventos();
   const [editTarget, setEditTarget] = useState<Evento | null>(null);
+  const queryClient = useQueryClient();
+  const { addToast } = useToast();
 
   const { data, isLoading, isError, refetch } = eventosQuery;
   const items = data?.items || [];
-  const ongoing = items.find((event) => event.ongoing);
+  const ongoing = items.find(
+    (event) => event.status.codigo === "EM_ANDAMENTO",
+  );
   const others = ongoing
     ? items.filter((event) => event.id !== ongoing.id)
     : items;
@@ -77,10 +79,33 @@ export default function EventosPage() {
     Boolean(from) ||
     Boolean(to);
 
+  async function handleEdit(event: Evento) {
+    if (event.observacoes !== undefined) {
+      setEditTarget(event);
+      return;
+    }
+
+    try {
+      const detalhe = await queryClient.fetchQuery({
+        queryKey: comporChave(queryKeys.eventos, "detalhe", event.id),
+        queryFn: () => obterEvento(event.id),
+      });
+      setEditTarget(detalhe);
+    } catch (error) {
+      addToast(
+        mensagemErro(
+          error,
+          "Não foi possível carregar os dados do evento para edição.",
+        ),
+        "error",
+      );
+    }
+  }
+
   const cardProps = {
     onChangeStatus: requestStatus,
     onDelete: setDeleteTarget,
-    onEdit: setEditTarget,
+    onEdit: handleEdit,
   };
   const statusConfirmation = statusTarget
     ? obterConfirmacaoStatus(statusTarget.event, statusTarget.status)
@@ -120,7 +145,7 @@ export default function EventosPage() {
           />
           <SelecaoMultipla
             label="Tipo do evento"
-            options={TYPE_OPTIONS}
+            options={TIPO_EVENTO_OPTIONS}
             value={types}
             onChange={(value) => {
               setTypes(value);
@@ -249,7 +274,7 @@ export default function EventosPage() {
       {deleteTarget ? (
         <ConfirmacaoDialog
           title="Excluir evento"
-          message={`Deseja excluir o evento "${deleteTarget.name}"? Vendas, doações, fiados e lançamentos de caixa vinculados também serão removidos.`}
+          message={`Deseja excluir o evento "${deleteTarget.nome}"? Vendas, doações, fiados e lançamentos de caixa vinculados também serão removidos.`}
           confirmLabel="Excluir evento"
           destructive
           loading={deleteEvent.isPending}

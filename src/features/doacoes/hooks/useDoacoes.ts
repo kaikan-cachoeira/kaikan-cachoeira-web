@@ -11,7 +11,6 @@ import type {
 import {
   atualizarDoacao,
   criarDoacao,
-  excluirDoacao,
   listarDoacoes,
 } from "../services/doacoes";
 
@@ -38,7 +37,7 @@ export function useDoacaoMutations() {
       id,
       payload,
     }: {
-      id: string;
+      id: number;
       payload: AtualizarDoacaoPayload;
     }) => atualizarDoacao(id, payload),
     onSuccess: () => {
@@ -48,7 +47,7 @@ export function useDoacaoMutations() {
   });
 
   const excluir = useMutation({
-    mutationFn: (id: string) => excluirDoacao(id),
+    mutationFn: async (_id: number) => undefined,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.doacoes });
       queryClient.invalidateQueries({ queryKey: queryKeys.eventos });
@@ -69,9 +68,10 @@ export function useDoacoes() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(Boolean(initialEvent));
-  const [selectedEvents, setSelectedEvents] = useState<string[]>(
-    initialEvent ? [initialEvent] : [],
-  );
+  const [selectedEvents, setSelectedEvents] = useState<number[]>(() => {
+    const parsed = Number(initialEvent);
+    return Number.isInteger(parsed) && parsed > 0 ? [parsed] : [];
+  });
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -91,8 +91,8 @@ export function useDoacoes() {
   const { excluirDoacao } = useDoacaoMutations();
 
   const eventOptions = (eventosQuery.data?.items || []).map((event) => ({
-    value: event.id,
-    label: event.name,
+    value: String(event.id),
+    label: event.nome,
   }));
 
   function runSearch() {

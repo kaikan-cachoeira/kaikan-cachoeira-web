@@ -14,7 +14,7 @@ import { mensagemErro } from "@/shared/api/erros";
 import styles from "./ModaisEvento.module.css";
 
 interface CustoModalProps {
-  eventId: string;
+  eventId: number;
   custo?: CustoEvento;
   onClose: () => void;
 }

@@ -26,7 +26,7 @@ interface SidebarProps {
 
 export default function Sidebar({ open, onClose, onNavigate }: SidebarProps) {
   const { usuario, sair } = useAutenticacao();
-  const initials = usuario?.initials || "AD";
+  const initials:string | undefined = usuario?.nome.slice(0, 2).toUpperCase() || "AD";
 
   return (
     <aside
@@ -73,9 +73,9 @@ export default function Sidebar({ open, onClose, onNavigate }: SidebarProps) {
             {initials}
           </span>
           <span className={styles.userText}>
-            <span className={styles.userName}>{usuario?.name || "Administrador"}</span>
+            <span className={styles.userName}>{usuario?.nome || "Administrador"}</span>
             <span className={styles.userEmail}>
-              {usuario?.email || "conta compartilhada"}
+              {usuario?.cargo || "conta compartilhada"}
             </span>
           </span>
         </div>

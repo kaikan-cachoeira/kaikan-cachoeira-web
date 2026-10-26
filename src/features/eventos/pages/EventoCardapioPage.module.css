@@ -45,6 +45,20 @@
   font-weight: 500;
 }
 
+.productCell {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-12);
+}
+
+.productPhoto {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: var(--raio-campo);
+  object-fit: cover;
+}
+
 .productType {
   display: block;
   color: var(--texto-suave);

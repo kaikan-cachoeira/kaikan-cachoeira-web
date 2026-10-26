@@ -1,7 +1,7 @@
 import axios from "axios";
 import { demoAdapter } from "./demo/adaptador";
 
-export const modoDemoAtivo = import.meta.env.VITE_DEMO_MODE !== "false";
+export const modoDemoAtivo = import.meta.env.VITE_DEMO_MODE === "true";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:8080",

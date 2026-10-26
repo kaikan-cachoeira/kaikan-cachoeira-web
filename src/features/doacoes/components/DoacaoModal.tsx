@@ -13,21 +13,26 @@ import { useEventosQuery } from "@/features/eventos";
 import { useProdutosQuery } from "@/features/inventario";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
 import { mensagemErro } from "@/shared/api/erros";
-import type { CriarDoacaoPayload, Doacao } from "../models";
+import type {
+  CriarDoacaoPayload,
+  Doacao,
+  FormaPagamentoDoacao,
+  TipoDoacao,
+} from "../models";
 import { formatarNumero } from "@/shared/lib/formatacao";
 import { OPCOES_TIPO_DOACAO } from "@/shared/lib/tiposDoacao";
 import styles from "./DoacaoModal.module.css";
 
 const PAYMENT_OPTIONS = [
   { value: "PIX", label: "PIX" },
-  { value: "Débito", label: "Débito" },
-  { value: "Crédito", label: "Crédito" },
-  { value: "Dinheiro", label: "Dinheiro" },
+  { value: "DEBITO", label: "Débito" },
+  { value: "CREDITO", label: "Crédito" },
+  { value: "DINHEIRO", label: "Dinheiro" },
 ];
 
 interface DoacaoModalProps {
   doacao?: Doacao;
-  initialType?: string;
+  initialType?: TipoDoacao;
   onClose: () => void;
 }
 
@@ -44,11 +49,11 @@ interface DoacaoFormValues {
 
 export default function DoacaoModal({
   doacao,
-  initialType = "ready",
+  initialType = "REABASTECIMENTO",
   onClose,
 }: DoacaoModalProps) {
   const isEdit = Boolean(doacao);
-  const [type, setType] = useState(doacao?.type ?? initialType);
+  const [type, setType] = useState<TipoDoacao>(doacao?.tipo ?? initialType);
   const [serverError, setServerError] = useState("");
   const { addToast } = useToast();
   const {
@@ -71,49 +76,52 @@ export default function DoacaoModal({
   } = useForm<DoacaoFormValues>({
     mode: "onTouched",
     defaultValues: {
-      eventId: doacao?.eventId ?? "",
-      productId: doacao?.productId ?? "",
-      quantity: doacao?.quantity ?? 1,
-      donor: doacao?.donor ?? "",
-      ticketValue: doacao?.ticketValue ?? 0,
-      amount: doacao?.amount ?? 0,
-      paymentMethod: doacao?.paymentMethod ?? "PIX",
-      itemName: doacao?.itemName ?? "",
+      eventId: doacao ? String(doacao.eventoId) : "",
+      productId: doacao?.produtoId ? String(doacao.produtoId) : "",
+      quantity: doacao?.quantidade ?? 1,
+      donor: doacao?.doador ?? "",
+      ticketValue: doacao?.valorFicha ?? 0,
+      amount: doacao?.valor ?? 0,
+      paymentMethod: doacao?.formaPagamento ?? "PIX",
+      itemName: doacao?.nome ?? "",
     },
   });
 
   const selectedProductId = watch("productId");
   const selectedProduct = (productsData?.items || []).find(
-    (product) => product.id === selectedProductId,
+    (product) => String(product.id) === selectedProductId,
   );
   const eventOptions = (eventsData?.items || []).map((event) => ({
-    value: event.id,
-    label: event.name,
+    value: String(event.id),
+    label: event.nome,
   }));
   if (
     doacao &&
-    !eventOptions.some((option) => option.value === doacao.eventId)
+    !eventOptions.some((option) => option.value === String(doacao.eventoId))
   ) {
-    eventOptions.push({ value: doacao.eventId, label: doacao.eventName });
+    eventOptions.push({
+      value: String(doacao.eventoId),
+      label: doacao.eventoNome,
+    });
   }
 
   const productOptions = (productsData?.items || []).map((product) => ({
-    value: product.id,
-    label: `${product.name} (${formatarNumero(product.quantity)} un.)`,
+    value: String(product.id),
+    label: `${product.nome} (${formatarNumero(product.quantidadeAtual)} un.)`,
   }));
   if (
-    doacao?.type === "ready" &&
-    doacao.productId &&
-    !productOptions.some((option) => option.value === doacao.productId)
+    doacao?.tipo === "REABASTECIMENTO" &&
+    doacao.produtoId &&
+    !productOptions.some((option) => option.value === String(doacao.produtoId))
   ) {
     productOptions.push({
-      value: doacao.productId,
-      label: `${doacao.itemName || "Produto"} (indisponível)`,
+      value: String(doacao.produtoId),
+      label: `${doacao.nome || "Produto"} (indisponível)`,
     });
   }
 
   function changeType(nextType: string) {
-    setType(nextType);
+    setType(nextType as TipoDoacao);
     setServerError("");
     resetField("productId");
     resetField("quantity");
@@ -124,21 +132,20 @@ export default function DoacaoModal({
   const onSubmit: SubmitHandler<DoacaoFormValues> = async (values) => {
     setServerError("");
     const payload: CriarDoacaoPayload = {
-      eventId: values.eventId,
-      type,
-      donor: values.donor,
-      ticketValue: values.ticketValue,
+      eventoId: Number(values.eventId),
+      tipo: type,
+      doador: values.donor,
+      valorFicha: values.ticketValue,
     };
 
-    if (type === "ready") {
-      payload.productId = values.productId;
-      payload.itemName = selectedProduct?.name || "";
-      payload.quantity = values.quantity;
-    } else if (type === "money") {
-      payload.amount = values.amount;
-      payload.paymentMethod = values.paymentMethod;
+    if (type === "REABASTECIMENTO") {
+      payload.produtoId = Number(values.productId);
+      payload.quantidade = values.quantity;
+    } else if (type === "DINHEIRO") {
+      payload.valor = values.amount;
+      payload.formaPagamento = values.paymentMethod as FormaPagamentoDoacao;
     } else {
-      payload.itemName = values.itemName;
+      payload.nome = values.itemName;
     }
 
     try {
@@ -203,6 +210,8 @@ export default function DoacaoModal({
           error={errors.eventId?.message}
           {...register("eventId", {
             required: "Selecione o evento destinado à doação.",
+            validate: (value) =>
+              Number(value) > 0 || "Selecione o evento destinado à doação.",
           })}
         />
 
@@ -214,7 +223,7 @@ export default function DoacaoModal({
           columns={3}
         />
 
-        {type === "ready" ? (
+        {type === "REABASTECIMENTO" ? (
           <>
             <Selecao
               id="doacao-produto"
@@ -255,14 +264,14 @@ export default function DoacaoModal({
             </div>
             {selectedProduct ? (
               <p className={styles.stockHint}>
-                Saldo atual do produto: {formatarNumero(selectedProduct.quantity)}{" "}
-                unidades. A doação não altera o saldo automaticamente.
+                Saldo atual do produto: {formatarNumero(selectedProduct.quantidadeAtual)}{" "}
+                unidades. O reabastecimento por doação aumenta o estoque.
               </p>
             ) : null}
           </>
         ) : null}
 
-        {type === "money" ? (
+        {type === "DINHEIRO" ? (
           <>
             <div className={styles.twoColumns}>
               <Controller
@@ -303,7 +312,7 @@ export default function DoacaoModal({
           </>
         ) : null}
 
-        {type === "ingredient" ? (
+        {type === "PRODUTO" ? (
           <>
             <p className={styles.notice}>
               <Icone name="info" size={18} />
@@ -319,10 +328,10 @@ export default function DoacaoModal({
               error={errors.itemName?.message}
               {...register("itemName", {
                 validate: (value) =>
-                  type !== "ingredient" ||
+                  type !== "PRODUTO" ||
                   Boolean(String(value || "").trim()) ||
                   "Informe o ingrediente doado.",
-              })}
+                })}
             />
             <Entrada
               id="doacao-doador-ingrediente"

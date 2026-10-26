@@ -124,6 +124,24 @@
   font-weight: 600;
 }
 
+.valueInput {
+  min-height: 44px;
+  padding: 10px var(--espaco-12);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-campo);
+  background: var(--branco-suave);
+  font-weight: 600;
+}
+
+.valueInputError {
+  border-color: var(--cor-erro);
+}
+
+.valueError {
+  color: var(--cor-erro);
+  font-size: 0.75rem;
+}
+
 .totals {
   display: flex;
   flex-direction: column;

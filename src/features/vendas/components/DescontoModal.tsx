@@ -63,7 +63,7 @@ export default function DescontoModal({
         noValidate
       >
         <div className={styles.discountContext}>
-          <strong>{item?.name}</strong>
+          <strong>{item?.nome}</strong>
           <span>Preço original: {formatarMoeda(basePrice)}</span>
         </div>
 

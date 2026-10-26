@@ -3,7 +3,6 @@ import PageHeader from "@/shared/components/PageHeader/PageHeader";
 import Abas from "@/shared/components/Abas/Abas";
 import Botao from "@/shared/components/Botao/Botao";
 import Paginacao from "@/shared/components/Paginacao/Paginacao";
-import ConfirmacaoDialog from "@/shared/components/ConfirmacaoDialog/ConfirmacaoDialog";
 import { EstatisticaCard } from "@/shared/components/Card/Card";
 import {
   EstadoVazio,
@@ -33,14 +32,10 @@ export default function FiadosPage() {
     setPage,
     settleTarget,
     setSettleTarget,
-    unsettleTarget,
-    setUnsettleTarget,
     fiadosQuery,
     summary,
     fiados,
     tabs,
-    desquitarFiado,
-    confirmUnsettle,
   } = useFiados();
 
   if (eventLoading) {
@@ -76,14 +71,17 @@ export default function FiadosPage() {
       />
 
       <section className={styles.statsGrid} aria-label="Resumo do caixa">
-        <EstatisticaCard label="Fichas vendidas" value={formatarMoeda(summary.sold)} />
+        <EstatisticaCard
+          label="Fichas vendidas"
+          value={formatarMoeda(summary.fichasVendidas)}
+        />
         <EstatisticaCard
           label="Fichas devolvidas"
-          value={formatarMoeda(summary.returned)}
+          value={formatarMoeda(summary.fichasDevolvidas)}
         />
         <EstatisticaCard
           label="Fiados em aberto"
-          value={formatarMoeda(summary.openFiados)}
+          value={formatarMoeda(summary.fiadosEmAberto)}
         />
       </section>
 
@@ -148,26 +146,18 @@ export default function FiadosPage() {
                       {fiado.situationLabel}
                     </span>
                     <span className={styles.fiadoDebtor}>
-                      {fiado.debtorName}
+                      {fiado.nomeDevedor}
                     </span>
                     <span className={styles.rowDate}>
-                      {formatarHoraHoje(fiado.createdAt)}
+                      {formatarHoraHoje(fiado.criadoEm)}
                     </span>
                     <div className={styles.rowAction}>
-                      {fiado.status === "pending" ? (
+                      {fiado.quitado ? null : (
                         <Botao
                           size="compact"
                           onClick={() => setSettleTarget(fiado)}
                         >
                           Quitar fiado
-                        </Botao>
-                      ) : (
-                        <Botao
-                          variant="secondary"
-                          size="compact"
-                          onClick={() => setUnsettleTarget(fiado)}
-                        >
-                          Cancelar quitação
                         </Botao>
                       )}
                     </div>
@@ -216,23 +206,6 @@ export default function FiadosPage() {
         <QuitarFiadoModal
           fiado={settleTarget}
           onClose={() => setSettleTarget(null)}
-        />
-      ) : null}
-
-      {unsettleTarget ? (
-        <ConfirmacaoDialog
-          title="Cancelar quitação"
-          message={`Deseja cancelar a quitação do fiado de ${
-            unsettleTarget.debtorName
-          }, no valor de ${formatarMoeda(
-            unsettleTarget.amount,
-          )}? O fiado voltará para pendente.`}
-          confirmLabel="Cancelar quitação"
-          cancelLabel="Voltar"
-          destructive
-          loading={desquitarFiado.isPending}
-          onCancel={() => setUnsettleTarget(null)}
-          onConfirm={confirmUnsettle}
         />
       ) : null}
     </div>
