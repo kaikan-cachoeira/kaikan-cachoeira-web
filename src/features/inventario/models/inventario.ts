@@ -3,52 +3,55 @@ import type {
   ParametrosPaginacao,
 } from "@/shared/models/paginacao";
 
+export interface CategoriaResumoProduto {
+  id: number;
+  nome: string;
+}
+
 export interface Produto {
-  id: string;
-  name: string;
-  description?: string;
-  image?: string | null;
-  categoryId?: string | null;
-  category?: string;
-  quantity: number;
-  minStock: number;
-  lowStock?: boolean;
-  createdAt?: string;
-  lots?: LoteProduto[];
-  movements?: MovimentacaoProduto[];
+  id: number;
+  nome: string;
+  descricao?: string | null;
+  categoria?: CategoriaResumoProduto | null;
+  fotoUrl?: string | null;
+  quantidadeAtual: number;
+  estoqueMinimo?: number | null;
+  lotes?: LoteProduto[];
+  movimentacoes?: MovimentacaoProduto[];
 }
 
 export interface LoteProduto {
-  id: string;
-  entryQty: number;
-  balance: number;
-  totalCost: number;
-  unitCost: number;
-  createdAt: string;
+  id: number;
+  quantidadeInicial: number;
+  quantidadeAtual: number;
+  custoTotal: number;
+  custoUnitario: number;
+  criadoEm: string;
 }
 
 export interface MovimentacaoProduto {
-  id: string;
+  id: number;
+  estoqueId: number;
   type: string;
-  quantity: number;
-  totalCost: number;
-  unitCost: number;
-  notes?: string;
-  eventName?: string;
-  createdAt: string;
+  quantidade: number;
+  custoTotal: number;
+  custoUnitario: number;
+  eventoId?: number | null;
+  eventoNome?: string | null;
+  observacoes?: string | null;
+  criadoEm: string;
 }
 
 export interface Categoria {
-  id: string;
-  name: string;
-  description?: string;
-  productCount?: number;
-  createdAt?: string;
+  id: number;
+  nome: string;
+  descricao?: string | null;
+  quantidadeProdutos?: number;
 }
 
 export interface ParametrosProdutos extends ParametrosPaginacao {
   stock?: string;
-  categoryId?: string;
+  categoryId?: number;
   categoryIds?: string;
 }
 
@@ -59,23 +62,36 @@ export interface RespostaCategorias {
 }
 
 export interface CriarProdutoPayload {
-  name: string;
-  description?: string;
-  categoryId: string;
-  minStock: number;
-  image?: string | null;
+  nome: string;
+  descricao?: string;
+  categoriaId?: number | null;
+  estoqueMinimo?: number | null;
 }
 
 export interface CriarMovimentacaoPayload {
-  type: string;
-  quantity: number;
-  totalCost: number;
-  notes?: string;
+  tipoMovimentacaoId: number;
+  quantidade: number;
+  custoTotal?: number;
+  eventoId?: number;
+  observacoes?: string;
+}
+
+export interface TipoMovimentacao {
+  id: number;
+  codigo: string;
+  descricao: string;
+  direcao: "ENTRADA" | "SAIDA";
+  exigeCusto: boolean;
+}
+
+export interface MovimentacaoResultado {
+  movimentacoes: MovimentacaoProduto[];
+  quantidadeAtual: number;
 }
 
 export interface CriarCategoriaPayload {
-  name: string;
-  description?: string;
+  nome: string;
+  descricao?: string;
 }
 
 export type AtualizarCategoriaPayload = CriarCategoriaPayload;
@@ -86,3 +102,11 @@ export interface OpcaoCategoria {
 }
 
 export type AtualizarProdutoPayload = CriarProdutoPayload;
+
+export interface PaginaApi<T> {
+  itens: T[];
+  page: number;
+  size: number;
+  totalItens: number;
+  totalPaginas: number;
+}

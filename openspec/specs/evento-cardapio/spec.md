@@ -27,7 +27,7 @@ O cardápio SHALL consultar `GET /eventos/{id}/produtos` e `GET /eventos/{id}/pr
 
 ### Requirement: Adicionar item de estoque
 
-A adição de item de estoque SHALL enviar `origem: ESTOQUE`, `produtoId`, `quantidadePrevista` e `precoVenda`. O item MUST referenciar um produto ativo e não pode repetir um produto já presente no cardápio do evento.
+A adição de item de estoque SHALL enviar `origem: ESTOQUE`, `produtoId`, `quantidadePrevista` e `precoVenda`. O item MUST referenciar um produto ativo e não pode repetir um produto já presente no cardápio do evento. A seleção de produtos MUST consumir o catálogo integrado de estoque com IDs numéricos e saldo atual compatível com `quantidadeAtual`.
 
 #### Scenario: Item de estoque adicionado
 

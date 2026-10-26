@@ -6,10 +6,13 @@ export type {
   CriarProdutoPayload,
   LoteProduto,
   MovimentacaoProduto,
+  MovimentacaoResultado,
   OpcaoCategoria,
+  PaginaApi,
   ParametrosProdutos,
   Produto,
   RespostaCategorias,
   RespostaProdutos,
+  TipoMovimentacao,
   AtualizarProdutoPayload,
 } from "./inventario";

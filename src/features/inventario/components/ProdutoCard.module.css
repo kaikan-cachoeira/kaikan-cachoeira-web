@@ -112,6 +112,14 @@
   background: var(--branco-suave);
 }
 
+.dangerItem {
+  color: var(--erro);
+}
+
+.dangerItem:hover {
+  background: color-mix(in srgb, var(--erro) 10%, transparent);
+}
+
 .actions {
   display: flex;
   gap: var(--espaco-8);

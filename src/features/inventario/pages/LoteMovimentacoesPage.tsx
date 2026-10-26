@@ -22,15 +22,22 @@ import styles from "./LoteMovimentacoesPage.module.css";
 
 export default function LoteMovimentacoesPage() {
   const { productId, lotId } = useParams();
+  const produtoIdNumero = Number(productId);
+  const loteIdNumero = Number(lotId);
   const [page, setPage] = useState(1);
-  const produtoQuery = useProdutoQuery(productId);
-  const movimentosQuery = useMovimentacoesLoteQuery(lotId, {
+  const produtoQuery = useProdutoQuery(
+    Number.isFinite(produtoIdNumero) ? produtoIdNumero : null,
+  );
+  const movimentosQuery = useMovimentacoesLoteQuery(
+    Number.isFinite(loteIdNumero) ? loteIdNumero : undefined,
+    {
     page,
     pageSize: 6,
-  });
+    },
+  );
 
   const product = produtoQuery.data;
-  const lot = product?.lots?.find((item) => item.id === lotId);
+  const lot = product?.lotes?.find((item) => item.id === loteIdNumero);
   const { data, isLoading, isError, isFetching, refetch } = movimentosQuery;
 
   const voltar = (
@@ -56,7 +63,7 @@ export default function LoteMovimentacoesPage() {
     );
   }
 
-  const hasCost = Number(lot.totalCost) > 0;
+  const hasCost = Number(lot.custoTotal) > 0;
 
   return (
     <div className={styles.stack}>
@@ -64,25 +71,25 @@ export default function LoteMovimentacoesPage() {
 
       <PageHeader
         title="Movimentações do lote"
-        subtitle={`${product.name} · entrada em ${formatarDataHora(lot.createdAt)}`}
+        subtitle={`${product.nome} · entrada em ${formatarDataHora(lot.criadoEm)}`}
       />
 
       <dl className={styles.summary}>
         <div>
           <dt>Quantidade de entrada</dt>
-          <dd>{formatarNumero(lot.entryQty)} un</dd>
+          <dd>{formatarNumero(lot.quantidadeInicial)} un</dd>
         </div>
         <div>
           <dt>Saldo atual</dt>
-          <dd>{formatarNumero(lot.balance)} un</dd>
+          <dd>{formatarNumero(lot.quantidadeAtual)} un</dd>
         </div>
         <div>
           <dt>Custo total</dt>
-          <dd>{hasCost ? formatarMoeda(lot.totalCost) : "Sem custo"}</dd>
+          <dd>{hasCost ? formatarMoeda(lot.custoTotal) : "Sem custo"}</dd>
         </div>
         <div>
           <dt>Custo unitário</dt>
-          <dd>{hasCost ? formatarMoeda(lot.unitCost) : "Sem custo"}</dd>
+          <dd>{hasCost ? formatarMoeda(lot.custoUnitario) : "Sem custo"}</dd>
         </div>
       </dl>
 
@@ -100,7 +107,7 @@ export default function LoteMovimentacoesPage() {
             aria-busy={isFetching ? "true" : undefined}
           >
             {data.items.map((movement) => {
-              const positive = Number(movement.quantity) > 0;
+              const positive = Number(movement.quantidade) > 0;
               return (
                 <li key={movement.id} className={modalStyles.listItem}>
                   <div className={modalStyles.listMain}>
@@ -114,21 +121,21 @@ export default function LoteMovimentacoesPage() {
                         }
                       >
                         {positive ? "+" : ""}
-                        {formatarNumero(movement.quantity)} un
+                        {formatarNumero(movement.quantidade)} un
                       </strong>
                     </div>
                     <p className={modalStyles.listMeta}>
-                      {formatarDataHora(movement.createdAt)}
-                      {movement.eventName ? ` · ${movement.eventName}` : ""}
+                      {formatarDataHora(movement.criadoEm)}
+                      {movement.eventoNome ? ` · ${movement.eventoNome}` : ""}
                     </p>
-                    {Number(movement.totalCost) > 0 ? (
+                    {Number(movement.custoTotal) > 0 ? (
                       <p className={modalStyles.listMeta}>
-                        Custo total: {formatarMoeda(movement.totalCost)} ·
-                        Custo unitário: {formatarMoeda(movement.unitCost)}
+                        Custo total: {formatarMoeda(movement.custoTotal)} ·
+                        Custo unitário: {formatarMoeda(movement.custoUnitario)}
                       </p>
                     ) : null}
-                    {movement.notes ? (
-                      <p className={modalStyles.listNote}>{movement.notes}</p>
+                    {movement.observacoes ? (
+                      <p className={modalStyles.listNote}>{movement.observacoes}</p>
                     ) : null}
                   </div>
                 </li>

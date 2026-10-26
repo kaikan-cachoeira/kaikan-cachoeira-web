@@ -84,7 +84,7 @@ export default function DoacaoModal({
 
   const selectedProductId = watch("productId");
   const selectedProduct = (productsData?.items || []).find(
-    (product) => product.id === selectedProductId,
+    (product) => String(product.id) === selectedProductId,
   );
   const eventOptions = (eventsData?.items || []).map((event) => ({
     value: String(event.id),
@@ -101,8 +101,8 @@ export default function DoacaoModal({
   }
 
   const productOptions = (productsData?.items || []).map((product) => ({
-    value: product.id,
-    label: `${product.name} (${formatarNumero(product.quantity)} un.)`,
+    value: String(product.id),
+    label: `${product.nome} (${formatarNumero(product.quantidadeAtual)} un.)`,
   }));
   if (
     doacao?.type === "ready" &&
@@ -135,7 +135,7 @@ export default function DoacaoModal({
 
     if (type === "ready") {
       payload.productId = values.productId;
-      payload.itemName = selectedProduct?.name || "";
+      payload.itemName = selectedProduct?.nome || "";
       payload.quantity = values.quantity;
     } else if (type === "money") {
       payload.amount = values.amount;
@@ -260,7 +260,7 @@ export default function DoacaoModal({
             </div>
             {selectedProduct ? (
               <p className={styles.stockHint}>
-                Saldo atual do produto: {formatarNumero(selectedProduct.quantity)}{" "}
+                Saldo atual do produto: {formatarNumero(selectedProduct.quantidadeAtual)}{" "}
                 unidades. A doação não altera o saldo automaticamente.
               </p>
             ) : null}

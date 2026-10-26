@@ -98,7 +98,7 @@ export default function AdicionarProdutoCardapioModal({
 
   const selectedProductId = watch("productId");
   const selectedProduct = (productsData?.items || []).find(
-    (product) => product.id === selectedProductId,
+    (product) => String(product.id) === selectedProductId,
   );
   const categoryOptions = [
     { value: "", label: "Sem categoria" },
@@ -307,8 +307,8 @@ export default function AdicionarProdutoCardapioModal({
                   productsLoading ? "Carregando..." : "Selecionar produto"
                 }
                 options={(productsData?.items || []).map((product) => ({
-                  value: product.id,
-                  label: `${product.name} (${formatarNumero(product.quantity)} un.)`,
+                  value: String(product.id),
+                  label: `${product.nome} (${formatarNumero(product.quantidadeAtual)} un.)`,
                 }))}
                 disabled={productsLoading}
                 required
@@ -337,7 +337,7 @@ export default function AdicionarProdutoCardapioModal({
                     if (
                       !item &&
                       selectedProduct &&
-                      value > Number(selectedProduct.quantity)
+                      value > Number(selectedProduct.quantidadeAtual)
                     ) {
                       return "A quantidade não pode ser maior que o estoque disponível.";
                     }
@@ -369,9 +369,9 @@ export default function AdicionarProdutoCardapioModal({
             </div>
             {selectedProduct && !item ? (
               <p className={styles.hintBox}>
-                Estoque disponível: {formatarNumero(selectedProduct.quantity)}{" "}
+                Estoque disponível: {formatarNumero(selectedProduct.quantidadeAtual)}{" "}
                 unidades · Categoria:{" "}
-                {selectedProduct.category || "Sem categoria"}
+                {selectedProduct.categoria?.nome || "Sem categoria"}
               </p>
             ) : null}
           </>

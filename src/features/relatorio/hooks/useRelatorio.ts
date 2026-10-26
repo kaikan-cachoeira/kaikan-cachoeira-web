@@ -19,6 +19,19 @@ async function listarTodasDoacoes(eventIds: string) {
   return { items, total: firstPage.total };
 }
 
+async function listarTodosProdutosEstoque() {
+  const pageSize = 100;
+  const primeira = await listarProdutos({ page: 1, pageSize });
+  const items = [...primeira.items];
+
+  for (let page = 2; page <= primeira.totalPages; page += 1) {
+    const resposta = await listarProdutos({ page, pageSize });
+    items.push(...resposta.items);
+  }
+
+  return items;
+}
+
 export interface FiltrosRelatorio {
   from: string;
   to: string;
@@ -52,15 +65,20 @@ export function useRelatorio(filtros: FiltrosRelatorio) {
   const estoqueBaixoQuery = useQuery({
     queryKey: comporChave(queryKeys.eventos, "relatorio", "estoque-baixo"),
     queryFn: async () => {
-      const resposta = await listarProdutos({ stock: "low", pageSize: 1 });
-      return resposta.total;
+      const produtos = await listarTodosProdutosEstoque();
+      return produtos.filter(
+        (produto) =>
+          produto.estoqueMinimo !== null &&
+          produto.estoqueMinimo !== undefined &&
+          produto.quantidadeAtual <= produto.estoqueMinimo,
+      ).length;
     },
   });
   const semEstoqueQuery = useQuery({
     queryKey: comporChave(queryKeys.eventos, "relatorio", "sem-estoque"),
     queryFn: async () => {
-      const resposta = await listarProdutos({ stock: "out", pageSize: 1 });
-      return resposta.total;
+      const produtos = await listarTodosProdutosEstoque();
+      return produtos.filter((produto) => produto.quantidadeAtual === 0).length;
     },
   });
   const fiadosQuery = useQuery({
