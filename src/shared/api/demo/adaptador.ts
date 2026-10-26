@@ -249,6 +249,13 @@ async function route(config: any) {
     return ok(config, { ok: true });
   }
 
+  if (method === "post" && path === "/auth/reset-password") {
+    if (!body.password || body.password.length < 8) {
+      return fail(config, 400, "A senha deve ter ao menos 8 caracteres.");
+    }
+    return ok(config, { ok: true });
+  }
+
   /* Categorias */
   if (method === "get" && path === "/categories") {
     const term = params.get("search") || "";
