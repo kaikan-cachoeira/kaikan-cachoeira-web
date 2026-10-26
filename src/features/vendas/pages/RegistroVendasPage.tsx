@@ -40,8 +40,15 @@ export default function RegistroVendasPage() {
     discountItem,
     setDiscountItem,
     aplicarDescontoNoItem,
+    removerDescontoNoItem,
+    descontoLoading,
     createSale,
     confirmSale,
+    valorFinal,
+    setValorFinal,
+    valorFinalInvalido,
+    descontoVenda,
+    totalComDescontoDosItens,
     subtitle,
   } = useVendas({ carregarCardapio: true });
 
@@ -116,6 +123,8 @@ export default function RegistroVendasPage() {
                     key={item.id}
                     item={item}
                     onDiscount={setDiscountItem}
+                    onRemoveDiscount={removerDescontoNoItem}
+                    discountLoading={descontoLoading}
                   />
                 ))}
               </div>
@@ -148,6 +157,11 @@ export default function RegistroVendasPage() {
           <ResumoVenda
             onConfirm={confirmSale}
             confirming={createSale.isPending}
+            valorFinal={valorFinal}
+            onValorFinalChange={setValorFinal}
+            valorFinalInvalido={valorFinalInvalido}
+            descontoVenda={descontoVenda}
+            totalComDescontoDosItens={totalComDescontoDosItens}
           />
         </div>
       )}

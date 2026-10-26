@@ -11,14 +11,17 @@ import styles from "./VendaProdutoCard.module.css";
 interface VendaProdutoCardProps {
   item: ItemCardapio;
   onDiscount?: (item: ItemCardapio) => void;
+  onRemoveDiscount?: (item: ItemCardapio) => void;
+  discountLoading?: boolean;
 }
 
 export default function VendaProdutoCard({
   item,
   onDiscount,
+  onRemoveDiscount,
+  discountLoading = false,
 }: VendaProdutoCardProps) {
-  const { adicionarItem, itens, definirQuantidade, descontos, removerDesconto } =
-    useCarrinho();
+  const { adicionarItem, itens, definirQuantidade } = useCarrinho();
   const cartId = String(item.id);
   const cartItem = itens.find((entry) => entry.menuItemId === cartId);
   const quantity = cartItem?.quantity || 0;
@@ -29,9 +32,8 @@ export default function VendaProdutoCard({
       ? item.restantePrevisto
       : null;
   const max = disponivel !== null ? disponivel : undefined;
-  const discountedPrice = descontos[cartId];
-  const currentPrice = discountedPrice ?? item.precoComDesconto;
-  const hasDiscount = discountedPrice !== undefined || item.desconto > 0;
+  const currentPrice = item.precoComDesconto;
+  const hasDiscount = item.desconto > 0;
   const soldOut = disponivel !== null && disponivel <= 0;
   const atMax = max !== undefined && quantity >= max;
 
@@ -91,9 +93,8 @@ export default function VendaProdutoCard({
         <Botao
           variant="secondary"
           size="compact"
-          onClick={() =>
-            hasDiscount ? removerDesconto(cartId) : onDiscount?.(item)
-          }
+          onClick={() => (hasDiscount ? onRemoveDiscount?.(item) : onDiscount?.(item))}
+          loading={discountLoading}
         >
           {hasDiscount ? "Remover desconto" : "Aplicar desconto"}
         </Botao>

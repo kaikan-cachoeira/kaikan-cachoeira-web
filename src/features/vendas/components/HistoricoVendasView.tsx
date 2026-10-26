@@ -59,6 +59,7 @@ export default function HistoricoVendasView({
     setTo,
     detailsSale,
     setDetailsSale,
+    detalhesQuery,
     cancelTarget,
     setCancelTarget,
     vendasQuery,
@@ -143,13 +144,13 @@ export default function HistoricoVendasView({
             </Cabecalho>
             <Corpo>
               {data.items.map((sale) => (
-                <Linha key={sale.id} muted={sale.status === "cancelled"}>
-                  <Celula>{sale.productsLabel}</Celula>
-                  <Celula>{formatarDataHora(sale.createdAt)}</Celula>
-                  <Celula numeric>{formatarNumero(sale.quantity)}</Celula>
-                  <Celula numeric>{formatarMoeda(sale.discount)}</Celula>
+                <Linha key={sale.id} muted={sale.cancelada}>
+                  <Celula>{`Venda #${sale.id}`}</Celula>
+                  <Celula>{formatarDataHora(sale.criadoEm)}</Celula>
+                  <Celula numeric>{formatarNumero(sale.quantidadeItens)}</Celula>
+                  <Celula numeric>{formatarMoeda(sale.desconto)}</Celula>
                   <Celula numeric>
-                    <strong>{formatarMoeda(sale.total)}</strong>
+                    <strong>{formatarMoeda(sale.precoTotal)}</strong>
                   </Celula>
                   <Celula>
                     <div className={styles.rowActions}>
@@ -160,7 +161,7 @@ export default function HistoricoVendasView({
                       >
                         Ver detalhes
                       </Botao>
-                      {sale.status === "active" ? (
+                      {!sale.cancelada ? (
                         <Botao
                           variant="danger"
                           size="compact"
@@ -207,6 +208,10 @@ export default function HistoricoVendasView({
       {detailsSale ? (
         <VendaDetalhesModal
           sale={detailsSale}
+          details={detalhesQuery.data}
+          loading={detalhesQuery.isLoading}
+          error={detalhesQuery.isError}
+          onRetry={detalhesQuery.refetch}
           onClose={() => setDetailsSale(null)}
         />
       ) : null}
@@ -215,7 +220,7 @@ export default function HistoricoVendasView({
         <ConfirmacaoDialog
           title="Cancelar venda"
           message={`Deseja cancelar esta venda de ${formatarMoeda(
-            cancelTarget.total,
+            cancelTarget.precoTotal,
           )}? Os produtos voltarão ao desempenho do evento.`}
           confirmLabel="Cancelar venda"
           cancelLabel="Voltar"

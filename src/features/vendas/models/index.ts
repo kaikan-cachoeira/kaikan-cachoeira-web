@@ -1,9 +1,10 @@
 export type {
   CriarVendaPayload,
-  ItemVenda,
+  ItemVendaDetalhe,
   ItemVendaPayload,
   ParametrosVendas,
   ParametrosVendasEvento,
   RespostaVendas,
   Venda,
+  VendaDetalhe,
 } from "./vendas";
