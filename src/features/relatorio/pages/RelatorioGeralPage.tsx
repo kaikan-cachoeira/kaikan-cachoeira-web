@@ -86,7 +86,7 @@ export default function RelatorioGeralPage() {
   );
   const donations = donationsQuery.data?.items || [];
   const ticketValue = donations.reduce(
-    (sum, donation) => sum + Number(donation.ticketValue || 0),
+    (sum, donation) => sum + Number(donation.valorFicha || 0),
     0,
   );
   const hasFilters = Boolean(from || to || types.length);

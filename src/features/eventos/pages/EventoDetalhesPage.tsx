@@ -595,7 +595,6 @@ export default function EventoDetalhesPage() {
                     <CelulaCabecalho>Doação</CelulaCabecalho>
                     <CelulaCabecalho>Doador</CelulaCabecalho>
                     <CelulaCabecalho>Tipo</CelulaCabecalho>
-                    <CelulaCabecalho numeric>Valor</CelulaCabecalho>
                     <CelulaCabecalho numeric>
                       Fichas de agradecimento
                     </CelulaCabecalho>
@@ -612,18 +611,16 @@ export default function EventoDetalhesPage() {
                       </Celula>
                       <Celula>{item.doador || "Não informado"}</Celula>
                       <Celula>{rotuloTipoDoacao(item.tipo)}</Celula>
-                      <Celula numeric>—</Celula>
                       <Celula numeric>{formatarMoeda(item.valorFicha)}</Celula>
                     </Linha>
                   ))}
                   {doacoesDinheiro.slice(0, 5).map((item, index) => (
                     <Linha key={`dinheiro-${index}`}>
                       <Celula>
-                        Doação em dinheiro · {item.formaPagamento || "PIX"}
+                        {formatarMoeda(item.valor)} · {item.formaPagamento || "PIX"}
                       </Celula>
                       <Celula>{item.doador || "Não informado"}</Celula>
                       <Celula>Dinheiro</Celula>
-                      <Celula numeric>{formatarMoeda(item.valor)}</Celula>
                       <Celula numeric>{formatarMoeda(item.valorFicha)}</Celula>
                     </Linha>
                   ))}

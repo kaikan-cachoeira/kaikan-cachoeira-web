@@ -13,21 +13,26 @@ import { useEventosQuery } from "@/features/eventos";
 import { useProdutosQuery } from "@/features/inventario";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
 import { mensagemErro } from "@/shared/api/erros";
-import type { CriarDoacaoPayload, Doacao } from "../models";
+import type {
+  CriarDoacaoPayload,
+  Doacao,
+  FormaPagamentoDoacao,
+  TipoDoacao,
+} from "../models";
 import { formatarNumero } from "@/shared/lib/formatacao";
 import { OPCOES_TIPO_DOACAO } from "@/shared/lib/tiposDoacao";
 import styles from "./DoacaoModal.module.css";
 
 const PAYMENT_OPTIONS = [
   { value: "PIX", label: "PIX" },
-  { value: "Débito", label: "Débito" },
-  { value: "Crédito", label: "Crédito" },
-  { value: "Dinheiro", label: "Dinheiro" },
+  { value: "DEBITO", label: "Débito" },
+  { value: "CREDITO", label: "Crédito" },
+  { value: "DINHEIRO", label: "Dinheiro" },
 ];
 
 interface DoacaoModalProps {
   doacao?: Doacao;
-  initialType?: string;
+  initialType?: TipoDoacao;
   onClose: () => void;
 }
 
@@ -44,11 +49,11 @@ interface DoacaoFormValues {
 
 export default function DoacaoModal({
   doacao,
-  initialType = "ready",
+  initialType = "REABASTECIMENTO",
   onClose,
 }: DoacaoModalProps) {
   const isEdit = Boolean(doacao);
-  const [type, setType] = useState(doacao?.type ?? initialType);
+  const [type, setType] = useState<TipoDoacao>(doacao?.tipo ?? initialType);
   const [serverError, setServerError] = useState("");
   const { addToast } = useToast();
   const {
@@ -71,14 +76,14 @@ export default function DoacaoModal({
   } = useForm<DoacaoFormValues>({
     mode: "onTouched",
     defaultValues: {
-      eventId: doacao ? String(doacao.eventId) : "",
-      productId: doacao?.productId ?? "",
-      quantity: doacao?.quantity ?? 1,
-      donor: doacao?.donor ?? "",
-      ticketValue: doacao?.ticketValue ?? 0,
-      amount: doacao?.amount ?? 0,
-      paymentMethod: doacao?.paymentMethod ?? "PIX",
-      itemName: doacao?.itemName ?? "",
+      eventId: doacao ? String(doacao.eventoId) : "",
+      productId: doacao?.produtoId ? String(doacao.produtoId) : "",
+      quantity: doacao?.quantidade ?? 1,
+      donor: doacao?.doador ?? "",
+      ticketValue: doacao?.valorFicha ?? 0,
+      amount: doacao?.valor ?? 0,
+      paymentMethod: doacao?.formaPagamento ?? "PIX",
+      itemName: doacao?.nome ?? "",
     },
   });
 
@@ -92,11 +97,11 @@ export default function DoacaoModal({
   }));
   if (
     doacao &&
-    !eventOptions.some((option) => option.value === String(doacao.eventId))
+    !eventOptions.some((option) => option.value === String(doacao.eventoId))
   ) {
     eventOptions.push({
-      value: String(doacao.eventId),
-      label: doacao.eventName,
+      value: String(doacao.eventoId),
+      label: doacao.eventoNome,
     });
   }
 
@@ -105,18 +110,18 @@ export default function DoacaoModal({
     label: `${product.nome} (${formatarNumero(product.quantidadeAtual)} un.)`,
   }));
   if (
-    doacao?.type === "ready" &&
-    doacao.productId &&
-    !productOptions.some((option) => option.value === doacao.productId)
+    doacao?.tipo === "REABASTECIMENTO" &&
+    doacao.produtoId &&
+    !productOptions.some((option) => option.value === String(doacao.produtoId))
   ) {
     productOptions.push({
-      value: doacao.productId,
-      label: `${doacao.itemName || "Produto"} (indisponível)`,
+      value: String(doacao.produtoId),
+      label: `${doacao.nome || "Produto"} (indisponível)`,
     });
   }
 
   function changeType(nextType: string) {
-    setType(nextType);
+    setType(nextType as TipoDoacao);
     setServerError("");
     resetField("productId");
     resetField("quantity");
@@ -127,21 +132,20 @@ export default function DoacaoModal({
   const onSubmit: SubmitHandler<DoacaoFormValues> = async (values) => {
     setServerError("");
     const payload: CriarDoacaoPayload = {
-      eventId: Number(values.eventId),
-      type,
-      donor: values.donor,
-      ticketValue: values.ticketValue,
+      eventoId: Number(values.eventId),
+      tipo: type,
+      doador: values.donor,
+      valorFicha: values.ticketValue,
     };
 
-    if (type === "ready") {
-      payload.productId = values.productId;
-      payload.itemName = selectedProduct?.nome || "";
-      payload.quantity = values.quantity;
-    } else if (type === "money") {
-      payload.amount = values.amount;
-      payload.paymentMethod = values.paymentMethod;
+    if (type === "REABASTECIMENTO") {
+      payload.produtoId = Number(values.productId);
+      payload.quantidade = values.quantity;
+    } else if (type === "DINHEIRO") {
+      payload.valor = values.amount;
+      payload.formaPagamento = values.paymentMethod as FormaPagamentoDoacao;
     } else {
-      payload.itemName = values.itemName;
+      payload.nome = values.itemName;
     }
 
     try {
@@ -219,7 +223,7 @@ export default function DoacaoModal({
           columns={3}
         />
 
-        {type === "ready" ? (
+        {type === "REABASTECIMENTO" ? (
           <>
             <Selecao
               id="doacao-produto"
@@ -261,13 +265,13 @@ export default function DoacaoModal({
             {selectedProduct ? (
               <p className={styles.stockHint}>
                 Saldo atual do produto: {formatarNumero(selectedProduct.quantidadeAtual)}{" "}
-                unidades. A doação não altera o saldo automaticamente.
+                unidades. O reabastecimento por doação aumenta o estoque.
               </p>
             ) : null}
           </>
         ) : null}
 
-        {type === "money" ? (
+        {type === "DINHEIRO" ? (
           <>
             <div className={styles.twoColumns}>
               <Controller
@@ -308,7 +312,7 @@ export default function DoacaoModal({
           </>
         ) : null}
 
-        {type === "ingredient" ? (
+        {type === "PRODUTO" ? (
           <>
             <p className={styles.notice}>
               <Icone name="info" size={18} />
@@ -324,10 +328,10 @@ export default function DoacaoModal({
               error={errors.itemName?.message}
               {...register("itemName", {
                 validate: (value) =>
-                  type !== "ingredient" ||
+                  type !== "PRODUTO" ||
                   Boolean(String(value || "").trim()) ||
                   "Informe o ingrediente doado.",
-              })}
+                })}
             />
             <Entrada
               id="doacao-doador-ingrediente"

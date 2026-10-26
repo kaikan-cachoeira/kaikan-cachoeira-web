@@ -3,19 +3,23 @@ import type {
   ParametrosPaginacao,
 } from "@/shared/models/paginacao";
 
+export type TipoDoacao = "DINHEIRO" | "PRODUTO" | "REABASTECIMENTO";
+export type FormaPagamentoDoacao = "PIX" | "DEBITO" | "CREDITO" | "DINHEIRO";
+
 export interface Doacao {
-  id: string;
-  eventId: number;
-  eventName: string;
-  type: string;
-  itemName?: string;
-  quantity?: number;
-  donor?: string;
-  paymentMethod?: string;
-  amount?: number;
-  ticketValue: number;
-  productId?: string | null;
-  createdAt: string;
+  id: number;
+  eventoId: number;
+  eventoNome: string;
+  tipo: TipoDoacao;
+  valor?: number | null;
+  formaPagamento?: FormaPagamentoDoacao | null;
+  produtoId?: number | null;
+  nome?: string | null;
+  quantidade?: number | null;
+  doador: string;
+  valorFicha?: number | null;
+  criadoEm: string;
+  atualizadoEm: string;
 }
 
 export interface ParametrosDoacoes extends ParametrosPaginacao {
@@ -26,15 +30,15 @@ export interface ParametrosDoacoes extends ParametrosPaginacao {
 export type RespostaDoacoes = Paginado<Doacao>;
 
 export interface CriarDoacaoPayload {
-  eventId: number;
-  type: string;
-  donor?: string;
-  ticketValue: number;
-  productId?: string;
-  itemName?: string;
-  quantity?: number;
-  amount?: number;
-  paymentMethod?: string;
+  eventoId: number;
+  tipo: TipoDoacao;
+  valor?: number;
+  formaPagamento?: FormaPagamentoDoacao;
+  produtoId?: number;
+  nome?: string;
+  quantidade?: number;
+  doador: string;
+  valorFicha?: number;
 }
 
 export type AtualizarDoacaoPayload = CriarDoacaoPayload;

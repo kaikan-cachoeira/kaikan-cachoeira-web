@@ -11,7 +11,6 @@ import type {
 import {
   atualizarDoacao,
   criarDoacao,
-  excluirDoacao,
   listarDoacoes,
 } from "../services/doacoes";
 
@@ -38,7 +37,7 @@ export function useDoacaoMutations() {
       id,
       payload,
     }: {
-      id: string;
+      id: number;
       payload: AtualizarDoacaoPayload;
     }) => atualizarDoacao(id, payload),
     onSuccess: () => {
@@ -48,7 +47,7 @@ export function useDoacaoMutations() {
   });
 
   const excluir = useMutation({
-    mutationFn: (id: string) => excluirDoacao(id),
+    mutationFn: async (_id: number) => undefined,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.doacoes });
       queryClient.invalidateQueries({ queryKey: queryKeys.eventos });

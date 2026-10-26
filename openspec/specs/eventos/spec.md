@@ -108,7 +108,7 @@ A mudança de status SHALL usar `PATCH /eventos/{id}` com o identificador numér
 
 ### Requirement: Detalhe do evento
 
-O detalhe SHALL exibir cabeçalho e resumo de `GET /eventos/{id}`. Quando o evento já iniciou, o detalhe SHALL usar `GET /eventos/{id}/relatorio` para métricas, produtos, doações, custos adicionais e vendas por hora. Antes de iniciar, SHALL usar `GET /eventos/{id}/produtos` e exibir métricas zeradas.
+O detalhe SHALL exibir cabeçalho e resumo de `GET /eventos/{id}`. Quando o evento já iniciou, o detalhe SHALL usar `GET /eventos/{id}/relatorio` para métricas, produtos, doações, custos adicionais e vendas por hora. Antes de iniciar, SHALL usar `GET /eventos/{id}/produtos` e exibir métricas zeradas. A seção de doações MUST permanecer compatível com o contrato atualizado de doações, incluindo mapeamento consistente de tipo e identificação do evento associado.
 
 #### Scenario: Evento não iniciado
 
