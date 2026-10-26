@@ -8,8 +8,8 @@ export async function entrar(credenciais: Credenciais): Promise<Sessao> {
 
 export async function solicitarRecuperacaoSenha(
   email: string,
-): Promise<{ message?: string }> {
-  const { data } = await api.post<{ message?: string }>("/auth/recover", {
+): Promise<void> {
+  const { data } = await api.post<void>("/auth/recuperacao-senha", {
     email,
   });
   return data;
@@ -23,4 +23,10 @@ export async function redefinirSenha(
     payload,
   );
   return data;
+}
+
+export async function sair(refreshToken: string): Promise<void> {
+  await api.post<void>("/auth/logout", {
+    refreshToken
+  });
 }

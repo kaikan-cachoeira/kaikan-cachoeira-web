@@ -26,9 +26,11 @@ import {
 import { useToast } from "@/shared/components/Toast/ToastProvider";
 import ConfirmacaoDialog from "@/shared/components/ConfirmacaoDialog/ConfirmacaoDialog";
 import { mensagemErro } from "@/shared/api/erros";
+import { resolverUrlApi } from "@/shared/api/urls";
 import { useEventoMutations } from "../hooks/useEventos";
 import { useEventoCardapio } from "../hooks/useEventoCardapio";
 import type { ItemCardapio } from "../models";
+import { varianteStatus } from "../utils/statusEvento";
 import {
   formatarMoeda,
   formatarNumero,
@@ -37,10 +39,10 @@ import {
 import AdicionarProdutoCardapioModal from "../components/AdicionarProdutoCardapioModal";
 import styles from "./EventoCardapioPage.module.css";
 
-const TYPE_OPTIONS = [
-  { value: "", label: "Todos" },
-  { value: "ready", label: "Produto pronto" },
-  { value: "made", label: "Feito na hora" },
+const ORIGEM_OPTIONS = [
+  { value: "", label: "Todas" },
+  { value: "ESTOQUE", label: "Estoque" },
+  { value: "PRODUZIDO", label: "Produzido" },
 ];
 
 interface MenuAcoes {
@@ -50,7 +52,9 @@ interface MenuAcoes {
 }
 
 export default function EventoCardapioPage() {
-  const { id } = useParams();
+  const { id: paramId } = useParams();
+  const id = Number(paramId);
+  const idValido = Number.isFinite(id) && id > 0;
   const { addToast } = useToast();
   const { excluirProduto } = useEventoMutations();
   const [actionsMenu, setActionsMenu] = useState<MenuAcoes | null>(null);
@@ -88,8 +92,11 @@ export default function EventoCardapioPage() {
     clearAll,
     openAdd,
     hasFilters,
-  } = useEventoCardapio(id);
+  } = useEventoCardapio(idValido ? id : undefined);
   const activeMenuItemId = actionsMenu?.item.id;
+  const podeEditar =
+    event?.tipoEvento === "EVENTO" &&
+    event.status.codigo === "NAO_INICIADO";
 
   function closeActionsMenu(returnFocus = false) {
     setActionsMenu(null);
@@ -197,7 +204,7 @@ export default function EventoCardapioPage() {
   }, [activeMenuItemId]);
 
   async function confirmDelete() {
-    if (!id || !deleteTarget) return;
+    if (!idValido || !deleteTarget) return;
     try {
       await excluirProduto.mutateAsync({
         eventId: id,
@@ -224,37 +231,30 @@ export default function EventoCardapioPage() {
         title="Produtos do cardápio"
         subtitle="Controle dos produtos vendidos no baiten do evento"
         actions={
-          <>
-            <Botao
-              variant="secondary"
-              iconLeft="ticket"
-              onClick={() => setCategoriesOpen(true)}
-            >
-              Menu de categorias
-            </Botao>
-            <Botao iconLeft="plus" onClick={() => openAdd("ready")}>
-              Adicionar produto
-            </Botao>
-          </>
+          podeEditar ? (
+            <>
+              <Botao
+                variant="secondary"
+                iconLeft="ticket"
+                onClick={() => setCategoriesOpen(true)}
+              >
+                Menu de categorias
+              </Botao>
+              <Botao iconLeft="plus" onClick={() => openAdd("ESTOQUE")}>
+                Adicionar produto
+              </Botao>
+            </>
+          ) : undefined
         }
       >
         {event ? (
           <div className={styles.eventContext}>
-            <span>{event.name}</span>
+            <span>{event.nome}</span>
             <span className={styles.eventMeta}>
-              {formatarPeriodo(event.start, event.end)}
+              {formatarPeriodo(event.dataHoraInicio, event.dataHoraEncerramento)}
             </span>
-            <Etiqueta
-              variant={
-                event.status === "Em andamento"
-                  ? "success"
-                  : event.status === "Não iniciado"
-                    ? "warning"
-                    : "muted"
-              }
-              dot
-            >
-              {event.status}
+            <Etiqueta variant={varianteStatus(event.status.codigo)} dot>
+              {event.status.descricao}
             </Etiqueta>
           </div>
         ) : null}
@@ -276,18 +276,18 @@ export default function EventoCardapioPage() {
             label="Categoria"
             options={[
               { value: "", label: "Todas" },
-              ...categories.map((item) => ({
-                value: item.name,
-                label: item.name,
+              ...categories.map((categoria) => ({
+                value: categoria,
+                label: categoria,
               })),
             ]}
             value={category}
             onChange={(changeEvent) => changeCategory(changeEvent.target.value)}
           />
           <Selecao
-            id="cardapio-filtro-tipo"
-            label="Tipo"
-            options={TYPE_OPTIONS}
+            id="cardapio-filtro-origem"
+            label="Origem"
+            options={ORIGEM_OPTIONS}
             value={type}
             onChange={(changeEvent) => changeType(changeEvent.target.value)}
           />
@@ -308,73 +308,91 @@ export default function EventoCardapioPage() {
               <Linha>
                 <CelulaCabecalho>Produto</CelulaCabecalho>
                 <CelulaCabecalho>Categoria</CelulaCabecalho>
+                <CelulaCabecalho>Origem</CelulaCabecalho>
                 <CelulaCabecalho numeric>Previsto</CelulaCabecalho>
                 <CelulaCabecalho numeric>Vendido</CelulaCabecalho>
-                <CelulaCabecalho numeric>Preço de venda</CelulaCabecalho>
-                <CelulaCabecalho numeric>Receita</CelulaCabecalho>
-                <CelulaCabecalho numeric>Custo total</CelulaCabecalho>
-                <CelulaCabecalho numeric>Descontos</CelulaCabecalho>
-                <CelulaCabecalho numeric>Lucro líquido</CelulaCabecalho>
-                <CelulaCabecalho>Ações</CelulaCabecalho>
+                <CelulaCabecalho numeric>Restante</CelulaCabecalho>
+                <CelulaCabecalho numeric>Preço</CelulaCabecalho>
+                <CelulaCabecalho numeric>Desconto</CelulaCabecalho>
+                <CelulaCabecalho numeric>Custo ingredientes</CelulaCabecalho>
+                {podeEditar ? <CelulaCabecalho>Ações</CelulaCabecalho> : null}
               </Linha>
             </Cabecalho>
             <Corpo>
               {visible.map((item) => {
-                const revenue = Math.max(
-                  0,
-                  item.price * item.sold - item.discounts,
-                );
-                const profit = revenue - item.costTotal;
+                const foto = resolverUrlApi(item.fotoUrl);
                 return (
                   <Linha key={item.id}>
                     <Celula>
-                      <span className={styles.productName}>{item.name}</span>
-                      <span className={styles.productType}>
-                        {item.type === "ready"
-                          ? "produto pronto"
-                          : "feito na hora"}
-                      </span>
+                      <div className={styles.productCell}>
+                        {foto ? (
+                          <img
+                            className={styles.productPhoto}
+                            src={foto}
+                            alt={`Foto de ${item.nome}`}
+                          />
+                        ) : null}
+                        <div>
+                          <span className={styles.productName}>
+                            {item.nome}
+                          </span>
+                          <span className={styles.productType}>
+                            {item.origem === "ESTOQUE"
+                              ? "produto do estoque"
+                              : "produzido no evento"}
+                          </span>
+                        </div>
+                      </div>
                     </Celula>
-                    <Celula>{item.category}</Celula>
-                    <Celula numeric>
-                      {item.expected === null || item.expected === undefined
-                        ? "—"
-                        : formatarNumero(item.expected)}
-                    </Celula>
-                    <Celula numeric>{formatarNumero(item.sold)}</Celula>
-                    <Celula numeric>{formatarMoeda(item.price)}</Celula>
-                    <Celula numeric>{formatarMoeda(revenue)}</Celula>
-                    <Celula numeric>{formatarMoeda(item.costTotal)}</Celula>
-                    <Celula numeric>{formatarMoeda(item.discounts)}</Celula>
-                    <Celula numeric>
-                      <span
-                        className={
-                          profit >= 0 ? styles.positive : styles.negative
-                        }
-                      >
-                        {formatarMoeda(profit)}
-                      </span>
-                    </Celula>
+                    <Celula>{item.categoria || "—"}</Celula>
                     <Celula>
-                      <button
-                        type="button"
-                        className={styles.moreButton}
-                        id={`menu-trigger-${item.id}`}
-                        aria-label={`Mais opções de ${item.name}`}
-                        aria-haspopup="menu"
-                        aria-expanded={actionsMenu?.item.id === item.id}
-                        aria-controls={
-                          actionsMenu?.item.id === item.id
-                            ? `menu-produto-${item.id}`
-                            : undefined
-                        }
-                        onClick={(event) =>
-                          toggleActionsMenu(item, event.currentTarget)
-                        }
-                      >
-                        <Icone name="more-vertical" size={20} />
-                      </button>
+                      {item.origem === "ESTOQUE" ? "Estoque" : "Produzido"}
                     </Celula>
+                    <Celula numeric>
+                      {item.quantidadePrevista === null ||
+                      item.quantidadePrevista === undefined
+                        ? "—"
+                        : formatarNumero(item.quantidadePrevista)}
+                    </Celula>
+                    <Celula numeric>
+                      {formatarNumero(item.quantidadeVendida)}
+                    </Celula>
+                    <Celula numeric>
+                      {item.restantePrevisto === null ||
+                      item.restantePrevisto === undefined
+                        ? "—"
+                        : formatarNumero(item.restantePrevisto)}
+                    </Celula>
+                    <Celula numeric>{formatarMoeda(item.precoVenda)}</Celula>
+                    <Celula numeric>{formatarMoeda(item.desconto)}</Celula>
+                    <Celula numeric>
+                      {item.custoTotalIngredientes === null ||
+                      item.custoTotalIngredientes === undefined
+                        ? "—"
+                        : formatarMoeda(item.custoTotalIngredientes)}
+                    </Celula>
+                    {podeEditar ? (
+                      <Celula>
+                        <button
+                          type="button"
+                          className={styles.moreButton}
+                          id={`menu-trigger-${item.id}`}
+                          aria-label={`Mais opções de ${item.nome}`}
+                          aria-haspopup="menu"
+                          aria-expanded={actionsMenu?.item.id === item.id}
+                          aria-controls={
+                            actionsMenu?.item.id === item.id
+                              ? `menu-produto-${item.id}`
+                              : undefined
+                          }
+                          onClick={(event) =>
+                            toggleActionsMenu(item, event.currentTarget)
+                          }
+                        >
+                          <Icone name="more-vertical" size={20} />
+                        </button>
+                      </Celula>
+                    ) : null}
                   </Linha>
                 );
               })}
@@ -401,35 +419,30 @@ export default function EventoCardapioPage() {
           icon="ticket"
           action={
             hasFilters ? (
-              <Botao
-                variant="secondary"
-                onClick={clearAll}
-              >
+              <Botao variant="secondary" onClick={clearAll}>
                 Limpar filtros
               </Botao>
-            ) : (
-              <Botao onClick={() => openAdd("ready")}>
+            ) : podeEditar ? (
+              <Botao onClick={() => openAdd("ESTOQUE")}>
                 Adicionar produto
               </Botao>
-            )
+            ) : undefined
           }
         />
       )}
 
-      {addOpen && id ? (
+      {addOpen && idValido && podeEditar ? (
         <AdicionarProdutoCardapioModal
           eventId={id}
-          categories={categories}
           initialType={addType}
           onClose={() => setAddOpen(false)}
         />
       ) : null}
 
-      {editTarget && id ? (
+      {editTarget && idValido && podeEditar ? (
         <AdicionarProdutoCardapioModal
           eventId={id}
           item={editTarget}
-          categories={categories}
           onClose={() => setEditTarget(null)}
         />
       ) : null}
@@ -437,7 +450,7 @@ export default function EventoCardapioPage() {
       {deleteTarget ? (
         <ConfirmacaoDialog
           title="Excluir produto do cardápio"
-          message={`Deseja excluir "${deleteTarget.name}" do cardápio deste evento?`}
+          message={`Deseja excluir "${deleteTarget.nome}" do cardápio deste evento?`}
           confirmLabel="Excluir"
           destructive
           loading={excluirProduto.isPending}

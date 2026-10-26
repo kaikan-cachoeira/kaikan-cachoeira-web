@@ -1,20 +1,15 @@
 import { useState } from "react";
-import { useToast } from "@/shared/components/Toast/ToastProvider";
-import { mensagemErro } from "@/shared/api/erros";
 import { useEventoAtualQuery } from "@/features/eventos";
 import type { Fiado, ResumoCaixa } from "../models";
 import {
-  useCaixaMutations,
   useCaixaQuery,
   useFiadosQuery,
 } from "./useCaixa";
 
 export function useFiados() {
-  const { addToast } = useToast();
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [settleTarget, setSettleTarget] = useState<Fiado | null>(null);
-  const [unsettleTarget, setUnsettleTarget] = useState<Fiado | null>(null);
 
   const eventoQuery = useEventoAtualQuery();
   const caixaQuery = useCaixaQuery({
@@ -27,12 +22,14 @@ export function useFiados() {
     page,
     pageSize: 6,
   });
-  const { desquitarFiado: desquitar } = useCaixaMutations();
-
   const summary: ResumoCaixa = caixaQuery.data?.summary || {
-    sold: 0,
-    returned: 0,
-    openFiados: 0,
+    fichasVendidas: 0,
+    fichasDevolvidas: 0,
+    saldoFichas: 0,
+    porFormaPagamento: {},
+    fiadosEmAberto: 0,
+    quantidadeFiadosEmAberto: 0,
+    totalRecebido: 0,
   };
   const fiados = fiadosQuery.data?.items || [];
   const tabs = [
@@ -45,20 +42,6 @@ export function useFiados() {
     },
   ];
 
-  async function confirmUnsettle() {
-    if (!unsettleTarget) return;
-    try {
-      await desquitar.mutateAsync(unsettleTarget.id);
-      addToast("Quitação cancelada. O fiado voltou para pendente.");
-      setUnsettleTarget(null);
-    } catch (error) {
-      addToast(
-        mensagemErro(error, "Não foi possível cancelar a quitação."),
-        "error",
-      );
-    }
-  }
-
   return {
     event: eventoQuery.data,
     eventLoading: eventoQuery.isLoading,
@@ -68,14 +51,10 @@ export function useFiados() {
     setPage,
     settleTarget,
     setSettleTarget,
-    unsettleTarget,
-    setUnsettleTarget,
     caixaQuery,
     fiadosQuery,
     summary,
     fiados,
     tabs,
-    desquitarFiado: desquitar,
-    confirmUnsettle,
   };
 }

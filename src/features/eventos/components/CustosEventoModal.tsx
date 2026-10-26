@@ -11,7 +11,7 @@ import CustoModal from "./CustoModal";
 import styles from "./ModaisEvento.module.css";
 
 interface CustosEventoModalProps {
-  eventId: string;
+  eventId: number;
   custos: CustoEvento[];
   somenteLeitura: boolean;
   onClose: () => void;

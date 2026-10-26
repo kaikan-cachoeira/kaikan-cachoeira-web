@@ -23,7 +23,6 @@ import {
   EventoVendasPage,
   HistoricoVendasPage,
   RegistroVendasPage,
-  VendasPorHora,
 } from "@/features/vendas";
 import { CaixaPage, FiadosGeraisPage, FiadosPage } from "@/features/caixa";
 import { RelatorioGeralPage } from "@/features/relatorio";
@@ -53,10 +52,7 @@ export default function AppRoutes() {
           />
           <Route path="/doacoes" element={<DoacoesPage />} />
           <Route path="/eventos" element={<EventosPage />} />
-          <Route
-            path="/eventos/:id"
-            element={<EventoDetalhesPage vendasPorHora={VendasPorHora} />}
-          />
+          <Route path="/eventos/:id" element={<EventoDetalhesPage />} />
           <Route path="/eventos/:id/cardapio" element={<EventoCardapioPage />} />
           <Route path="/eventos/:id/vendas" element={<EventoVendasPage />} />
           <Route path="/registro-vendas" element={<RegistroVendasPage />} />

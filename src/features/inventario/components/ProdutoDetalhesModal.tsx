@@ -24,18 +24,18 @@ interface LotRowProps {
 }
 
 function LotRow({ lot, onViewMovements }: LotRowProps) {
-  const hasCost = Number(lot.totalCost) > 0;
+  const hasCost = Number(lot.custoTotal) > 0;
   return (
     <li className={styles.listItem}>
       <div className={styles.listMain}>
         <p>
-          <strong>{formatarNumero(lot.entryQty)} un.</strong> de entrada · saldo{" "}
-          <strong>{formatarNumero(lot.balance)} un.</strong>
+          <strong>{formatarNumero(lot.quantidadeInicial)} un.</strong> de entrada · saldo{" "}
+          <strong>{formatarNumero(lot.quantidadeAtual)} un.</strong>
         </p>
         <p className={styles.listMeta}>
-          {formatarDataHora(lot.createdAt)} · Custo total:{" "}
-          {hasCost ? formatarMoeda(lot.totalCost) : "Sem custo"} · Custo
-          unitário: {hasCost ? formatarMoeda(lot.unitCost) : "Sem custo"}
+          {formatarDataHora(lot.criadoEm)} · Custo total:{" "}
+          {hasCost ? formatarMoeda(lot.custoTotal) : "Sem custo"} · Custo
+          unitário: {hasCost ? formatarMoeda(lot.custoUnitario) : "Sem custo"}
         </p>
       </div>
       <Botao variant="tertiary" size="compact" onClick={onViewMovements}>
@@ -50,7 +50,7 @@ interface MovementRowProps {
 }
 
 function MovementRow({ movement }: MovementRowProps) {
-  const positive = Number(movement.quantity) > 0;
+  const positive = Number(movement.quantidade) > 0;
   return (
     <li className={styles.listItem}>
       <div className={styles.listMain}>
@@ -58,21 +58,21 @@ function MovementRow({ movement }: MovementRowProps) {
           <span>{movement.type}</span>
           <strong className={positive ? styles.positive : styles.negative}>
             {positive ? "+" : ""}
-            {formatarNumero(movement.quantity)} un
+            {formatarNumero(movement.quantidade)} un
           </strong>
         </div>
         <p className={styles.listMeta}>
-          {formatarDataHora(movement.createdAt)}
-          {movement.eventName ? ` · ${movement.eventName}` : ""}
+          {formatarDataHora(movement.criadoEm)}
+          {movement.eventoNome ? ` · ${movement.eventoNome}` : ""}
         </p>
-        {movement.type === "Reabastecimento" ? (
+        {movement.type === "REABASTECIMENTO" ? (
           <p className={styles.listMeta}>
-            Custo total: {formatarMoeda(movement.totalCost)} · Custo unitário:{" "}
-            {formatarMoeda(movement.unitCost)}
+            Custo total: {formatarMoeda(movement.custoTotal)} · Custo unitário:{" "}
+            {formatarMoeda(movement.custoUnitario)}
           </p>
         ) : null}
-        {movement.notes ? (
-          <p className={styles.listNote}>{movement.notes}</p>
+        {movement.observacoes ? (
+          <p className={styles.listNote}>{movement.observacoes}</p>
         ) : null}
       </div>
     </li>
@@ -80,7 +80,7 @@ function MovementRow({ movement }: MovementRowProps) {
 }
 
 interface ProdutoDetalhesModalProps {
-  productId: string;
+  productId: number;
   onClose: () => void;
   onMovement: (produto: Produto) => void;
 }
@@ -95,8 +95,8 @@ export default function ProdutoDetalhesModal({
   const [showAllLots, setShowAllLots] = useState(false);
   const [showAllMovements, setShowAllMovements] = useState(false);
 
-  const lots = product?.lots || [];
-  const movements = product?.movements || [];
+  const lots = product?.lotes || [];
+  const movements = product?.movimentacoes || [];
   const visibleLots = showAllLots ? lots : lots.slice(0, 3);
   const visibleMovements = showAllMovements
     ? movements
@@ -131,35 +131,37 @@ export default function ProdutoDetalhesModal({
       ) : product ? (
         <div className={styles.details}>
           <div className={styles.productSummary}>
-            <MiniaturaProduto
-              src={product.image}
-              alt={`Imagem de ${product.name}`}
+              <MiniaturaProduto
+              src={product.fotoUrl}
+              alt={`Imagem de ${product.nome}`}
               size="large"
             />
             <div className={styles.productInfo}>
               <div className={styles.titleBadges}>
-                <h3>{product.name}</h3>
-                {product.lowStock ? (
+                <h3>{product.nome}</h3>
+                {product.estoqueMinimo !== null &&
+                product.estoqueMinimo !== undefined &&
+                product.quantidadeAtual <= product.estoqueMinimo ? (
                   <Etiqueta variant="warning" dot>
                     Estoque baixo
                   </Etiqueta>
                 ) : null}
               </div>
               <p className={styles.description}>
-                {product.description || "Sem descrição cadastrada."}
+                {product.descricao || "Sem descrição cadastrada."}
               </p>
               <dl className={styles.infoGrid}>
                 <div>
                   <dt>Categoria</dt>
-                  <dd>{product.category || "Sem categoria"}</dd>
+                  <dd>{product.categoria?.nome || "Sem categoria"}</dd>
                 </div>
                 <div>
                   <dt>Quantidade atual</dt>
-                  <dd>{formatarNumero(product.quantity)} un</dd>
+                  <dd>{formatarNumero(product.quantidadeAtual)} un</dd>
                 </div>
                 <div>
                   <dt>Estoque mínimo</dt>
-                  <dd>{formatarNumero(product.minStock)} un</dd>
+                  <dd>{formatarNumero(product.estoqueMinimo)} un</dd>
                 </div>
               </dl>
             </div>
@@ -185,9 +187,9 @@ export default function ProdutoDetalhesModal({
                     key={lot.id}
                     lot={lot}
                     onViewMovements={() =>
-                      navigate(
-                        `/estoque/${productId}/lotes/${lot.id}/movimentacoes`,
-                      )
+                        navigate(
+                          `/estoque/${productId}/lotes/${lot.id}/movimentacoes`,
+                        )
                     }
                   />
                 ))}

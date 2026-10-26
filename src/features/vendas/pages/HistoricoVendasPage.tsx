@@ -26,6 +26,11 @@ export default function HistoricoVendasPage() {
     refetchEvent,
     createSale,
     confirmSale,
+    valorFinal,
+    setValorFinal,
+    valorFinalInvalido,
+    descontoVenda,
+    totalComDescontoDosItens,
     subtitle,
   } = useVendas();
 
@@ -64,6 +69,11 @@ export default function HistoricoVendasPage() {
           <ResumoVenda
             onConfirm={confirmSale}
             confirming={createSale.isPending}
+            valorFinal={valorFinal}
+            onValorFinalChange={setValorFinal}
+            valorFinalInvalido={valorFinalInvalido}
+            descontoVenda={descontoVenda}
+            totalComDescontoDosItens={totalComDescontoDosItens}
           />
         </div>
       )}

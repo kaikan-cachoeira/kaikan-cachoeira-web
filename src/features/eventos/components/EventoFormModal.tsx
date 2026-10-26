@@ -8,16 +8,13 @@ import Selecao from "@/shared/components/Formulario/Selecao";
 import AreaTexto from "@/shared/components/Formulario/AreaTexto";
 import Icone from "@/shared/components/Icone/Icone";
 import { useEventoMutations } from "../hooks/useEventos";
-import type { Evento } from "../models";
+import type { CriarEventoPayload, Evento, TipoEvento } from "../models";
+import { paraInstant } from "../utils/datas";
+import { TIPO_EVENTO_OPTIONS } from "../utils/statusEvento";
 import { paraEntradaDataHora } from "@/shared/lib/formatacao";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
 import { mensagemErro } from "@/shared/api/erros";
 import styles from "./ModaisEvento.module.css";
-
-const TYPE_OPTIONS = [
-  { value: "Evento", label: "Evento" },
-  { value: "Reunião", label: "Reunião" },
-];
 
 interface EventoFormModalProps {
   evento?: Evento;
@@ -25,11 +22,11 @@ interface EventoFormModalProps {
 }
 
 interface EventoFormValues {
-  name: string;
-  type: string;
-  notes: string;
-  start: string;
-  end: string;
+  nome: string;
+  tipoEvento: TipoEvento;
+  observacoes: string;
+  inicio: string;
+  encerramento: string;
 }
 
 export default function EventoFormModal({
@@ -50,24 +47,33 @@ export default function EventoFormModal({
   } = useForm<EventoFormValues>({
     mode: "onTouched",
     defaultValues: {
-      type: evento?.type ?? "Evento",
-      name: evento?.name ?? "",
-      notes: evento?.notes ?? "",
-      start: paraEntradaDataHora(evento?.start),
-      end: paraEntradaDataHora(evento?.end),
+      nome: evento?.nome ?? "",
+      tipoEvento: evento?.tipoEvento ?? "EVENTO",
+      observacoes: evento?.observacoes ?? "",
+      inicio: paraEntradaDataHora(evento?.dataHoraInicio),
+      encerramento: paraEntradaDataHora(evento?.dataHoraEncerramento),
     },
   });
 
-  const start = watch("start");
+  const inicio = watch("inicio");
 
   const onSubmit: SubmitHandler<EventoFormValues> = async (values) => {
     setServerError("");
+
+    const payload: CriarEventoPayload = {
+      nome: values.nome.trim(),
+      tipoEvento: values.tipoEvento,
+      observacoes: values.observacoes.trim() || undefined,
+      dataHoraInicio: paraInstant(values.inicio),
+      dataHoraEncerramento: paraInstant(values.encerramento),
+    };
+
     try {
       if (evento) {
-        await updateEvent.mutateAsync({ id: evento.id, payload: values });
+        await updateEvent.mutateAsync({ id: evento.id, payload });
         addToast("Evento atualizado com sucesso.");
       } else {
-        await createEvent.mutateAsync(values);
+        await createEvent.mutateAsync(payload);
         addToast("Evento criado com sucesso.");
       }
       onClose();
@@ -119,8 +125,8 @@ export default function EventoFormModal({
           label="Nome"
           placeholder="Nome do evento"
           required
-          error={errors.name?.message}
-          {...register("name", {
+          error={errors.nome?.message}
+          {...register("nome", {
             required: "Informe o nome do evento.",
             minLength: { value: 2, message: "Informe ao menos 2 caracteres." },
           })}
@@ -129,9 +135,11 @@ export default function EventoFormModal({
         <Selecao
           id="evento-tipo"
           label="Tipo do evento"
-          options={TYPE_OPTIONS}
-          error={errors.type?.message}
-          {...register("type", { required: "Selecione o tipo do evento." })}
+          options={TIPO_EVENTO_OPTIONS}
+          error={errors.tipoEvento?.message}
+          {...register("tipoEvento", {
+            required: "Selecione o tipo do evento.",
+          })}
         />
 
         <AreaTexto
@@ -139,8 +147,8 @@ export default function EventoFormModal({
           label="Observações"
           rows={3}
           placeholder="Observações do evento (opcional)"
-          error={errors.notes?.message}
-          {...register("notes")}
+          error={errors.observacoes?.message}
+          {...register("observacoes")}
         />
 
         <div className={styles.twoColumns}>
@@ -149,8 +157,8 @@ export default function EventoFormModal({
             label="Data e hora de início"
             type="datetime-local"
             required
-            error={errors.start?.message}
-            {...register("start", {
+            error={errors.inicio?.message}
+            {...register("inicio", {
               required: "Informe a data e hora de início.",
             })}
           />
@@ -159,13 +167,13 @@ export default function EventoFormModal({
             label="Data e hora de encerramento"
             type="datetime-local"
             required
-            error={errors.end?.message}
-            {...register("end", {
+            error={errors.encerramento?.message}
+            {...register("encerramento", {
               required: "Informe a data e hora de encerramento.",
               validate: (value) =>
-                !start ||
+                !inicio ||
                 !value ||
-                new Date(value) > new Date(start) ||
+                new Date(value) > new Date(inicio) ||
                 "O encerramento deve ser posterior ao início.",
             })}
           />

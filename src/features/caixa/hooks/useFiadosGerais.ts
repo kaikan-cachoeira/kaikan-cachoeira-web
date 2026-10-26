@@ -7,7 +7,7 @@ export function useFiadosGerais() {
   const [searchDraft, setSearchDraft] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("pending");
-  const [eventIds, setEventIds] = useState<string[]>([]);
+  const [eventIds, setEventIds] = useState<number[]>([]);
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [settleTarget, setSettleTarget] = useState<Fiado | null>(null);

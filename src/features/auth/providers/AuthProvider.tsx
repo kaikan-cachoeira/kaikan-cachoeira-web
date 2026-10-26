@@ -7,7 +7,7 @@ import {
   salvarJSON,
 } from "@/shared/lib/armazenamentoLocal";
 import type { Credenciais, Sessao } from "../models";
-import { entrar as entrarNaApi } from "../services/autenticacao";
+import { entrar as entrarNaApi, sair as sairNaApi } from "../services/autenticacao";
 import { AutenticacaoContexto } from "./authContexto";
 
 const CHAVE_SESSAO = "kaikan-cachoeira-session";
@@ -19,7 +19,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [sessao, setSessao] = useState<Sessao | null>(() => {
     const inicial = lerJSON<Sessao | null>(CHAVE_SESSAO, null);
-    definirToken(inicial?.token ?? null);
+    definirToken(inicial?.accessToken ?? null);
     return inicial;
   });
 
@@ -28,7 +28,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (event.key === CHAVE_SESSAO) {
         const proxima = lerJSON<Sessao | null>(CHAVE_SESSAO, null);
         setSessao(proxima);
-        definirToken(proxima?.token ?? null);
+        definirToken(proxima?.accessToken ?? null);
       }
     };
     window.addEventListener("storage", aoAlterarArmazenamento);
@@ -38,21 +38,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const entrar = useCallback(async (credenciais: Credenciais) => {
     const data = await entrarNaApi(credenciais);
     salvarJSON(CHAVE_SESSAO, data);
-    definirToken(data.token);
+    definirToken(data.accessToken);
     setSessao(data);
     return data;
   }, []);
 
   const sair = useCallback(() => {
+    if(sessao?.refreshToken) {
+      void sairNaApi(sessao.refreshToken).catch(() => {})
+    }
     removerChave(CHAVE_SESSAO);
     definirToken(null);
     setSessao(null);
-  }, []);
+  }, [sessao?.refreshToken]);
 
   const valor = useMemo(
     () => ({
-      usuario: sessao?.user || null,
-      estaAutenticado: Boolean(sessao?.token),
+      usuario: sessao?.usuario || null,
+      estaAutenticado: Boolean(sessao?.accessToken),
       entrar,
       sair,
     }),

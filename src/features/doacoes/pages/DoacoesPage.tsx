@@ -23,7 +23,6 @@ import {
   EstadoCarregando,
 } from "@/shared/components/Estado/Estado";
 import ConfirmacaoDialog from "@/shared/components/ConfirmacaoDialog/ConfirmacaoDialog";
-import { mensagemErro } from "@/shared/api/erros";
 import { useEventoQuery } from "@/features/eventos";
 import type { Doacao } from "../models";
 import { useDoacoes } from "../hooks/useDoacoes";
@@ -41,22 +40,23 @@ import DoacaoModal from "../components/DoacaoModal";
 import styles from "./DoacoesPage.module.css";
 
 function donationLabel(donation: Doacao) {
-  if (donation.type === "money") {
-    return `Doação em dinheiro · ${donation.paymentMethod || "PIX"}`;
+  if (donation.tipo === "DINHEIRO") {
+    return `${formatarMoeda(donation.valor)} · ${donation.formaPagamento || "PIX"}`;
   }
-  return `${donation.itemName || "Doação"}${
-    donation.quantity ? ` · ${formatarNumero(donation.quantity)} unidades` : ""
+  return `${donation.nome || "Doação"}${
+    donation.quantidade
+      ? ` · ${formatarNumero(donation.quantidade)} unidades`
+      : ""
   }`;
 }
 
 export default function DoacoesPage() {
   const location = useLocation();
   const navigationState = location.state as { fromEventId?: unknown } | null;
-  const eventIdCandidate = navigationState?.fromEventId;
+  const eventIdCandidate = Number(navigationState?.fromEventId);
   const eventId =
-    typeof eventIdCandidate === "string" &&
-    /^[A-Za-z0-9_-]+$/.test(eventIdCandidate.trim())
-      ? eventIdCandidate.trim()
+    Number.isInteger(eventIdCandidate) && eventIdCandidate > 0
+      ? eventIdCandidate
       : null;
   const sourceEventQuery = useEventoQuery(eventId);
   const hasValidSourceEvent = sourceEventQuery.data?.id === eventId;
@@ -85,7 +85,6 @@ export default function DoacoesPage() {
     modalOpen,
     setModalOpen,
     doacoesQuery,
-    excluirDoacao,
     eventOptions,
     runSearch,
     clearFilters,
@@ -205,19 +204,8 @@ export default function DoacoesPage() {
 
   async function confirmDelete() {
     if (!deleteTarget) return;
-    try {
-      await excluirDoacao.mutateAsync(deleteTarget.id);
-      addToast("Doação excluída com sucesso.");
-      setDeleteTarget(null);
-      if (data?.items.length === 1 && data.page > 1) {
-        setPage(data.page - 1);
-      }
-    } catch (error) {
-      addToast(
-        mensagemErro(error, "Não foi possível excluir a doação."),
-        "error",
-      );
-    }
+    addToast("Exclusão de doação ainda não disponível.", "info");
+    setDeleteTarget(null);
   }
 
   return (
@@ -258,9 +246,9 @@ export default function DoacoesPage() {
           <SelecaoMultipla
             label="Eventos"
             options={eventOptions}
-            value={selectedEvents}
+            value={selectedEvents.map(String)}
             onChange={(value) => {
-              setSelectedEvents(value);
+              setSelectedEvents(value.map(Number));
               setPage(1);
             }}
             placeholder="Todos"
@@ -303,23 +291,23 @@ export default function DoacoesPage() {
               {data.items.map((donation) => (
                 <Linha key={donation.id}>
                   <Celula>{donationLabel(donation)}</Celula>
-                  <Celula>{donation.donor || "Não informado"}</Celula>
-                  <Celula>{donation.eventName}</Celula>
+                  <Celula>{donation.doador || "Não informado"}</Celula>
+                  <Celula>{donation.eventoNome}</Celula>
                   <Celula>
                     <Etiqueta
-                      variant={donation.type === "money" ? "success" : "neutral"}
+                      variant={donation.tipo === "DINHEIRO" ? "success" : "neutral"}
                     >
-                      {rotuloTipoDoacao(donation.type)}
+                      {rotuloTipoDoacao(donation.tipo)}
                     </Etiqueta>
                   </Celula>
-                  <Celula numeric>{formatarMoeda(donation.ticketValue)}</Celula>
-                  <Celula>{formatarDataHora(donation.createdAt)}</Celula>
+                  <Celula numeric>{formatarMoeda(donation.valorFicha)}</Celula>
+                  <Celula>{formatarDataHora(donation.criadoEm)}</Celula>
                   <Celula>
                     <button
                       type="button"
                       className={styles.moreButton}
                       id={`menu-trigger-doacao-${donation.id}`}
-                      aria-label={`Mais opções da doação de ${donation.donor || donation.itemName}`}
+                      aria-label={`Mais opções da doação de ${donation.doador || donation.nome}`}
                       aria-haspopup="menu"
                       aria-expanded={actionsMenu?.donation.id === donation.id}
                       aria-controls={
@@ -385,10 +373,10 @@ export default function DoacoesPage() {
       {deleteTarget ? (
         <ConfirmacaoDialog
           title="Excluir doação"
-          message={`Deseja excluir "${donationLabel(deleteTarget)}", doada por "${deleteTarget.donor || "Não informado"}"?`}
+          message={`Deseja excluir "${donationLabel(deleteTarget)}", doada por "${deleteTarget.doador || "Não informado"}"?`}
           confirmLabel="Excluir doação"
           destructive
-          loading={excluirDoacao.isPending}
+          loading={false}
           onCancel={() => setDeleteTarget(null)}
           onConfirm={confirmDelete}
         />

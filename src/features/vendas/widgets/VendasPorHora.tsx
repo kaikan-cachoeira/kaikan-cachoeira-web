@@ -3,7 +3,7 @@ import { useVendasEventoQuery } from "../hooks/useVendas";
 import styles from "./VendasPorHora.module.css";
 
 interface VendasPorHoraProps {
-  eventId: string;
+  eventId: number;
 }
 
 export default function VendasPorHora({ eventId }: VendasPorHoraProps) {
@@ -11,12 +11,10 @@ export default function VendasPorHora({ eventId }: VendasPorHoraProps) {
     pageSize: 100,
   });
 
-  const sales = (data?.items || []).filter(
-    (sale) => sale.status === "active",
-  );
+  const sales = (data?.items || []).filter((sale) => !sale.cancelada);
   const hourCounts: Record<number, number> = {};
   sales.forEach((sale) => {
-    const hour = new Date(sale.createdAt).getHours();
+    const hour = new Date(sale.criadoEm).getHours();
     hourCounts[hour] = (hourCounts[hour] || 0) + 1;
   });
   const hours = Object.keys(hourCounts)

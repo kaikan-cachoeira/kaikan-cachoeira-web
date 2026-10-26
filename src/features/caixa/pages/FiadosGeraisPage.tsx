@@ -60,8 +60,8 @@ export default function FiadosGeraisPage() {
 
   const response = fiadosQuery.data;
   const eventOptions = (eventosQuery.data?.items || []).map((event) => ({
-    value: event.id,
-    label: event.name,
+    value: String(event.id),
+    label: event.nome,
   }));
   const hasActiveFilters = hasFilters || Boolean(search);
 
@@ -116,9 +116,9 @@ export default function FiadosGeraisPage() {
             <SelecaoMultipla
               label="Evento"
               options={eventOptions}
-              value={eventIds}
+              value={eventIds.map(String)}
               onChange={(value) => {
-                setEventIds(value);
+                setEventIds(value.map(Number));
                 setPage(1);
               }}
               placeholder="Todos"

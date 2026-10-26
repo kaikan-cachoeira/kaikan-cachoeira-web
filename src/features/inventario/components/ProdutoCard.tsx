@@ -12,6 +12,7 @@ interface ProdutoCardProps {
   onDetails?: (produto: Produto) => void;
   onMovement?: (produto: Produto) => void;
   onEdit?: (produto: Produto) => void;
+  onDelete?: (produto: Produto) => void;
 }
 
 export default function ProdutoCard({
@@ -19,6 +20,7 @@ export default function ProdutoCard({
   onDetails,
   onMovement,
   onEdit,
+  onDelete,
 }: ProdutoCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -43,25 +45,29 @@ export default function ProdutoCard({
     };
   }, [menuOpen]);
 
-  const outOfStock = Number(produto.quantity) === 0;
-  const lowStock = !outOfStock && produto.lowStock;
+  const outOfStock = Number(produto.quantidadeAtual) === 0;
+  const lowStock =
+    !outOfStock &&
+    produto.estoqueMinimo !== null &&
+    produto.estoqueMinimo !== undefined &&
+    Number(produto.quantidadeAtual) <= Number(produto.estoqueMinimo);
 
   return (
     <article className={styles.card}>
       <div className={styles.top}>
         <MiniaturaProduto
-          src={produto.image}
-          alt={`Imagem de ${produto.name}`}
+          src={produto.fotoUrl}
+          alt={`Imagem de ${produto.nome}`}
         />
         <div className={styles.info}>
           <div className={styles.titleRow}>
-            <h3 className={styles.name}>{produto.name}</h3>
+            <h3 className={styles.name}>{produto.nome}</h3>
             <div className={styles.menuWrap} ref={menuRef}>
               <button
                 ref={triggerRef}
                 type="button"
                 className={styles.menuButton}
-                aria-label={`Mais opções de ${produto.name}`}
+                aria-label={`Mais opções de ${produto.nome}`}
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
                 onClick={() => setMenuOpen((current) => !current)}
@@ -75,34 +81,35 @@ export default function ProdutoCard({
                     role="menuitem"
                     onClick={() => {
                       setMenuOpen(false);
-                      onDetails?.(produto);
+                      onEdit?.(produto);
                     }}
                   >
-                    <Icone name="eye" size={16} />
-                    Ver detalhes
+                    <Icone name="edit" size={16} />
+                    Editar produto
                   </button>
                   <button
                     type="button"
                     role="menuitem"
+                    className={styles.dangerItem}
                     onClick={() => {
                       setMenuOpen(false);
-                      onEdit?.(produto);
-                    }}  
+                      onDelete?.(produto);
+                    }}
                   >
-                    <Icone name="edit" size={16} />
-                    Editar produto
+                    <Icone name="trash" size={16} />
+                    Excluir produto
                   </button>
                 </div>
               ) : null}
             </div>
           </div>
           <p className={styles.category}>
-            {produto.category || "Sem categoria"}
+            {produto.categoria?.nome || "Sem categoria"}
           </p>
           <div className={styles.stockRow}>
             <span className={styles.quantity}>
-              {formatarNumero(produto.quantity)}{" "}
-              {Number(produto.quantity) === 1 ? "unidade" : "unidades"}
+              {formatarNumero(produto.quantidadeAtual)}{" "}
+              {Number(produto.quantidadeAtual) === 1 ? "unidade" : "unidades"}
             </span>
             {outOfStock ? (
               <Etiqueta variant="danger" dot>

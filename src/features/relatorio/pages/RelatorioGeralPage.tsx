@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import type { Evento } from "@/features/eventos";
+import { varianteStatus, type Evento } from "@/features/eventos";
 import Botao from "@/shared/components/Botao/Botao";
 import {
   EstatisticaCard,
@@ -35,12 +35,6 @@ const TYPE_OPTIONS = [
   { value: "Evento", label: "Evento" },
   { value: "Reunião", label: "Reunião" },
 ];
-
-function statusVariant(status: string) {
-  if (status === "Em andamento") return "success";
-  if (status === "Encerrado") return "muted";
-  return "neutral";
-}
 
 function obterLucro(event: Evento) {
   return Number(event.metrics?.profit || 0);
@@ -81,7 +75,7 @@ export default function RelatorioGeralPage() {
   );
 
   const chartEvents = [...events]
-    .sort((a, b) => Date.parse(a.start) - Date.parse(b.start))
+    .sort((a, b) => Date.parse(a.dataHoraInicio) - Date.parse(b.dataHoraInicio))
     .slice(-12);
   const chartMax = Math.max(
     1,
@@ -92,7 +86,7 @@ export default function RelatorioGeralPage() {
   );
   const donations = donationsQuery.data?.items || [];
   const ticketValue = donations.reduce(
-    (sum, donation) => sum + Number(donation.ticketValue || 0),
+    (sum, donation) => sum + Number(donation.valorFicha || 0),
     0,
   );
   const hasFilters = Boolean(from || to || types.length);
@@ -211,8 +205,8 @@ export default function RelatorioGeralPage() {
                           title={`Custos: ${formatarMoeda(costs)}`}
                         />
                       </div>
-                      <span className={styles.chartName} title={event.name}>
-                        {event.name}
+                      <span className={styles.chartName} title={event.nome}>
+                        {event.nome}
                       </span>
                       <span
                         className={
@@ -247,18 +241,18 @@ export default function RelatorioGeralPage() {
               </Cabecalho>
               <Corpo>
                 {[...events]
-                  .sort((a, b) => Date.parse(b.start) - Date.parse(a.start))
+                  .sort((a, b) => Date.parse(b.dataHoraInicio) - Date.parse(a.dataHoraInicio))
                   .map((event) => (
                     <Linha key={event.id}>
                       <Celula>
                         <div className={styles.eventCell}>
-                          <span className={styles.eventName}>{event.name}</span>
-                          <Etiqueta variant={statusVariant(event.status)}>
-                            {event.status}
+                          <span className={styles.eventName}>{event.nome}</span>
+                          <Etiqueta variant={varianteStatus(event.status.codigo)}>
+                            {event.status.descricao}
                           </Etiqueta>
                         </div>
                       </Celula>
-                      <Celula>{formatarData(event.start)}</Celula>
+                      <Celula>{formatarData(event.dataHoraInicio)}</Celula>
                       <Celula numeric>
                         {formatarNumero(event.metrics?.sales)}
                       </Celula>

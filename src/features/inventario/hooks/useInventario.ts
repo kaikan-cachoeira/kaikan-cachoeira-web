@@ -20,7 +20,12 @@ import {
 import {
   criarMovimentacao,
   criarProduto,
+  excluirProduto,
+  listarEventosReuniao,
   listarProdutos,
+  listarTiposMovimentacao,
+  listarLotesProduto,
+  listarMovimentacoesProduto,
   obterProduto,
   atualizarProduto,
   listarMovimentacoesLote,
@@ -33,22 +38,56 @@ export function useProdutosQuery(params: ParametrosProdutos) {
   });
 }
 
-export function useProdutoQuery(id?: string | null) {
+export function useProdutoQuery(id?: number | null) {
   return useQuery({
     queryKey: comporChave(queryKeys.produtos, "detalhe", id),
-    queryFn: () => obterProduto(id as string),
+    queryFn: () => obterProduto(id as number),
     enabled: Boolean(id),
   });
 }
 
 export function useMovimentacoesLoteQuery(
-  lotId: string | undefined,
+  lotId: number | undefined,
   params: ParametrosPaginacao,
 ) {
   return useQuery({
     queryKey: comporChave(queryKeys.produtos, "lote", lotId, params),
-    queryFn: () => listarMovimentacoesLote(lotId as string, params),
+    queryFn: () => listarMovimentacoesLote(lotId as number, params),
     enabled: Boolean(lotId),
+  });
+}
+
+export function useTiposMovimentacaoQuery() {
+  return useQuery({
+    queryKey: comporChave(queryKeys.produtos, "tipos-movimentacao"),
+    queryFn: listarTiposMovimentacao,
+  });
+}
+
+export function useReunioesQuery(enabled = true) {
+  return useQuery({
+    queryKey: comporChave(queryKeys.eventos, "reunioes-estoque"),
+    queryFn: listarEventosReuniao,
+    enabled,
+  });
+}
+
+export function useLotesProdutoQuery(produtoId?: number | null) {
+  return useQuery({
+    queryKey: comporChave(queryKeys.produtos, "lotes", produtoId),
+    queryFn: () => listarLotesProduto(produtoId as number),
+    enabled: Boolean(produtoId),
+  });
+}
+
+export function useMovimentacoesProdutoQuery(
+  produtoId: number | undefined,
+  params: ParametrosPaginacao,
+) {
+  return useQuery({
+    queryKey: comporChave(queryKeys.produtos, "movimentacoes", produtoId, params),
+    queryFn: () => listarMovimentacoesProduto(produtoId as number, params),
+    enabled: Boolean(produtoId),
   });
 }
 
@@ -63,7 +102,13 @@ export function useProdutoMutations() {
   const queryClient = useQueryClient();
 
   const criar = useMutation({
-    mutationFn: (payload: CriarProdutoPayload) => criarProduto(payload),
+    mutationFn: ({
+      payload,
+      arquivo,
+    }: {
+      payload: CriarProdutoPayload;
+      arquivo?: File | null;
+    }) => criarProduto(payload, arquivo),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.produtos });
     },
@@ -73,10 +118,12 @@ export function useProdutoMutations() {
     mutationFn: ({
       id,
       payload,
+      arquivo,
     }: {
-      id: string;
+      id: number;
       payload: AtualizarProdutoPayload;
-    }) => atualizarProduto(id, payload),
+      arquivo?: File | null;
+    }) => atualizarProduto(id, payload, arquivo),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.produtos });
     },
@@ -87,13 +134,29 @@ export function useProdutoMutations() {
       productId,
       payload,
     }: {
-      productId: string;
+      productId: number;
       payload: CriarMovimentacaoPayload;
     }) => criarMovimentacao(productId, payload),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.produtos });
       queryClient.invalidateQueries({
         queryKey: comporChave(queryKeys.produtos, "detalhe", variables.productId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: comporChave(queryKeys.produtos, "lotes", variables.productId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: comporChave(queryKeys.produtos, "movimentacoes", variables.productId),
+      });
+    },
+  });
+
+  const excluir = useMutation({
+    mutationFn: (id: number) => excluirProduto(id),
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.produtos });
+      queryClient.removeQueries({
+        queryKey: comporChave(queryKeys.produtos, "detalhe", id),
       });
     },
   });
@@ -102,6 +165,7 @@ export function useProdutoMutations() {
     criarProduto: criar,
     atualizarProduto: atualizar,
     criarMovimentacao: movimentar,
+    excluirProduto: excluir,
   };
 }
 
@@ -120,7 +184,7 @@ export function useCategoriaMutations() {
       id,
       payload,
     }: {
-      id: string;
+      id: number;
       payload: AtualizarCategoriaPayload;
     }) => atualizarCategoria(id, payload),
     onSuccess: () => {
@@ -130,7 +194,7 @@ export function useCategoriaMutations() {
   });
 
   const excluir = useMutation({
-    mutationFn: (id: string) => excluirCategoria(id),
+    mutationFn: (id: number) => excluirCategoria(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.categorias });
       queryClient.invalidateQueries({ queryKey: queryKeys.produtos });
@@ -154,7 +218,7 @@ export function useInventario() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [createdProduct, setCreatedProduct] = useState<Produto | null>(null);
-  const [detailsId, setDetailsId] = useState<string | null>(null);
+  const [detailsId, setDetailsId] = useState<number | null>(null);
   const [movementProduct, setMovementProduct] = useState<Produto | null>(null);
   const [movementSuccess, setMovementSuccess] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
@@ -180,8 +244,8 @@ export function useInventario() {
 
   const categoryOptions = (categoriasQuery.data?.items || []).map(
     (category) => ({
-      value: category.id,
-      label: category.name,
+      value: String(category.id),
+      label: category.nome,
     }),
   );
 

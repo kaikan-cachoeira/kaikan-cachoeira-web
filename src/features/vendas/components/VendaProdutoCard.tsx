@@ -2,6 +2,7 @@ import Etiqueta from "@/shared/components/Etiqueta/Etiqueta";
 import Botao from "@/shared/components/Botao/Botao";
 import MiniaturaProduto from "@/shared/components/MiniaturaProduto/MiniaturaProduto";
 import SeletorQuantidade from "@/shared/components/SeletorQuantidade/SeletorQuantidade";
+import { resolverUrlApi } from "@/shared/api/urls";
 import type { ItemCardapio } from "@/features/eventos";
 import { useCarrinho } from "../hooks/useVendas";
 import { formatarMoeda, formatarNumero } from "@/shared/lib/formatacao";
@@ -10,49 +11,56 @@ import styles from "./VendaProdutoCard.module.css";
 interface VendaProdutoCardProps {
   item: ItemCardapio;
   onDiscount?: (item: ItemCardapio) => void;
+  onRemoveDiscount?: (item: ItemCardapio) => void;
+  discountLoading?: boolean;
 }
 
 export default function VendaProdutoCard({
   item,
   onDiscount,
+  onRemoveDiscount,
+  discountLoading = false,
 }: VendaProdutoCardProps) {
-  const { adicionarItem, itens, definirQuantidade, descontos, removerDesconto } = useCarrinho();
-  const cartItem = itens.find((entry) => entry.menuItemId === item.id);
+  const { adicionarItem, itens, definirQuantidade } = useCarrinho();
+  const cartId = String(item.id);
+  const cartItem = itens.find((entry) => entry.menuItemId === cartId);
   const quantity = cartItem?.quantity || 0;
-  const max =
-    item.type === "ready" && Number.isFinite(Number(item.availableQuantity))
-      ? Number(item.availableQuantity)
-      : undefined;
-  const discountedPrice = descontos[item.id];
-  const currentPrice = discountedPrice ?? item.price;
-  const hasDiscount = discountedPrice !== undefined;
-  const soldOut = item.type === "ready" && Number(item.availableQuantity) <= 0;
+  const disponivel =
+    item.origem === "ESTOQUE" &&
+    item.restantePrevisto !== null &&
+    item.restantePrevisto !== undefined
+      ? item.restantePrevisto
+      : null;
+  const max = disponivel !== null ? disponivel : undefined;
+  const currentPrice = item.precoComDesconto;
+  const hasDiscount = item.desconto > 0;
+  const soldOut = disponivel !== null && disponivel <= 0;
   const atMax = max !== undefined && quantity >= max;
 
   return (
     <article className={styles.card}>
       <MiniaturaProduto
-        src={item.image}
-        alt={`Imagem de ${item.name}`}
+        src={resolverUrlApi(item.fotoUrl)}
+        alt={`Imagem de ${item.nome}`}
         size="fill"
       />
 
       <div className={styles.info}>
         <div className={styles.titleRow}>
-          <h3 className={styles.name}>{item.name}</h3>
-          {soldOut ? (
-            <Etiqueta variant="danger">Sem estoque</Etiqueta>
-          ) : null}
+          <h3 className={styles.name}>{item.nome}</h3>
+          {soldOut ? <Etiqueta variant="danger">Sem estoque</Etiqueta> : null}
         </div>
-        <p className={styles.category}>{item.category}</p>
+        <p className={styles.category}>{item.categoria || "Sem categoria"}</p>
         <p className={styles.priceRow}>
           <strong>{formatarMoeda(currentPrice)}</strong>
-          {hasDiscount ? <s>{formatarMoeda(item.price)}</s> : null}
+          {hasDiscount ? <s>{formatarMoeda(item.precoVenda)}</s> : null}
         </p>
         <p className={styles.availability}>
-          {item.type === "ready"
-            ? `Quantidade: ${formatarNumero(item.availableQuantity)}`
-            : "Feito na hora"}
+          {item.origem === "ESTOQUE"
+            ? `Quantidade: ${
+                disponivel === null ? "—" : formatarNumero(disponivel)
+              }`
+            : "Produzido no evento"}
         </p>
       </div>
 
@@ -62,13 +70,20 @@ export default function VendaProdutoCard({
             value={quantity}
             min={1}
             max={max}
-            onChange={(next) => definirQuantidade(item.id, next)}
-            label={`quantidade de ${item.name}`}
+            onChange={(next) => definirQuantidade(cartId, next)}
+            label={`quantidade de ${item.nome}`}
           />
         ) : (
           <Botao
             className={styles.addButton}
-            onClick={() => adicionarItem(item)}
+            onClick={() =>
+              adicionarItem({
+                id: cartId,
+                name: item.nome,
+                price: item.precoComDesconto,
+                availableQuantity: item.restantePrevisto ?? null,
+              })
+            }
             disabled={soldOut || atMax}
           >
             Adicionar à venda
@@ -78,9 +93,8 @@ export default function VendaProdutoCard({
         <Botao
           variant="secondary"
           size="compact"
-          onClick={() =>
-            hasDiscount ? removerDesconto(item.id) : onDiscount?.(item)
-          }
+          onClick={() => (hasDiscount ? onRemoveDiscount?.(item) : onDiscount?.(item))}
+          loading={discountLoading}
         >
           {hasDiscount ? "Remover desconto" : "Aplicar desconto"}
         </Botao>

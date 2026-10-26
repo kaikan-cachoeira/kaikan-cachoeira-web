@@ -11,21 +11,19 @@ import Icone from "@/shared/components/Icone/Icone";
 import Modal from "@/shared/components/Modal/Modal";
 import { formatarMoeda, formatarNumero } from "@/shared/lib/formatacao";
 import type { Produto } from "../models";
-import { useProdutoMutations } from "../hooks/useInventario";
+import {
+  useProdutoMutations,
+  useReunioesQuery,
+  useTiposMovimentacaoQuery,
+} from "../hooks/useInventario";
 import styles from "./ModaisInventario.module.css";
 
-const TIPOS_MOVIMENTACAO = [
-  "Reabastecimento",
-  "Consumo interno",
-  "Perda",
-  "Ajuste de saída",
-];
-
 interface MovimentacaoFormValues {
-  type: string;
-  quantity: number;
-  totalCost: number;
-  notes: string;
+  tipoMovimentacaoId: string;
+  quantidade: number;
+  custoTotal: number;
+  eventoId: string;
+  observacoes: string;
 }
 
 interface MovimentacaoModalProps {
@@ -40,6 +38,7 @@ export default function MovimentacaoModal({
   onSuccess,
 }: MovimentacaoModalProps) {
   const { criarMovimentacao } = useProdutoMutations();
+  const tiposQuery = useTiposMovimentacaoQuery();
   const [serverError, setServerError] = useState("");
   const {
     register,
@@ -50,21 +49,31 @@ export default function MovimentacaoModal({
   } = useForm<MovimentacaoFormValues>({
     mode: "onTouched",
     defaultValues: {
-      type: "Reabastecimento",
-      quantity: 1,
-      totalCost: 0,
-      notes: "",
+      tipoMovimentacaoId: "",
+      quantidade: 1,
+      custoTotal: 0,
+      eventoId: "",
+      observacoes: "",
     },
   });
 
-  const type = watch("type");
-  const rawQuantity = Number(watch("quantity"));
-  const rawTotalCost = Number(watch("totalCost"));
-  const isEntry = type === "Reabastecimento";
+  const tipoMovimentacaoId = Number(watch("tipoMovimentacaoId"));
+  const tipoSelecionado = (tiposQuery.data || []).find(
+    (item) => item.id === tipoMovimentacaoId,
+  );
+  const reunioesQuery = useReunioesQuery(
+    tipoSelecionado?.codigo === "CONSUMO_INTERNO",
+  );
+
+  const rawQuantity = Number(watch("quantidade"));
+  const rawTotalCost = Number(watch("custoTotal"));
+  const isEntry = tipoSelecionado?.direcao === "ENTRADA";
+  const exigeCusto = Boolean(tipoSelecionado?.exigeCusto);
+  const exigeReuniao = tipoSelecionado?.codigo === "CONSUMO_INTERNO";
   const quantity = Number.isFinite(rawQuantity) ? rawQuantity : 0;
   const afterQuantity = isEntry
-    ? Number(produto.quantity) + quantity
-    : Number(produto.quantity) - quantity;
+    ? Number(produto.quantidadeAtual) + quantity
+    : Number(produto.quantidadeAtual) - quantity;
   const unitCost = isEntry && quantity > 0 ? rawTotalCost / quantity : 0;
 
   const onSubmit: SubmitHandler<MovimentacaoFormValues> = async (values) => {
@@ -73,10 +82,11 @@ export default function MovimentacaoModal({
       await criarMovimentacao.mutateAsync({
         productId: produto.id,
         payload: {
-          type: values.type,
-          quantity: values.quantity,
-          totalCost: isEntry ? values.totalCost : 0,
-          notes: values.notes,
+          tipoMovimentacaoId: Number(values.tipoMovimentacaoId),
+          quantidade: values.quantidade,
+          custoTotal: exigeCusto ? values.custoTotal : undefined,
+          eventoId: values.eventoId ? Number(values.eventoId) : undefined,
+          observacoes: values.observacoes,
         },
       });
       onSuccess();
@@ -120,21 +130,28 @@ export default function MovimentacaoModal({
         noValidate
       >
         <div className={styles.currentStock}>
-          <span>{produto.name}</span>
+          <span>{produto.nome}</span>
           <strong>
-            Quantidade atual: {formatarNumero(produto.quantity)} unidades
+            Quantidade atual: {formatarNumero(produto.quantidadeAtual)} unidades
           </strong>
         </div>
 
         <Selecao
           id="movimentacao-tipo"
           label="Tipo de movimentação"
-          options={TIPOS_MOVIMENTACAO.map((item) => ({
-            value: item,
-            label: item,
+          options={(tiposQuery.data || []).map((item) => ({
+            value: String(item.id),
+            label: item.codigo
+                .toLowerCase()
+                .split('_')
+                .map(palavra => palavra.charAt(0).toUpperCase() + palavra.slice(1))
+                .join(' '),
           }))}
-          error={errors.type?.message}
-          {...register("type", { required: "Selecione o tipo." })}
+          disabled={tiposQuery.isLoading}
+          error={errors.tipoMovimentacaoId?.message}
+          {...register("tipoMovimentacaoId", {
+            required: "Selecione o tipo.",
+          })}
         />
 
         <div className={styles.twoColumns}>
@@ -146,15 +163,15 @@ export default function MovimentacaoModal({
             step="1"
             inputMode="numeric"
             required
-            error={errors.quantity?.message}
-            {...register("quantity", {
+            error={errors.quantidade?.message}
+            {...register("quantidade", {
               valueAsNumber: true,
               required: "Informe a quantidade.",
               validate: (value) => {
                 if (!Number.isInteger(value) || value <= 0) {
                   return "Informe uma quantidade inteira maior que zero.";
                 }
-                if (!isEntry && value > Number(produto.quantity)) {
+                if (!isEntry && value > Number(produto.quantidadeAtual)) {
                   return "A quantidade não pode ser maior que o saldo disponível.";
                 }
                 return true;
@@ -163,11 +180,15 @@ export default function MovimentacaoModal({
           />
           {isEntry ? (
             <Controller
-              name="totalCost"
+              name="custoTotal"
               control={control}
               rules={{
-                validate: (value) =>
-                  Number(value) >= 0 || "O custo não pode ser negativo.",
+                validate: (value) => {
+                  if (!exigeCusto) {
+                    return Number(value) >= 0 || "O custo não pode ser negativo.";
+                  }
+                  return Number(value) > 0 || "Informe custo total maior que zero.";
+                },
               }}
               render={({ field, fieldState }) => (
                 <CampoMoeda
@@ -178,12 +199,37 @@ export default function MovimentacaoModal({
                   onBlur={field.onBlur}
                   name={field.name}
                   error={fieldState.error?.message}
-                  hint="Opcional. O custo unitário é calculado pelo total."
+                  hint={
+                    exigeCusto
+                      ? "Obrigatório para este tipo de movimentação."
+                      : "Opcional. O custo unitário é calculado pelo total."
+                  }
                 />
               )}
             />
           ) : null}
         </div>
+
+        {exigeReuniao ? (
+          <Selecao
+            id="movimentacao-reuniao"
+            label="Reunião vinculada"
+            placeholder={
+              reunioesQuery.isLoading ? "Carregando reuniões..." : "Selecione"
+            }
+            options={(reunioesQuery.data || []).map((evento) => ({
+              value: String(evento.id),
+              label: evento.nome,
+            }))}
+            error={errors.eventoId?.message}
+            {...register("eventoId", {
+              validate: (value) =>
+                !exigeReuniao ||
+                Boolean(value) ||
+                "Selecione a reunião para consumo interno.",
+            })}
+          />
+        ) : null}
 
         <div className={styles.calculationGrid}>
           {isEntry ? (
@@ -203,8 +249,8 @@ export default function MovimentacaoModal({
           label="Observações"
           rows={3}
           placeholder="Informações adicionais (opcional)"
-          error={errors.notes?.message}
-          {...register("notes")}
+          error={errors.observacoes?.message}
+          {...register("observacoes")}
         />
 
         {serverError ? (

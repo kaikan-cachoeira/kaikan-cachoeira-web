@@ -17,11 +17,10 @@ import {
 import styles from "./ModaisInventario.module.css";
 
 interface ProdutoFormValues {
-  name: string;
-  description?: string;
+  nome: string;
+  descricao?: string;
   categoryId: string;
-  minStock: number;
-  image?: string | null;
+  estoqueMinimo: number;
 }
 
 interface ProdutoFormModalProps {
@@ -43,8 +42,9 @@ export default function ProdutoFormModal({
   const { criarProduto, atualizarProduto } = useProdutoMutations();
   const mutation = isEdit ? atualizarProduto : criarProduto;
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const [image, setImage] = useState<string | null>(produto?.image ?? null);
+  const [image, setImage] = useState<string | null>(produto?.fotoUrl ?? null);
   const [imageName, setImageName] = useState("");
+  const [arquivo, setArquivo] = useState<File | null>(null);
   const [serverError, setServerError] = useState("");
   const {
     register,
@@ -54,19 +54,19 @@ export default function ProdutoFormModal({
   } = useForm<ProdutoFormValues>({
     mode: "onTouched",
     defaultValues: {
-      name: produto?.name ?? "",
-      description: produto?.description ?? "",
-      categoryId: produto?.categoryId ?? "",
-      minStock: produto?.minStock ?? 0,
-      image: produto?.image ?? null,
+      nome: produto?.nome ?? "",
+      descricao: produto?.descricao ?? "",
+      categoryId:
+        produto?.categoria?.id !== undefined ? String(produto.categoria.id) : "",
+      estoqueMinimo: produto?.estoqueMinimo ?? 0,
     },
   });
 
   useEffect(() => {
-    if (!categoriesLoading && produto?.categoryId) {
-      setValue("categoryId", produto.categoryId);
+    if (!categoriesLoading && produto?.categoria?.id) {
+      setValue("categoryId", String(produto.categoria.id));
     }
-  }, [categoriesLoading, produto?.categoryId, setValue]);
+  }, [categoriesLoading, produto?.categoria?.id, setValue]);
 
   function handleFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -80,7 +80,7 @@ export default function ProdutoFormModal({
       if (typeof reader.result !== "string") return;
       setImage(reader.result);
       setImageName(file.name);
-      setValue("image", reader.result);
+      setArquivo(file);
       setServerError("");
     };
     reader.readAsDataURL(file);
@@ -92,11 +92,25 @@ export default function ProdutoFormModal({
       if (produto) {
         const atualizado = await atualizarProduto.mutateAsync({
           id: produto.id,
-          payload: { ...values, image },
+          payload: {
+            nome: values.nome,
+            descricao: values.descricao,
+            categoriaId: values.categoryId ? Number(values.categoryId) : undefined,
+            estoqueMinimo: values.estoqueMinimo,
+          },
+          arquivo,
         });
         onUpdated?.(atualizado);
       } else {
-        const criado = await criarProduto.mutateAsync({ ...values, image });
+        const criado = await criarProduto.mutateAsync({
+          payload: {
+            nome: values.nome,
+            descricao: values.descricao,
+            categoriaId: values.categoryId ? Number(values.categoryId) : undefined,
+            estoqueMinimo: values.estoqueMinimo,
+          },
+          arquivo,
+        });
         onCreated?.(criado);
       }
     } catch (error) {
@@ -112,8 +126,8 @@ export default function ProdutoFormModal({
   };
 
   const categoryOptions = (categories?.items || []).map((category) => ({
-    value: category.id,
-    label: category.name,
+    value: String(category.id),
+    label: category.nome,
   }));
 
   return (
@@ -181,7 +195,6 @@ export default function ProdutoFormModal({
               onChange={handleFile}
               aria-label="Selecionar imagem do produto"
             />
-            <input type="hidden" {...register("image")} />
           </div>
         </div>
 
@@ -190,8 +203,8 @@ export default function ProdutoFormModal({
           label="Nome"
           placeholder="Nome do produto"
           required
-          error={errors.name?.message}
-          {...register("name", {
+          error={errors.nome?.message}
+          {...register("nome", {
             required: "Informe o nome do produto.",
             minLength: { value: 2, message: "Informe ao menos 2 caracteres." },
           })}
@@ -202,8 +215,8 @@ export default function ProdutoFormModal({
           label="Descrição"
           rows={3}
           placeholder="Descrição do produto (opcional)"
-          error={errors.description?.message}
-          {...register("description")}
+          error={errors.descricao?.message}
+          {...register("descricao")}
         />
 
         <div className={styles.twoColumns}>
@@ -226,8 +239,8 @@ export default function ProdutoFormModal({
             min="0"
             step="1"
             inputMode="numeric"
-            error={errors.minStock?.message}
-            {...register("minStock", {
+            error={errors.estoqueMinimo?.message}
+            {...register("estoqueMinimo", {
               valueAsNumber: true,
               min: {
                 value: 0,

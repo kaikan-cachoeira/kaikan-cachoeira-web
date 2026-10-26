@@ -23,8 +23,8 @@ import {
 import styles from "../components/ModaisInventario.module.css";
 
 interface CategoriaFormValues {
-  name: string;
-  description?: string;
+  nome: string;
+  descricao?: string;
 }
 
 interface FormularioCategoriaModalProps {
@@ -51,9 +51,9 @@ function FormularioCategoriaModal({
     formState: { errors },
   } = useForm<CategoriaFormValues>({
     mode: "onTouched",
-    defaultValues: {
-      name: categoria?.name || "",
-      description: categoria?.description || "",
+      defaultValues: {
+      nome: categoria?.nome || "",
+      descricao: categoria?.descricao || "",
     },
   });
 
@@ -112,8 +112,8 @@ function FormularioCategoriaModal({
           label="Nome"
           placeholder="Nome da categoria"
           required
-          error={errors.name?.message}
-          {...register("name", {
+          error={errors.nome?.message}
+          {...register("nome", {
             required: "Informe o nome da categoria.",
             minLength: { value: 2, message: "Informe ao menos 2 caracteres." },
           })}
@@ -123,8 +123,8 @@ function FormularioCategoriaModal({
           label="Descrição"
           rows={3}
           placeholder="Descrição da categoria (opcional)"
-          error={errors.description?.message}
-          {...register("description")}
+          error={errors.descricao?.message}
+          {...register("descricao")}
         />
         {serverError ? (
           <p className={styles.serverError} role="alert">
@@ -244,15 +244,17 @@ export default function CategoriasModal({ onClose }: CategoriasModalProps) {
               {items.map((category) => (
                 <li key={category.id} className={styles.categoryItem}>
                   <div>
-                    <h3 className={styles.categoryName}>{category.name}</h3>
-                    <p className={styles.categoryDescription}>
-                      {category.description || "Sem descrição"}
-                    </p>
-                    <p className={styles.categoryCount}>
-                      {category.productCount}{" "}
-                      {category.productCount === 1 ? "produto" : "produtos"} ·{" "}
-                      {pluralizarCategoria(category.name)}
-                    </p>
+                     <h3 className={styles.categoryName}>{category.nome}</h3>
+                     <p className={styles.categoryDescription}>
+                      {category.descricao || "Sem descrição"}
+                     </p>
+                    {typeof category.quantidadeProdutos === "number" ? (
+                      <p className={styles.categoryCount}>
+                        {category.quantidadeProdutos}{" "}
+                        {category.quantidadeProdutos === 1 ? "produto" : "produtos"} ·{" "}
+                        {pluralizarCategoria(category.nome)}
+                      </p>
+                    ) : null}
                   </div>
                   <div className={styles.categoryActions}>
                     <Botao
@@ -294,7 +296,7 @@ export default function CategoriasModal({ onClose }: CategoriasModalProps) {
       {deleteTarget ? (
         <ConfirmacaoDialog
           title="Excluir categoria"
-          message={`Deseja excluir a categoria "${deleteTarget.name}"? Os produtos vinculados ficarão sem categoria.`}
+          message={`Deseja excluir a categoria "${deleteTarget.nome}"?`}
           confirmLabel="Excluir"
           destructive
           loading={excluirCategoria.isPending}

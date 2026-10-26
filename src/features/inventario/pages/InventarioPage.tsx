@@ -1,5 +1,8 @@
+import { useState } from "react";
+import { mensagemErro } from "@/shared/api/erros";
 import BarraPesquisa from "@/shared/components/BarraPesquisa/BarraPesquisa";
 import Botao from "@/shared/components/Botao/Botao";
+import ConfirmacaoDialog from "@/shared/components/ConfirmacaoDialog/ConfirmacaoDialog";
 import {
   EstadoCarregando,
   EstadoErro,
@@ -11,12 +14,14 @@ import SelecaoMultipla from "@/shared/components/Formulario/SelecaoMultipla";
 import PageHeader from "@/shared/components/PageHeader/PageHeader";
 import Paginacao from "@/shared/components/Paginacao/Paginacao";
 import SucessoDialog from "@/shared/components/SucessoDialog/SucessoDialog";
+import { useToast } from "@/shared/components/Toast/ToastProvider";
 import MovimentacaoModal from "../components/MovimentacaoModal";
 import ProdutoCard from "../components/ProdutoCard";
 import ProdutoDetalhesModal from "../components/ProdutoDetalhesModal";
 import ProdutoFormModal from "../components/ProdutoFormModal";
+import type { Produto } from "../models";
+import { useInventario, useProdutoMutations } from "../hooks/useInventario";
 import CategoriasModal from "../widgets/CategoriasModal";
-import { useInventario } from "../hooks/useInventario";
 import styles from "./InventarioPage.module.css";
 
 const OPCOES_ESTOQUE = [
@@ -27,6 +32,10 @@ const OPCOES_ESTOQUE = [
 ];
 
 export default function InventarioPage() {
+  const [deleteTarget, setDeleteTarget] = useState<Produto | null>(null);
+  const { addToast } = useToast();
+  const { excluirProduto } = useProdutoMutations();
+
   const {
     searchDraft,
     setSearchDraft,
@@ -66,6 +75,28 @@ export default function InventarioPage() {
 
   const { data, isLoading, isError, isFetching, refetch } = produtosQuery;
   const { isLoading: categoriesLoading } = categoriasQuery;
+
+  async function confirmarExclusao() {
+    if (!deleteTarget) return;
+
+    const produtoSelecionado = deleteTarget;
+    try {
+      await excluirProduto.mutateAsync(produtoSelecionado.id);
+      addToast("Produto excluído com sucesso.");
+      setDeleteTarget(null);
+      setDetailsId((atual) =>
+        atual === produtoSelecionado.id ? null : atual,
+      );
+      setEditProduct((atual) =>
+        atual?.id === produtoSelecionado.id ? null : atual,
+      );
+    } catch (error) {
+      addToast(
+        mensagemErro(error, "Não foi possível excluir o produto."),
+        "error",
+      );
+    }
+  }
 
   return (
     <div className={styles.stack}>
@@ -137,15 +168,16 @@ export default function InventarioPage() {
             aria-busy={isFetching ? "true" : undefined}
           >
             {data.items.map((product) => (
-              <ProdutoCard
-                key={product.id}
-                produto={product}
-                onDetails={(item) => setDetailsId(item.id)}
-                onMovement={openMovement}
-                onEdit={setEditProduct}
-              />
-            ))}
-          </div>
+                <ProdutoCard
+                  key={product.id}
+                  produto={product}
+                  onDetails={(item) => setDetailsId(item.id)}
+                  onMovement={openMovement}
+                  onEdit={setEditProduct}
+                  onDelete={setDeleteTarget}
+                />
+              ))}
+            </div>
           <Paginacao
             page={data.page}
             totalPages={data.totalPages}
@@ -186,7 +218,7 @@ export default function InventarioPage() {
       {createdProduct ? (
         <SucessoDialog
           title="Produto criado com sucesso!"
-          message={`"${createdProduct.name}" foi adicionado ao estoque com quantidade inicial zero. Registre uma movimentação de reabastecimento para incluir unidades.`}
+          message={`"${createdProduct.nome}" foi adicionado ao estoque com quantidade inicial zero. Registre uma movimentação de reabastecimento para incluir unidades.`}
           buttonLabel="Voltar"
           onClose={() => setCreatedProduct(null)}
         />
@@ -206,7 +238,7 @@ export default function InventarioPage() {
       {updatedProduct ? (
         <SucessoDialog
           title="Produto atualizado com sucesso!"
-          message={`As alterações em "${updatedProduct.name}" foram salvas.`}
+          message={`As alterações em "${updatedProduct.nome}" foram salvas.`}
           buttonLabel="Voltar"
           onClose={() => setUpdatedProduct(null)}
         />
@@ -239,6 +271,18 @@ export default function InventarioPage() {
 
       {categoriesOpen ? (
         <CategoriasModal onClose={() => setCategoriesOpen(false)} />
+      ) : null}
+
+      {deleteTarget ? (
+        <ConfirmacaoDialog
+          title="Excluir produto"
+          message={`Deseja excluir o produto "${deleteTarget.nome}"? Essa ação não poderá ser desfeita.`}
+          confirmLabel="Excluir"
+          destructive
+          loading={excluirProduto.isPending}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={confirmarExclusao}
+        />
       ) : null}
     </div>
   );
