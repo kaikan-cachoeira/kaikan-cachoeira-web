@@ -11,31 +11,35 @@ import Icone from "@/shared/components/Icone/Icone";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
 import { useCaixaMutations } from "../hooks/useCaixa";
 import { mensagemErro } from "@/shared/api/erros";
+import type {
+  FormaPagamentoCaixa,
+  TipoLancamentoCaixa,
+} from "../models";
 import styles from "./PainelLancamentoCaixa.module.css";
 
 const TYPE_OPTIONS = [
-  { value: "Venda de fichas", label: "Venda de fichas" },
-  { value: "Devolução", label: "Devolução" },
+  { value: "VENDA_FICHA", label: "Venda de fichas" },
+  { value: "DEVOLUCAO_FICHA", label: "Devolução" },
 ];
 
 const PAYMENT_OPTIONS = [
   { value: "PIX", label: "PIX" },
-  { value: "Débito", label: "Débito" },
-  { value: "Crédito", label: "Crédito" },
-  { value: "Dinheiro", label: "Dinheiro" },
-  { value: "Fiado", label: "Fiado" },
+  { value: "DEBITO", label: "Débito" },
+  { value: "CREDITO", label: "Crédito" },
+  { value: "DINHEIRO", label: "Dinheiro" },
+  { value: "FIADO", label: "Fiado" },
 ];
 
 interface CaixaFormValues {
-  type: string;
+  type: Extract<TipoLancamentoCaixa, "VENDA_FICHA" | "DEVOLUCAO_FICHA">;
   value: number;
-  payment: string;
+  payment: FormaPagamentoCaixa;
   debtorName: string;
   note: string;
 }
 
 const EMPTY: CaixaFormValues = {
-  type: "Venda de fichas",
+  type: "VENDA_FICHA",
   value: 0,
   payment: "PIX",
   debtorName: "",
@@ -69,32 +73,34 @@ export default function PainelLancamentoCaixa({
 
   const type = watch("type");
   const payment = watch("payment");
-  const isFiado = payment === "Fiado";
-  const isDevolucao = type === "Devolução";
+  const isFiado = payment === "FIADO";
+  const isDevolucao = type === "DEVOLUCAO_FICHA";
   const fiadoPath = location.pathname === "/caixa/fiado";
 
   useEffect(() => {
     if (fiadoPath) {
-      setValue("payment", "Fiado");
+      setValue("payment", "FIADO");
     } else {
       setValue("payment", "PIX");
     }
   }, [fiadoPath, setValue]);
 
   function changeType(nextType: string) {
-    setValue("type", nextType);
-    if (nextType === "Devolução" && payment === "Fiado") {
+    const proximoTipo = nextType as CaixaFormValues["type"];
+    setValue("type", proximoTipo);
+    if (proximoTipo === "DEVOLUCAO_FICHA" && payment === "FIADO") {
       setValue("payment", "PIX");
       if (fiadoPath) navigate("/caixa", { replace: true });
     }
   }
 
   function changePayment(nextPayment: string) {
-    setValue("payment", nextPayment);
-    if (nextPayment === "Fiado" && !fiadoPath) {
+    const proximoPagamento = nextPayment as CaixaFormValues["payment"];
+    setValue("payment", proximoPagamento);
+    if (proximoPagamento === "FIADO" && !fiadoPath) {
       navigate("/caixa/fiado", { replace: true });
     }
-    if (nextPayment !== "Fiado" && fiadoPath) {
+    if (proximoPagamento !== "FIADO" && fiadoPath) {
       navigate("/caixa", { replace: true });
     }
   }
@@ -104,11 +110,11 @@ export default function PainelLancamentoCaixa({
     try {
       await createEntry.mutateAsync({
         eventId,
-        type: values.type,
-        value: values.value,
-        payment: values.payment,
-        debtorName: values.payment === "Fiado" ? values.debtorName : null,
-        note: values.payment === "Fiado" ? values.note : "",
+        tipo: values.type,
+        valor: values.value,
+        formaPagamento: values.payment,
+        nomeDevedor: values.payment === "FIADO" ? values.debtorName : null,
+        observacao: values.payment === "FIADO" ? values.note : "",
       });
       addToast("Registro adicionado ao caixa.");
       reset({
@@ -169,7 +175,7 @@ export default function PainelLancamentoCaixa({
             label="Forma de pagamento"
             options={
               isDevolucao
-                ? PAYMENT_OPTIONS.filter((option) => option.value !== "Fiado")
+                ? PAYMENT_OPTIONS.filter((option) => option.value !== "FIADO")
                 : PAYMENT_OPTIONS
             }
             value={payment}

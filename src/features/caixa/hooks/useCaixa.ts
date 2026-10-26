@@ -7,11 +7,13 @@ import { comporChave, queryKeys } from "@/shared/query/keys";
 import { useEventoAtualQuery } from "@/features/eventos";
 import type {
   CriarLancamentoCaixaPayload,
+  FormaPagamentoCaixa,
   LancamentoCaixa,
   ParametrosCaixa,
   ParametrosFiados,
   QuitarFiadoPayload,
   ResumoCaixa,
+  TipoLancamentoCaixa,
 } from "../models";
 import {
   cancelarLancamentoCaixa,
@@ -19,9 +21,8 @@ import {
   listarCaixa,
 } from "../services/caixa";
 import {
-  desquitarFiado,
   listarFiados,
-  quitarFiado,
+  quitarFiadoEvento,
 } from "../services/fiados";
 
 export function useCaixaQuery(params: ParametrosCaixa) {
@@ -35,6 +36,7 @@ export function useFiadosQuery(params: ParametrosFiados) {
   return useQuery({
     queryKey: comporChave(queryKeys.fiados, params),
     queryFn: () => listarFiados(params),
+    enabled: Boolean(params.eventId) || Boolean(params.eventIds),
   });
 }
 
@@ -55,23 +57,26 @@ export function useCaixaMutations() {
   });
 
   const cancelar = useMutation({
-    mutationFn: (id: string) => cancelarLancamentoCaixa(id),
+    mutationFn: ({
+      eventId,
+      id,
+    }: {
+      eventId: number;
+      id: number;
+    }) => cancelarLancamentoCaixa(eventId, id),
     onSuccess: invalidarCaixa,
   });
 
   const quitar = useMutation({
     mutationFn: ({
+      eventId,
       id,
       payload,
     }: {
-      id: string;
+      eventId: number;
+      id: number;
       payload: QuitarFiadoPayload;
-    }) => quitarFiado(id, payload),
-    onSuccess: invalidarCaixa,
-  });
-
-  const desquitar = useMutation({
-    mutationFn: (id: string) => desquitarFiado(id),
+    }) => quitarFiadoEvento(eventId, id, payload),
     onSuccess: invalidarCaixa,
   });
 
@@ -79,15 +84,14 @@ export function useCaixaMutations() {
     criarLancamento: criar,
     cancelarLancamento: cancelar,
     quitarFiado: quitar,
-    desquitarFiado: desquitar,
   };
 }
 
 export function useCaixa() {
   const location = useLocation();
   const { addToast } = useToast();
-  const [type, setType] = useState("");
-  const [payment, setPayment] = useState("");
+  const [type, setType] = useState<TipoLancamentoCaixa | "">("");
+  const [payment, setPayment] = useState<FormaPagamentoCaixa | "">("");
   const [page, setPage] = useState(1);
   const [cancelTarget, setCancelTarget] = useState<LancamentoCaixa | null>(
     null,
@@ -100,17 +104,21 @@ export function useCaixa() {
       eventId: eventoQuery.data?.id,
       page,
       pageSize: 6,
-      types: type || undefined,
-      payments: payment || undefined,
+      tipo: type || undefined,
+      formaPagamento: payment || undefined,
     }),
     [eventoQuery.data?.id, page, type, payment],
   );
 
   const caixaQuery = useCaixaQuery(params);
   const summary: ResumoCaixa = caixaQuery.data?.summary || {
-    sold: 0,
-    returned: 0,
-    openFiados: 0,
+    fichasVendidas: 0,
+    fichasDevolvidas: 0,
+    saldoFichas: 0,
+    porFormaPagamento: {},
+    fiadosEmAberto: 0,
+    quantidadeFiadosEmAberto: 0,
+    totalRecebido: 0,
   };
   const entries = caixaQuery.data?.items || [];
   const historyPath =
@@ -131,9 +139,12 @@ export function useCaixa() {
   }
 
   async function confirmCancel() {
-    if (!cancelTarget) return;
+    if (!cancelTarget || !eventoQuery.data?.id) return;
     try {
-      await cancelarLancamento.mutateAsync(cancelTarget.id);
+      await cancelarLancamento.mutateAsync({
+        eventId: eventoQuery.data.id,
+        id: cancelTarget.id,
+      });
       addToast("Lançamento cancelado com sucesso.");
       setCancelTarget(null);
     } catch (error) {

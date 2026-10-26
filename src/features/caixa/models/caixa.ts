@@ -3,22 +3,36 @@ import type {
   ParametrosPaginacao,
 } from "@/shared/models/paginacao";
 
+export type TipoLancamentoCaixa =
+  | "VENDA_FICHA"
+  | "DEVOLUCAO_FICHA"
+  | "QUITACAO_FIADO";
+
+export type FormaPagamentoCaixa =
+  | "PIX"
+  | "DEBITO"
+  | "CREDITO"
+  | "DINHEIRO"
+  | "FIADO";
+
 export interface LancamentoCaixa {
-  id: string;
+  id: number;
   eventId: number;
-  type: string;
-  value: number;
-  payment: string;
-  paymentLabel: string;
-  debtorName?: string | null;
-  note?: string;
-  createdAt: string;
+  tipo: TipoLancamentoCaixa;
+  valor: number;
+  formaPagamento: FormaPagamentoCaixa;
+  nomeDevedor?: string | null;
+  criadoEm: string;
 }
 
 export interface ResumoCaixa {
-  sold: number;
-  returned: number;
-  openFiados: number;
+  fichasVendidas: number;
+  fichasDevolvidas: number;
+  saldoFichas: number;
+  porFormaPagamento: Partial<Record<FormaPagamentoCaixa, number>>;
+  fiadosEmAberto: number;
+  quantidadeFiadosEmAberto: number;
+  totalRecebido: number;
 }
 
 export interface RespostaCaixa extends Paginado<LancamentoCaixa> {
@@ -28,18 +42,28 @@ export interface RespostaCaixa extends Paginado<LancamentoCaixa> {
 
 export interface ParametrosCaixa extends ParametrosPaginacao {
   eventId?: number;
-  types?: string;
-  payments?: string;
+  tipo?: TipoLancamentoCaixa;
+  formaPagamento?: FormaPagamentoCaixa;
 }
 
 export interface Fiado {
-  id: string;
+  id: number;
   eventId: number;
   eventName?: string;
+
+  nomeDevedor: string;
+  valor: number;
+  observacoes?: string | null;
+  quitado: boolean;
+  quitadoEm?: string | null;
+  formaPagamento?: FormaPagamentoCaixa | null;
+  criadoEm: string;
+
+  // Compatibilidade com telas legadas / fora de escopo
   amount: number;
   paidAmount: number;
   remaining: number;
-  status: string;
+  status: "pending" | "settled";
   situationLabel: string;
   debtorName: string;
   createdAt: string;
@@ -59,14 +83,13 @@ export interface ParametrosFiados extends ParametrosPaginacao {
 
 export interface CriarLancamentoCaixaPayload {
   eventId: number;
-  type: string;
-  value: number;
-  payment: string;
-  debtorName?: string | null;
-  note?: string;
+  tipo: Extract<TipoLancamentoCaixa, "VENDA_FICHA" | "DEVOLUCAO_FICHA">;
+  valor: number;
+  formaPagamento: FormaPagamentoCaixa;
+  nomeDevedor?: string | null;
+  observacao?: string;
 }
 
 export interface QuitarFiadoPayload {
-  value: number;
-  paymentMethod: string;
+  formaPagamento: Exclude<FormaPagamentoCaixa, "FIADO">;
 }
