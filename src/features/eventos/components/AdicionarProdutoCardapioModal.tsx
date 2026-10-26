@@ -10,7 +10,7 @@ import AreaTexto from "@/shared/components/Formulario/AreaTexto";
 import CampoMoeda from "@/shared/components/Formulario/CampoMoeda";
 import Icone from "@/shared/components/Icone/Icone";
 import { useEventoMutations } from "../hooks/useEventos";
-import { useProdutosQuery } from "@/features/inventario";
+import { useProdutosQuery, useCategoriasQuery } from "@/features/inventario";
 import { resolverUrlApi } from "@/shared/api/urls";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
 import { mensagemErro } from "@/shared/api/erros";
@@ -32,7 +32,6 @@ const MIME_PERMITIDOS = new Set(["image/jpeg", "image/png", "image/webp"]);
 interface AdicionarProdutoCardapioModalProps {
   eventId: number;
   item?: ItemCardapio;
-  categories?: string[];
   initialType?: OrigemProdutoEvento;
   onClose: () => void;
 }
@@ -50,7 +49,6 @@ interface ProdutoCardapioFormValues {
 export default function AdicionarProdutoCardapioModal({
   eventId,
   item,
-  categories = [],
   initialType = "ESTOQUE",
   onClose,
 }: AdicionarProdutoCardapioModalProps) {
@@ -75,6 +73,8 @@ export default function AdicionarProdutoCardapioModal({
   const { data: productsData, isLoading: productsLoading } = useProdutosQuery({
     pageSize: 100,
   });
+  const { data: categoriasData } = useCategoriasQuery("");
+  const categorias = (categoriasData?.items ?? []).map((c) => c.nome);
 
   const {
     register,
@@ -102,7 +102,7 @@ export default function AdicionarProdutoCardapioModal({
   );
   const categoryOptions = [
     { value: "", label: "Sem categoria" },
-    ...categories.map((categoria) => ({
+    ...categorias.map((categoria) => ({
       value: categoria,
       label: categoria,
     })),

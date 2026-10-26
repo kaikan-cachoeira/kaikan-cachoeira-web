@@ -319,13 +319,6 @@ export default function EventoDetalhesPage() {
     [];
   const produtosRelatorio = relatorioEvento?.produtos ?? [];
   const produtosPrevistos = produtosQuery.data ?? [];
-  const categoriasPrevistas = Array.from(
-    new Set(
-      produtosPrevistos
-        .map((item) => item.categoria)
-        .filter((categoria): categoria is string => Boolean(categoria)),
-    ),
-  );
   const topProducts = relatorioEvento?.produtosMaisVendidos.ranking ?? [];
   const topMax = topProducts[0]?.quantidadeVendida || 1;
   const doacoes = relatorioEvento?.doacoes;
@@ -686,7 +679,6 @@ export default function EventoDetalhesPage() {
       {addProductOpen && idValido && !isReuniao ? (
         <AdicionarProdutoCardapioModal
           eventId={id}
-          categories={categoriasPrevistas}
           initialType="ESTOQUE"
           onClose={() => setAddProductOpen(false)}
         />

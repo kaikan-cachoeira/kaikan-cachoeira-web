@@ -434,7 +434,6 @@ export default function EventoCardapioPage() {
       {addOpen && idValido && podeEditar ? (
         <AdicionarProdutoCardapioModal
           eventId={id}
-          categories={categories}
           initialType={addType}
           onClose={() => setAddOpen(false)}
         />
@@ -444,7 +443,6 @@ export default function EventoCardapioPage() {
         <AdicionarProdutoCardapioModal
           eventId={id}
           item={editTarget}
-          categories={categories}
           onClose={() => setEditTarget(null)}
         />
       ) : null}
