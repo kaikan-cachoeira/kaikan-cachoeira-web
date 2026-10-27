@@ -6,6 +6,7 @@ import type {
   AtualizarProdutoCardapioPayload,
   CriarCustoEventoPayload,
   CriarEventoPayload,
+  CustoEvento,
   Evento,
   EventoDetalhe,
   ItemCardapio,
@@ -77,31 +78,30 @@ export async function excluirEvento(id: number): Promise<{ ok: boolean }> {
 }
 
 export async function criarCustoEvento(
-  id: number,
+  eventoId: number,
   payload: CriarCustoEventoPayload,
-): Promise<Evento> {
-  const { data } = await api.post<Evento>(`/events/${id}/costs`, payload);
+): Promise<CustoEvento> {
+  const { data } = await api.post<CustoEvento>(`/eventos/${eventoId}/custos`, payload);
   return data;
 }
 
 export async function atualizarCustoEvento(
-  id: number,
+  eventoId: number,
   custoId: string,
   payload: AtualizarCustoEventoPayload,
-): Promise<Evento> {
-  const { data } = await api.put<Evento>(
-    `/events/${id}/costs/${custoId}`,
+): Promise<CustoEvento> {
+  const { data } = await api.put<CustoEvento>(
+    `/eventos/${eventoId}/custos/${custoId}`,
     payload,
   );
   return data;
 }
 
 export async function excluirCustoEvento(
-  id: number,
+  eventoId: number,
   custoId: string,
-): Promise<Evento> {
-  const { data } = await api.delete<Evento>(`/events/${id}/costs/${custoId}`);
-  return data;
+): Promise<void> {
+  await api.delete<void>(`/eventos/${eventoId}/custos/${custoId}`);
 }
 
 export async function listarProdutosEvento(

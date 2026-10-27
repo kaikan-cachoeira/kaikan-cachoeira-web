@@ -15,22 +15,22 @@ import styles from "./ModaisEvento.module.css";
 
 interface CustoModalProps {
   eventId: number;
-  custo?: CustoEvento;
+  custoEvento?: CustoEvento;
   onClose: () => void;
 }
 
 interface CustoFormValues {
-  name: string;
-  value: number;
-  description: string;
+  nome: string;
+  valor: number;
+  descricao?: string;
 }
 
 export default function CustoModal({
   eventId,
-  custo,
+  custoEvento,
   onClose,
 }: CustoModalProps) {
-  const isEdit = Boolean(custo);
+  const isEdit = Boolean(custoEvento);
   const { criarCusto: createCost, atualizarCusto: updateCost } =
     useEventoMutations();
   const mutation = isEdit ? updateCost : createCost;
@@ -44,19 +44,19 @@ export default function CustoModal({
   } = useForm<CustoFormValues>({
     mode: "onTouched",
     defaultValues: {
-      value: custo?.value ?? 0,
-      name: custo?.name ?? "",
-      description: custo?.description ?? "",
+      nome: custoEvento?.nome ?? "",
+      valor: custoEvento?.valor ?? 0,
+      descricao: custoEvento?.descricao ?? "",
     },
   });
 
   const onSubmit: SubmitHandler<CustoFormValues> = async (values) => {
     setServerError("");
     try {
-      if (custo) {
+      if (custoEvento) {
         await updateCost.mutateAsync({
           id: eventId,
-          custoId: custo.id,
+          custoId: custoEvento.id,
           payload: values,
         });
         addToast("Custo atualizado com sucesso.");
@@ -114,14 +114,14 @@ export default function CustoModal({
           label="Nome"
           placeholder="Nome do custo"
           required
-          error={errors.name?.message}
-          {...register("name", {
+          error={errors.nome?.message}
+          {...register("nome", {
             required: "Informe o nome do custo.",
             minLength: { value: 2, message: "Informe ao menos 2 caracteres." },
           })}
         />
         <Controller
-          name="value"
+          name="valor"
           control={control}
           rules={{
             validate: (value) =>
@@ -145,8 +145,8 @@ export default function CustoModal({
           label="Descrição"
           rows={3}
           placeholder="Descrição do custo (opcional)"
-          error={errors.description?.message}
-          {...register("description")}
+          error={errors.descricao?.message}
+          {...register("descricao")}
         />
         {serverError ? (
           <p className={styles.serverError} role="alert">

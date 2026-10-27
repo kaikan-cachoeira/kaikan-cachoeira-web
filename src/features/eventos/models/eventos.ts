@@ -76,10 +76,11 @@ export interface ItemCardapio {
 
 export interface CustoEvento {
   id: string;
-  name: string;
-  value: number;
-  description?: string;
-  createdAt: string;
+  nome: string;
+  valor: number;
+  descricao?: string;
+  criadoEm: string;
+  atualizadoEm: string;
 }
 
 export interface ParametrosEventos extends ParametrosPaginacao {
@@ -107,9 +108,9 @@ export interface CriarEventoPayload {
 export type AtualizarEventoPayload = CriarEventoPayload;
 
 export interface CriarCustoEventoPayload {
-  name: string;
-  value: number;
-  description?: string;
+  nome: string;
+  valor: number;
+  descricao?: string;
 }
 
 export type AtualizarCustoEventoPayload = CriarCustoEventoPayload;

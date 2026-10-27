@@ -60,11 +60,11 @@ export default function CustosEventoModal({
             {custos.map((custo) => (
               <li key={custo.id} className={styles.costRow}>
                 <div className={styles.costInfo}>
-                  <strong>{custo.name}</strong>
-                  {custo.description ? <small>{custo.description}</small> : null}
+                  <strong>{custo.nome}</strong>
+                  {custo.descricao ? <small>{custo.descricao}</small> : null}
                 </div>
                 <span className={styles.costValue}>
-                  {formatarMoeda(custo.value)}
+                  {formatarMoeda(custo.valor)}
                 </span>
                 {!somenteLeitura ? (
                   <div className={styles.costActions}>
@@ -98,7 +98,7 @@ export default function CustosEventoModal({
       {editTarget ? (
         <CustoModal
           eventId={eventId}
-          custo={editTarget}
+          custoEvento={editTarget}
           onClose={() => setEditTarget(null)}
         />
       ) : null}
@@ -106,7 +106,7 @@ export default function CustosEventoModal({
       {deleteTarget ? (
         <ConfirmacaoDialog
           title="Excluir custo"
-          message={`Deseja excluir o custo "${deleteTarget.name}" (${formatarMoeda(deleteTarget.value)})? Ele será removido dos custos do evento e o lucro será recalculado.`}
+          message={`Deseja excluir o custo "${deleteTarget.nome}" (${formatarMoeda(deleteTarget.valor)})? Ele será removido dos custos do evento e o lucro será recalculado.`}
           confirmLabel="Excluir custo"
           destructive
           loading={excluirCusto.isPending}
