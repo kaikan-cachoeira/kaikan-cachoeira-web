@@ -299,7 +299,7 @@ export default function DoacoesPage() {
                     </Etiqueta>
                   </Celula>
                   <Celula numeric>{formatarMoeda(donation.valorFicha)}</Celula>
-                  <Celula>
+                  <Celula centered>
                     <button
                       type="button"
                       className={styles.moreButton}

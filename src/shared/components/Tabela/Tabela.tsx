@@ -45,6 +45,7 @@ export function Linha({ children, muted = false, className = "" }: LinhaProps) {
 
 interface CelulaProps extends TabelaSecaoProps {
   numeric?: boolean;
+  centered?: boolean;
   className?: string;
 }
 
@@ -66,11 +67,12 @@ export function CelulaCabecalho({
 export function Celula({
   children,
   numeric = false,
+  centered = false,
   className = "",
 }: CelulaProps) {
   return (
     <td
-      className={`${styles.td} ${numeric ? styles.numeric : ""} ${className}`.trim()}
+      className={`${styles.td} ${numeric ? styles.numeric : centered ? styles.center : ""} ${className}`.trim()}
     >
       {children}
     </td>
