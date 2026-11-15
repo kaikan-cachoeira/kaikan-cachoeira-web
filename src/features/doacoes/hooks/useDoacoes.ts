@@ -79,7 +79,7 @@ export function useDoacoes() {
     () => ({
       search,
       page,
-      pageSize: 6,
+      pageSize: 10,
       eventIds: selectedEvents.length ? selectedEvents.join(",") : undefined,
       types: selectedTypes.length ? selectedTypes.join(",") : undefined,
     }),

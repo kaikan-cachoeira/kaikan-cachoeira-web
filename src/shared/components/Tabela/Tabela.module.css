@@ -55,6 +55,10 @@
   white-space: nowrap;
 }
 
+.center {
+  text-align: center;
+}
+
 @media (max-width: 760px) {
   .table {
     min-width: 680px;

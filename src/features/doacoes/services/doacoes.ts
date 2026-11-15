@@ -84,7 +84,7 @@ export async function listarDoacoes(
     params: {
       q: params.search || undefined,
       page: Math.max(0, (params.page || 1) - 1),
-      size: params.pageSize || 6,
+      size: params.pageSize || 10,
       tipo: parseListaCsv(params.types),
       eventoId: parseListaNumerosCsv(params.eventIds),
     },

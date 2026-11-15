@@ -102,11 +102,6 @@ export default function LoginPage() {
             Entrar
           </Botao>
         </form>
-
-        <p className={styles.demoNote}>
-          Modo de demonstração: use qualquer e-mail válido e uma senha para
-          acessar. Nenhuma credencial real é validada.
-        </p>
       </div>
   );
 }
