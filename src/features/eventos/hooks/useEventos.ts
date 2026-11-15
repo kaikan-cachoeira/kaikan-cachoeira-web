@@ -27,6 +27,7 @@ import {
   excluirProdutoCardapio,
   excluirEvento,
   listarEventos,
+  listarTodosEventos,
   listarProdutosEvento,
   obterCardapioEvento,
   obterEvento,
@@ -64,6 +65,17 @@ export function useEventosQuery(params: ParametrosEventos) {
   return useQuery({
     queryKey: comporChave(queryKeys.eventos, "lista", consultaRemota),
     queryFn: () => listarEventos(consultaRemota),
+  });
+}
+
+export function useEventosListaCompletaQuery(
+  params: Omit<ParametrosEventos, "page" | "pageSize"> = {},
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: comporChave(queryKeys.eventos, "lista-completa", params),
+    queryFn: () => listarTodosEventos(params),
+    enabled,
   });
 }
 
@@ -113,6 +125,7 @@ export function useEventoCardapioQuery(
   params?: {
     search?: string;
     category?: string;
+    type?: "ESTOQUE" | "PRODUZIDO";
     page?: number;
     pageSize?: number;
   },

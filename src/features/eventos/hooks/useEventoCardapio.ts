@@ -19,6 +19,7 @@ export function useEventoCardapio(id?: number) {
   const { data, isLoading, isError, refetch } = useEventoCardapioQuery(id, {
     search,
     category: category || undefined,
+    type: (type as OrigemProdutoEvento) || undefined,
     page,
     pageSize: PAGE_SIZE,
   });
@@ -26,9 +27,7 @@ export function useEventoCardapio(id?: number) {
   const items = useMemo(() => data?.items || [], [data]);
   const categories = useMemo(() => data?.categories || [], [data]);
 
-  const filtered = useMemo(() => {
-    return items.filter((item) => !type || item.origem === type);
-  }, [items, type]);
+  const filtered = useMemo(() => items, [items]);
 
   const totalPages = data?.totalPages ?? 1;
   const safePage = Math.min(data?.page ?? 1, totalPages);

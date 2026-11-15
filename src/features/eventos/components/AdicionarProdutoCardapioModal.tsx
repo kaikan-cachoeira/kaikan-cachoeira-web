@@ -10,7 +10,10 @@ import AreaTexto from "@/shared/components/Formulario/AreaTexto";
 import CampoMoeda from "@/shared/components/Formulario/CampoMoeda";
 import Icone from "@/shared/components/Icone/Icone";
 import { useEventoMutations } from "../hooks/useEventos";
-import { useProdutosQuery, useCategoriasQuery } from "@/features/inventario";
+import {
+  useCategoriasQuery,
+  useProdutosListaCompletaQuery,
+} from "@/features/inventario";
 import { resolverUrlApi } from "@/shared/api/urls";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
 import { mensagemErro } from "@/shared/api/erros";
@@ -70,9 +73,8 @@ export default function AdicionarProdutoCardapioModal({
     atualizarProduto: updateProduct,
     enviarFoto,
   } = useEventoMutations();
-  const { data: productsData, isLoading: productsLoading } = useProdutosQuery({
-    pageSize: 100,
-  });
+  const { data: productsData, isLoading: productsLoading } =
+    useProdutosListaCompletaQuery();
   const { data: categoriasData } = useCategoriasQuery("");
   const categorias = (categoriasData?.items ?? []).map((c) => c.nome);
 
@@ -97,7 +99,7 @@ export default function AdicionarProdutoCardapioModal({
   });
 
   const selectedProductId = watch("productId");
-  const selectedProduct = (productsData?.items || []).find(
+  const selectedProduct = (productsData || []).find(
     (product) => String(product.id) === selectedProductId,
   );
   const categoryOptions = [
@@ -306,7 +308,7 @@ export default function AdicionarProdutoCardapioModal({
                 placeholder={
                   productsLoading ? "Carregando..." : "Selecionar produto"
                 }
-                options={(productsData?.items || []).map((product) => ({
+                options={(productsData || []).map((product) => ({
                   value: String(product.id),
                   label: `${product.nome} (${formatarNumero(product.quantidadeAtual)} un.)`,
                 }))}

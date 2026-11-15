@@ -8,17 +8,17 @@ Define como o frontend consulta, cria, edita e acompanha eventos usando o contra
 
 ### Requirement: Listagem de eventos
 
-A listagem SHALL consultar `GET /eventos` e apresentar os eventos com o evento em andamento primeiro. Busca textual e período SHALL ser enviados à API como `q`, `dataInicio` e `dataFim`; filtros de status e tipo SHALL ser aplicados no cliente. A resposta SHALL ser paginada no cliente para preservar o contrato `Paginado` consumido por outras features.
+A listagem SHALL consultar `GET /eventos` e apresentar os eventos com o evento em andamento primeiro. Busca textual, período, `status` e `tipos` SHALL ser enviados à API; a resposta SHALL ser consumida como paginação server-side, preservando seleções múltiplas de status e tipo no contrato da consulta.
 
 #### Scenario: Lista com eventos
 
-- **WHEN** a API devolve um array com eventos
-- **THEN** a tela renderiza os cards, destacando o evento em andamento e paginando o restante
+- **WHEN** a API devolve uma página com eventos
+- **THEN** a tela renderiza os cards a partir da resposta paginada e destaca o evento em andamento quando ele estiver na página retornada
 
 #### Scenario: Filtros de status e tipo
 
 - **WHEN** o usuário seleciona um ou mais status ou tipos
-- **THEN** apenas os eventos correspondentes são exibidos, sem alterar a paginação além do necessário
+- **THEN** a consulta reflete todas as seleções e a lista exibida corresponde ao conjunto filtrado retornado pela API
 
 #### Scenario: Filtro por período
 
@@ -27,7 +27,7 @@ A listagem SHALL consultar `GET /eventos` e apresentar os eventos com o evento e
 
 #### Scenario: Lista vazia
 
-- **WHEN** a API devolve um array vazio
+- **WHEN** a API devolve uma página vazia
 - **THEN** a tela exibe o estado vazio, distinguindo "sem eventos" de "nenhum resultado para os filtros"
 
 ### Requirement: Evento em andamento

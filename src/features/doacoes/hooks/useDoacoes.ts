@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { comporChave, queryKeys } from "@/shared/query/keys";
-import { useEventosQuery } from "@/features/eventos";
+import { useEventosListaCompletaQuery } from "@/features/eventos";
 import type {
   AtualizarDoacaoPayload,
   CriarDoacaoPayload,
@@ -87,10 +87,10 @@ export function useDoacoes() {
   );
 
   const doacoesQuery = useDoacoesQuery(params);
-  const eventosQuery = useEventosQuery({ pageSize: 100 });
+  const eventosQuery = useEventosListaCompletaQuery();
   const { excluirDoacao } = useDoacaoMutations();
 
-  const eventOptions = (eventosQuery.data?.items || []).map((event) => ({
+  const eventOptions = (eventosQuery.data || []).map((event) => ({
     value: String(event.id),
     label: event.nome,
   }));

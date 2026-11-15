@@ -1,4 +1,5 @@
 import api from "@/shared/api/cliente";
+import { carregarTodasPaginas } from "@/shared/lib/carregarTodasPaginas";
 import type { Paginado, ParametrosPaginacao } from "@/shared/models/paginacao";
 import type {
   AdicionarProdutoCardapioPayload,
@@ -11,6 +12,7 @@ import type {
   Evento,
   EventoDetalhe,
   ItemCardapio,
+  OrigemProdutoEvento,
   ParametrosEventos,
   RelatorioEventoResponse,
   RespostaCardapio,
@@ -29,13 +31,8 @@ interface PaginaApi<T> {
 interface ParametrosCardapio extends ParametrosPaginacao {
   search?: string;
   category?: string;
+  type?: OrigemProdutoEvento;
 }
-
-const STATUS_ID: Record<string, number> = {
-  NAO_INICIADO: 1,
-  EM_ANDAMENTO: 2,
-  ENCERRADO: 3,
-};
 
 function paraPaginado<T>(pagina: PaginaApi<T>): Paginado<T> {
   return {
@@ -47,24 +44,6 @@ function paraPaginado<T>(pagina: PaginaApi<T>): Paginado<T> {
   };
 }
 
-function separar(valor?: string): string[] {
-  return valor
-    ? valor
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean)
-    : [];
-}
-
-function primeiroStatusId(statuses?: string): number | undefined {
-  const status = separar(statuses)[0];
-  return status ? STATUS_ID[status] : undefined;
-}
-
-function primeiroTipo(types?: string): string | undefined {
-  return separar(types)[0];
-}
-
 export async function listarEventos(
   params: ParametrosEventos,
 ): Promise<RespostaEventos> {
@@ -73,8 +52,8 @@ export async function listarEventos(
       q: params.search || undefined,
       dataInicio: params.from ? inicioDoDiaISO(params.from) : undefined,
       dataFim: params.to ? fimDoDiaISO(params.to) : undefined,
-      statusId: primeiroStatusId(params.statuses),
-      tipoEvento: primeiroTipo(params.types),
+      status: params.statuses,
+      tipos: params.types,
       page: Math.max(0, (params.page || 1) - 1),
       size: params.pageSize || 8,
     },
@@ -82,9 +61,26 @@ export async function listarEventos(
   return paraPaginado(data);
 }
 
+export async function listarTodosEventos(
+  params: Omit<ParametrosEventos, "page" | "pageSize"> = {},
+): Promise<Evento[]> {
+  return carregarTodasPaginas((page) =>
+    listarEventos({
+      ...params,
+      page,
+      pageSize: 100,
+    }),
+  );
+}
+
 export async function obterEventoAtual(): Promise<Evento | null> {
   const { data } = await api.get<PaginaApi<Evento>>("/eventos", {
-    params: { statusId: 2, tipoEvento: "EVENTO", page: 0, size: 1 },
+    params: {
+      status: "EM_ANDAMENTO",
+      tipos: "EVENTO",
+      page: 0,
+      size: 1,
+    },
   });
   return data.itens[0] ?? null;
 }
@@ -159,25 +155,24 @@ export async function excluirCustoEvento(
 
 export async function listarProdutosEvento(
   id: number,
+  params?: Omit<ParametrosCardapio, "page" | "pageSize">,
 ): Promise<ItemCardapio[]> {
-  const pageSize = 100;
-  let page = 0;
-  let totalPages = 1;
-  const items: ItemCardapio[] = [];
-
-  while (page < totalPages) {
+  return carregarTodasPaginas(async (page) => {
     const { data } = await api.get<PaginaApi<ItemCardapio>>(
       `/eventos/${id}/produtos`,
       {
-        params: { page, size: pageSize },
+        params: {
+          q: params?.search || undefined,
+          categoria: params?.category || undefined,
+          origem: params?.type || undefined,
+          page: Math.max(0, page - 1),
+          size: 100,
+        },
       },
     );
-    items.push(...data.itens);
-    totalPages = Math.max(1, data.totalPaginas);
-    page += 1;
-  }
 
-  return items;
+    return paraPaginado(data);
+  });
 }
 
 export async function obterCardapioEvento(
@@ -205,6 +200,7 @@ export async function obterCardapioEvento(
       params: {
         q: params?.search || undefined,
         categoria: params?.category || undefined,
+        origem: params?.type || undefined,
         page: Math.max(0, (params?.page || 1) - 1),
         size: params?.pageSize || 8,
       },

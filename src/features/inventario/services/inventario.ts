@@ -1,5 +1,6 @@
 import api from "@/shared/api/cliente";
 import { resolverUrlApi } from "@/shared/api/urls";
+import { carregarTodasPaginas } from "@/shared/lib/carregarTodasPaginas";
 import type { Paginado, ParametrosPaginacao } from "@/shared/models/paginacao";
 import type {
   AtualizarProdutoPayload,
@@ -96,27 +97,6 @@ function normalizarMovimentacao(
   };
 }
 
-function filtrarPorEstoque(items: Produto[], stock?: string) {
-  if (!stock) return items;
-  return items.filter((item) => {
-    const minimo = Number(item.estoqueMinimo ?? 0);
-    if (stock === "low") {
-      return item.estoqueMinimo !== null && item.estoqueMinimo !== undefined
-        ? item.quantidadeAtual <= minimo
-        : false;
-    }
-    if (stock === "out") return item.quantidadeAtual === 0;
-    if (stock === "ok") {
-      if (item.quantidadeAtual === 0) return false;
-      if (item.estoqueMinimo === null || item.estoqueMinimo === undefined) {
-        return true;
-      }
-      return item.quantidadeAtual > minimo;
-    }
-    return true;
-  });
-}
-
 function paraPaginado<I, O>(
   pagina: PaginaApi<I>,
   mapItem: (item: I) => O,
@@ -146,20 +126,23 @@ export async function listarProdutos(
         : params.categoryId
           ? [params.categoryId]
           : undefined,
-      abaixoDoMinimo: params.stock === "low" ? true : undefined,
+      situacao: params.stock || undefined,
     },
   });
 
-  const paginado = paraPaginado(data, normalizarProduto);
+  return paraPaginado(data, normalizarProduto);
+}
 
-  if (params.stock === "out" || params.stock === "ok") {
-    return {
-      ...paginado,
-      items: filtrarPorEstoque(paginado.items, params.stock),
-    };
-  }
-
-  return paginado;
+export async function listarTodosProdutos(
+  params: Omit<ParametrosProdutos, "page" | "pageSize"> = {},
+): Promise<Produto[]> {
+  return carregarTodasPaginas((page) =>
+    listarProdutos({
+      ...params,
+      page,
+      pageSize: 100,
+    }),
+  );
 }
 
 export async function listarLotesProduto(produtoId: number): Promise<LoteProduto[]> {
@@ -286,10 +269,20 @@ export async function listarTiposMovimentacao(): Promise<TipoMovimentacao[]> {
 export async function listarEventosReuniao(): Promise<
   Array<{ id: number; nome: string }>
 > {
-  const { data } = await api.get<PaginaApi<{ id: number; nome: string }>>("/eventos", {
-    params: { tipoEvento: "REUNIAO", page: 0, size: 100 },
+  return carregarTodasPaginas(async (page) => {
+    const { data } = await api.get<PaginaApi<{ id: number; nome: string }>>(
+      "/eventos",
+      {
+        params: {
+          tipos: "REUNIAO",
+          page: Math.max(0, page - 1),
+          size: 100,
+        },
+      },
+    );
+
+    return paraPaginado(data, (item) => item);
   });
-  return data.itens;
 }
 
 export function normalizarCategoriaApi(categoria: {

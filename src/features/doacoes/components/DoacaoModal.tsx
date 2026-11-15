@@ -9,8 +9,8 @@ import ControleSegmentado from "@/shared/components/Formulario/ControleSegmentad
 import CampoMoeda from "@/shared/components/Formulario/CampoMoeda";
 import Icone from "@/shared/components/Icone/Icone";
 import { useDoacaoMutations } from "../hooks/useDoacoes";
-import { useEventosQuery } from "@/features/eventos";
-import { useProdutosQuery } from "@/features/inventario";
+import { useEventosListaCompletaQuery } from "@/features/eventos";
+import { useProdutosListaCompletaQuery } from "@/features/inventario";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
 import { mensagemErro } from "@/shared/api/erros";
 import type {
@@ -61,10 +61,9 @@ export default function DoacaoModal({
     atualizarDoacao: updateDonation,
   } = useDoacaoMutations();
   const mutation = isEdit ? updateDonation : createDonation;
-  const { data: eventsData } = useEventosQuery({ pageSize: 100 });
-  const { data: productsData, isLoading: productsLoading } = useProdutosQuery({
-    pageSize: 100,
-  });
+  const { data: eventsData } = useEventosListaCompletaQuery();
+  const { data: productsData, isLoading: productsLoading } =
+    useProdutosListaCompletaQuery();
 
   const {
     register,
@@ -88,10 +87,10 @@ export default function DoacaoModal({
   });
 
   const selectedProductId = watch("productId");
-  const selectedProduct = (productsData?.items || []).find(
+  const selectedProduct = (productsData || []).find(
     (product) => String(product.id) === selectedProductId,
   );
-  const eventOptions = (eventsData?.items || []).map((event) => ({
+  const eventOptions = (eventsData || []).map((event) => ({
     value: String(event.id),
     label: event.nome,
   }));
@@ -105,7 +104,7 @@ export default function DoacaoModal({
     });
   }
 
-  const productOptions = (productsData?.items || []).map((product) => ({
+  const productOptions = (productsData || []).map((product) => ({
     value: String(product.id),
     label: `${product.nome} (${formatarNumero(product.quantidadeAtual)} un.)`,
   }));

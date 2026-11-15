@@ -47,11 +47,26 @@ A exclusão SHALL usar `DELETE /eventos/{eventoId}/caixa/{lancamentoId}` e MUST 
 - **THEN** a API retorna sucesso e a UI reflete o novo resumo e histórico
 
 ### Requirement: Listagem de fiados do evento
-Fiados do evento atual SHALL ser consultados por `GET /eventos/{eventoId}/fiados`, com filtro opcional de situação e exibição consistente de pendente ou quitado.
+Fiados do evento atual SHALL ser consultados por `GET /eventos/{eventoId}/fiados`, com filtro opcional de situação, paginação server-side e exibição consistente de pendente ou quitado.
 
 #### Scenario: Filtro por situação
 - **WHEN** o usuário seleciona pendente ou quitado
-- **THEN** a consulta envia `situacao` no formato esperado pela API
+- **THEN** a consulta envia `situacao` no formato esperado pela API e a lista exibe apenas os itens correspondentes
+
+#### Scenario: Navegação de páginas
+- **WHEN** o usuário troca de página na lista de fiados
+- **THEN** a consulta mantém a paginação server-side e a UI exibe os itens da página retornada pela API
+
+### Requirement: Resumo global de fiados do evento
+O sistema SHALL exibir os totais de fiados em aberto com base no conjunto completo de fiados do evento e não apenas nos itens da página atual.
+
+#### Scenario: Totais persistem entre páginas
+- **WHEN** o usuário navega entre páginas da listagem de fiados
+- **THEN** os totais exibidos de pendentes e valor em aberto permanecem consistentes com o conjunto filtrado completo
+
+#### Scenario: Totais refletem filtros
+- **WHEN** o usuário altera a situação filtrada
+- **THEN** os totais exibidos são recalculados para o conjunto correspondente ao filtro selecionado
 
 ### Requirement: Quitação de fiado no contrato real
 A quitação SHALL usar `PATCH /eventos/{eventoId}/fiados/{fiadoId}/quitacao` enviando apenas `formaPagamento`. A UI MUST tratar quitação como total no backend e MUST NOT oferecer quitação parcial por valor nesse fluxo.

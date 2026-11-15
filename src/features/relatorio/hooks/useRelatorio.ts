@@ -1,35 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
 import { comporChave, queryKeys } from "@/shared/query/keys";
-import { useEventosQuery } from "@/features/eventos";
-import { listarProdutos } from "@/features/inventario/services/inventario";
-import { listarFiados } from "@/features/caixa/services/fiados";
+import { carregarTodasPaginas } from "@/shared/lib/carregarTodasPaginas";
+import { useEventosListaCompletaQuery } from "@/features/eventos";
+import { listarTodosProdutos } from "@/features/inventario/services/inventario";
+import { obterResumoFiados } from "@/features/caixa/services/fiados";
 import { listarDoacoes } from "@/features/doacoes/services/doacoes";
 import { listarProdutosMaisVendidos } from "../services/relatorio";
 
 async function listarTodasDoacoes(eventIds: string) {
-  const pageSize = 100;
-  const firstPage = await listarDoacoes({ eventIds, page: 1, pageSize });
-  const items = [...firstPage.items];
+  const items = await carregarTodasPaginas((page) =>
+    listarDoacoes({
+      eventIds,
+      page,
+      pageSize: 100,
+    }),
+  );
 
-  for (let page = 2; page <= firstPage.totalPages; page += 1) {
-    const response = await listarDoacoes({ eventIds, page, pageSize });
-    items.push(...response.items);
-  }
-
-  return { items, total: firstPage.total };
+  return { items, total: items.length };
 }
 
 async function listarTodosProdutosEstoque() {
-  const pageSize = 100;
-  const primeira = await listarProdutos({ page: 1, pageSize });
-  const items = [...primeira.items];
-
-  for (let page = 2; page <= primeira.totalPages; page += 1) {
-    const resposta = await listarProdutos({ page, pageSize });
-    items.push(...resposta.items);
-  }
-
-  return items;
+  return listarTodosProdutos();
 }
 
 export interface FiltrosRelatorio {
@@ -49,7 +40,9 @@ export function useRelatorio(filtros: FiltrosRelatorio) {
     to: filtros.to || undefined,
     pageSize: 100,
   };
-  const eventosQuery = useEventosQuery(eventParams);
+  const eventosQuery = useEventosListaCompletaQuery(eventParams);
+  const eventosTodosQuery = useEventosListaCompletaQuery();
+  const todosEventIds = (eventosTodosQuery.data || []).map((event) => event.id);
 
   const productsParams = {
     types: filtros.types.length ? filtros.types.join(",") : undefined,
@@ -82,11 +75,21 @@ export function useRelatorio(filtros: FiltrosRelatorio) {
     },
   });
   const fiadosQuery = useQuery({
-    queryKey: comporChave(queryKeys.eventos, "relatorio", "fiados"),
-    queryFn: () => listarFiados({ status: "pending", pageSize: 1 }),
+    queryKey: comporChave(
+      queryKeys.eventos,
+      "relatorio",
+      "fiados",
+      todosEventIds.join(","),
+    ),
+    queryFn: () =>
+      obterResumoFiados({
+        status: "pending",
+        eventIds: todosEventIds.join(","),
+      }),
+    enabled: todosEventIds.length > 0,
   });
 
-  const events = eventosQuery.data?.items || [];
+  const events = eventosQuery.data || [];
   const eventIds = events.map((event) => event.id);
   const donationsQuery = useQuery({
     queryKey: comporChave(queryKeys.eventos, "relatorio", "doacoes", eventIds),
