@@ -21,6 +21,8 @@ import type {
 } from "../models";
 import PainelLancamentoCaixa from "../components/PainelLancamentoCaixa";
 import styles from "./Caixa.module.css";
+import { PERMISSOES, temPermissao } from "@/shared/permissoes/permissoes";
+import { usePermissoes } from "@/shared/permissoes/usePermissoes";
 
 const TYPE_OPTIONS = [
   { value: "", label: "Todos" },
@@ -79,6 +81,8 @@ export default function CaixaPage() {
     confirmCancel,
   } = useCaixa();
   const { data, isLoading, isError, refetch } = caixaQuery;
+  const permissoes = usePermissoes();
+  const podeVerEventos = temPermissao(permissoes, PERMISSOES.eventosMenu);
 
   if (eventLoading) {
     return <EstadoCarregando message="Carregando caixa..." />;
@@ -93,12 +97,18 @@ export default function CaixaPage() {
         />
         <EstadoVazio
           title="Nenhum evento em andamento."
-          description="Inicie um evento para registrar e consultar o caixa."
+          description={
+            podeVerEventos
+              ? "Inicie um evento para registrar e consultar o caixa."
+              : "O evento em andamento é iniciado por quem tem acesso à área de Eventos. Quando houver um, o caixa fica disponível aqui."
+          }
           icon="cash"
           action={
-            <Botao as={Link} to="/eventos">
-              Ir para eventos
-            </Botao>
+            podeVerEventos ? (
+              <Botao as={Link} to="/eventos">
+                Ir para eventos
+              </Botao>
+            ) : undefined
           }
         />
       </div>

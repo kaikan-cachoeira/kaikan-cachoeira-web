@@ -14,6 +14,8 @@ import ResumoVenda from "../components/ResumoVenda";
 import DescontoModal from "../components/DescontoModal";
 import styles from "./Vendas.module.css";
 import BotaoVoltar from "@/shared/components/BotaoVoltar/BotaoVoltar";
+import { PERMISSOES, temPermissao } from "@/shared/permissoes/permissoes";
+import { usePermissoes } from "@/shared/permissoes/usePermissoes";
 
 const TABS = [
   { to: "/registro-vendas", label: "Registro de vendas", end: true },
@@ -51,6 +53,8 @@ export default function RegistroVendasPage() {
     totalComDescontoDosItens,
     subtitle,
   } = useVendas({ carregarCardapio: true });
+  const permissoes = usePermissoes();
+  const podeVerEventos = temPermissao(permissoes, PERMISSOES.eventosMenu);
 
   return (
     <div className={styles.page}>
@@ -69,12 +73,18 @@ export default function RegistroVendasPage() {
           <Abas items={TABS} label="Seções do registro de venda" />
           <EstadoVazio
             title="Nenhum evento em andamento."
-            description="Inicie um evento para registrar vendas no PDV."
+            description={
+              podeVerEventos
+                ? "Inicie um evento para registrar vendas no PDV."
+                : "O evento em andamento é iniciado por quem tem acesso à área de Eventos. Quando houver um, o PDV fica disponível aqui."
+            }
             icon="calendar"
             action={
-              <Botao as={Link} to="/eventos">
-                Ir para eventos
-              </Botao>
+              podeVerEventos ? (
+                <Botao as={Link} to="/eventos">
+                  Ir para eventos
+                </Botao>
+              ) : undefined
             }
           />
         </div>

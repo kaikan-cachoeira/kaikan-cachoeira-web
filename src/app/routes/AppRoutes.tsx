@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import AppLayout from "@/app/layouts/AppLayout/AppLayout";
 import AuthLayout from "@/app/layouts/AuthLayout/AuthLayout";
+import GuardaDeArea from "@/app/routes/GuardaDeArea";
 import RotaProtegida from "@/app/routes/RotaProtegida";
 import PaginaPendente from "@/app/pages/PaginaPendente";
 import PaginaNaoEncontrada from "@/app/pages/PaginaNaoEncontrada";
@@ -43,41 +44,46 @@ export default function AppRoutes() {
 
       <Route element={<RotaProtegida />}>
         <Route element={<AppLayout />}>
-          <Route index element={<Navigate to="/inicio" replace />} />
-          <Route path="/inicio" element={<HomePage />} />
-          <Route path="/estoque" element={<InventarioPage />} />
-          <Route
-            path="/estoque/:productId/lotes/:lotId/movimentacoes"
-            element={<LoteMovimentacoesPage />}
-          />
-          <Route path="/doacoes" element={<DoacoesPage />} />
-          <Route path="/eventos" element={<EventosPage />} />
-          <Route path="/eventos/:id" element={<EventoDetalhesPage />} />
-          <Route path="/eventos/:id/cardapio" element={<EventoCardapioPage />} />
-          <Route path="/eventos/:id/vendas" element={<EventoVendasPage />} />
-          <Route path="/registro-vendas" element={<RegistroVendasPage />} />
-          <Route
-            path="/registro-vendas/historico"
-            element={<HistoricoVendasPage />}
-          />
-          <Route path="/caixa" element={<CaixaPage />} />
-          <Route path="/caixa/fiado" element={<CaixaPage />} />
-          <Route path="/caixa/fiados" element={<FiadosPage />} />
-          <Route path="/relatorio-geral" element={<RelatorioGeralPage />} />
-          <Route
-            path="/relatorio-geral/fiados"
-            element={<FiadosGeraisPage />}
-          />
-          <Route
-            path="/em-definicao/painel-de-controle"
-            element={<Navigate to="/relatorio-geral" replace />}
-          />
-          <Route
-            path="/em-definicao/relatorio-geral"
-            element={<Navigate to="/relatorio-geral" replace />}
-          />
-          <Route path="/em-definicao/:slug" element={<PaginaPendente />} />
-          <Route path="*" element={<PaginaNaoEncontrada />} />
+          <Route element={<GuardaDeArea />}>
+            <Route index element={<Navigate to="/inicio" replace />} />
+            <Route path="/inicio" element={<HomePage />} />
+            <Route path="/estoque" element={<InventarioPage />} />
+            <Route
+              path="/estoque/:productId/lotes/:lotId/movimentacoes"
+              element={<LoteMovimentacoesPage />}
+            />
+            <Route path="/doacoes" element={<DoacoesPage />} />
+            <Route path="/eventos" element={<EventosPage />} />
+            <Route path="/eventos/:id" element={<EventoDetalhesPage />} />
+            <Route
+              path="/eventos/:id/cardapio"
+              element={<EventoCardapioPage />}
+            />
+            <Route path="/eventos/:id/vendas" element={<EventoVendasPage />} />
+            <Route path="/registro-vendas" element={<RegistroVendasPage />} />
+            <Route
+              path="/registro-vendas/historico"
+              element={<HistoricoVendasPage />}
+            />
+            <Route path="/caixa" element={<CaixaPage />} />
+            <Route path="/caixa/fiado" element={<CaixaPage />} />
+            <Route path="/caixa/fiados" element={<FiadosPage />} />
+            <Route path="/relatorio-geral" element={<RelatorioGeralPage />} />
+            <Route
+              path="/relatorio-geral/fiados"
+              element={<FiadosGeraisPage />}
+            />
+            <Route
+              path="/em-definicao/painel-de-controle"
+              element={<Navigate to="/relatorio-geral" replace />}
+            />
+            <Route
+              path="/em-definicao/relatorio-geral"
+              element={<Navigate to="/relatorio-geral" replace />}
+            />
+            <Route path="/em-definicao/:slug" element={<PaginaPendente />} />
+            <Route path="*" element={<PaginaNaoEncontrada />} />
+          </Route>
         </Route>
       </Route>
     </Routes>

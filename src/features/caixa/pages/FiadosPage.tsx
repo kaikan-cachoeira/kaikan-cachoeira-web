@@ -16,6 +16,8 @@ import PainelLancamentoCaixa from "../components/PainelLancamentoCaixa";
 import QuitarFiadoModal from "../components/QuitarFiadoModal";
 import styles from "./Caixa.module.css";
 import BotaoVoltar from "@/shared/components/BotaoVoltar/BotaoVoltar";
+import { PERMISSOES, temPermissao } from "@/shared/permissoes/permissoes";
+import { usePermissoes } from "@/shared/permissoes/usePermissoes";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Todos" },
@@ -37,6 +39,8 @@ export default function FiadosPage() {
     fiados,
     tabs,
   } = useFiados();
+  const permissoes = usePermissoes();
+  const podeVerEventos = temPermissao(permissoes, PERMISSOES.eventosMenu);
 
   if (eventLoading) {
     return <EstadoCarregando message="Carregando caixa..." />;
@@ -51,12 +55,18 @@ export default function FiadosPage() {
         />
         <EstadoVazio
           title="Nenhum evento em andamento."
-          description="Inicie um evento para consultar os fiados."
+          description={
+            podeVerEventos
+              ? "Inicie um evento para consultar os fiados."
+              : "O evento em andamento é iniciado por quem tem acesso à área de Eventos. Quando houver um, os fiados ficam disponíveis aqui."
+          }
           icon="cash"
           action={
-            <Botao as={Link} to="/eventos">
-              Ir para eventos
-            </Botao>
+            podeVerEventos ? (
+              <Botao as={Link} to="/eventos">
+                Ir para eventos
+              </Botao>
+            ) : undefined
           }
         />
       </div>

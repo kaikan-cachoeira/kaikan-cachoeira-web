@@ -142,3 +142,12 @@ npm test && npm run typecheck && npm run lint && npm run lint:boundaries && npm 
   `/auth/*` nunca disparam renovação.
 - O modo demo é selecionável no cliente compartilhado e mantém os mesmos dados e
   endpoints, incluindo login, refresh e logout.
+- Permissões da sessão são publicadas por um contexto de `shared/permissoes`,
+  fornecido pelo `AuthProvider`; as features consomem `usePermissoes` e
+  `Permissao` sem criar aresta com `features/auth`.
+- Cada área de navegação exige uma permissão `*_MENU`. A tabela fica em
+  `shared/navegacao/areas.ts` e alimenta tanto a guarda de rota quanto a
+  sidebar; rota de área negada responde 404 dentro do shell.
+- O controle de acesso do cliente é decisão de interface. A API permanece a
+  autoridade e uma resposta `403` continua sendo apresentada como erro da
+  operação.

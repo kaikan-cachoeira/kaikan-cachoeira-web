@@ -15,6 +15,8 @@ import Etiqueta from "@/shared/components/Etiqueta/Etiqueta";
 import Entrada from "@/shared/components/Formulario/Entrada";
 import SelecaoMultipla from "@/shared/components/Formulario/SelecaoMultipla";
 import PageHeader from "@/shared/components/PageHeader/PageHeader";
+import { PERMISSOES, temPermissao } from "@/shared/permissoes/permissoes";
+import { usePermissoes } from "@/shared/permissoes/usePermissoes";
 import {
   Cabecalho,
   Celula,
@@ -54,6 +56,9 @@ export default function RelatorioGeralPage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [types, setTypes] = useState<string[]>([]);
+  const permissoes = usePermissoes();
+  const podeVerEstoque = temPermissao(permissoes, PERMISSOES.estoqueMenu);
+  const podeVerDoacoes = temPermissao(permissoes, PERMISSOES.doacoesMenu);
   const {
     eventosQuery,
     produtosQuery,
@@ -90,6 +95,17 @@ export default function RelatorioGeralPage() {
     0,
   );
   const hasFilters = Boolean(from || to || types.length);
+
+  const textoEstoqueBaixo = estoqueBaixoQuery.data
+    ? `${formatarNumero(estoqueBaixoQuery.data)} ${
+        estoqueBaixoQuery.data === 1 ? "produto" : "produtos"
+      } com estoque baixo`
+    : "Nenhum produto com estoque baixo";
+  const textoSemEstoque = semEstoqueQuery.data
+    ? `${formatarNumero(semEstoqueQuery.data)} ${
+        semEstoqueQuery.data === 1 ? "produto" : "produtos"
+      } sem estoque`
+    : "Nenhum produto sem estoque";
 
   function clearFilters() {
     setFrom("");
@@ -336,14 +352,14 @@ export default function RelatorioGeralPage() {
                       message="Não foi possível consultar o estoque baixo."
                       onRetry={estoqueBaixoQuery.refetch}
                     />
-                  ) : (
+                  ) : podeVerEstoque ? (
                     <Link className={styles.alertLink} to="/estoque">
-                      {estoqueBaixoQuery.data
-                        ? `${formatarNumero(estoqueBaixoQuery.data)} ${
-                            estoqueBaixoQuery.data === 1 ? "produto" : "produtos"
-                          } com estoque baixo`
-                        : "Nenhum produto com estoque baixo"}
+                      {textoEstoqueBaixo}
                     </Link>
+                  ) : (
+                    <span className={styles.alertText}>
+                      {textoEstoqueBaixo}
+                    </span>
                   )}
                   {semEstoqueQuery.isLoading ? (
                     <EstadoCarregando message="Consultando produtos sem estoque..." />
@@ -352,14 +368,14 @@ export default function RelatorioGeralPage() {
                       message="Não foi possível consultar os produtos sem estoque."
                       onRetry={semEstoqueQuery.refetch}
                     />
-                  ) : (
+                  ) : podeVerEstoque ? (
                     <Link className={styles.alertLink} to="/estoque">
-                      {semEstoqueQuery.data
-                        ? `${formatarNumero(semEstoqueQuery.data)} ${
-                            semEstoqueQuery.data === 1 ? "produto" : "produtos"
-                          } sem estoque`
-                        : "Nenhum produto sem estoque"}
+                      {textoSemEstoque}
                     </Link>
+                  ) : (
+                    <span className={styles.alertText}>
+                      {textoSemEstoque}
+                    </span>
                   )}
                   {fiadosQuery.isLoading ? (
                     <EstadoCarregando message="Consultando fiados..." />
@@ -387,14 +403,16 @@ export default function RelatorioGeralPage() {
                 title="Doações"
                 subtitle="Doações dos eventos no período selecionado"
                 action={
-                  <Botao
-                    as={Link}
-                    to="/doacoes"
-                    variant="tertiary"
-                    size="compact"
-                  >
-                    Ver todas
-                  </Botao>
+                  podeVerDoacoes ? (
+                    <Botao
+                      as={Link}
+                      to="/doacoes"
+                      variant="tertiary"
+                      size="compact"
+                    >
+                      Ver todas
+                    </Botao>
+                  ) : undefined
                 }
               >
                 {donationsQuery.isLoading ? (
