@@ -227,6 +227,15 @@
   text-decoration: underline;
 }
 
+.alertText {
+  display: block;
+  padding: var(--espaco-12);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-campo);
+  color: var(--texto);
+  font-size: var(--texto-corpo);
+}
+
 .donationStats {
   display: flex;
   flex-direction: column;

@@ -4,11 +4,8 @@ import {
   definirRenovadorDeToken,
   definirToken,
 } from "@/shared/api/cliente";
-import {
-  lerJSON,
-  removerChave,
-  salvarJSON,
-} from "@/shared/lib/armazenamentoLocal";
+import { removerChave, salvarJSON } from "@/shared/lib/armazenamentoLocal";
+import { PermissoesProvider } from "@/shared/permissoes/PermissoesProvider";
 import type { Credenciais, Sessao } from "../models";
 import {
   entrar as entrarNaApi,
@@ -17,13 +14,11 @@ import {
 } from "../services/autenticacao";
 import type { MotivoEncerramento } from "../services/renovacaoSessao";
 import { renovarSessao } from "../services/renovacaoSessao";
+import {
+  CHAVE_SESSAO,
+  lerSessaoPersistida,
+} from "../services/sessaoPersistida";
 import { AutenticacaoContexto } from "./authContexto";
-
-const CHAVE_SESSAO = "kaikan-cachoeira-session";
-
-function lerSessaoArmazenada() {
-  return lerJSON<Sessao | null>(CHAVE_SESSAO, null);
-}
 
 interface AuthProviderProps {
   children?: ReactNode;
@@ -31,7 +26,7 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [sessao, setSessao] = useState<Sessao | null>(() => {
-    const inicial = lerSessaoArmazenada();
+    const inicial = lerSessaoPersistida();
     definirToken(inicial?.accessToken ?? null);
     return inicial;
   });
@@ -40,7 +35,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     const aoAlterarArmazenamento = (event: StorageEvent) => {
       if (event.key === CHAVE_SESSAO) {
-        const proxima = lerSessaoArmazenada();
+        const proxima = lerSessaoPersistida();
         setSessao(proxima);
         definirToken(proxima?.accessToken ?? null);
         if (proxima) setSessaoExpirada(false);
@@ -60,7 +55,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     definirRenovadorDeToken((tokenUsado) =>
       renovarSessao(tokenUsado, {
-        lerSessao: lerSessaoArmazenada,
+        lerSessao: lerSessaoPersistida,
         salvarSessao: (renovada) => {
           salvarJSON(CHAVE_SESSAO, renovada);
           setSessao(renovada);
@@ -84,7 +79,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const sair = useCallback(() => {
-    const atual = lerSessaoArmazenada() ?? sessao;
+    const atual = lerSessaoPersistida() ?? sessao;
     if (atual?.refreshToken) {
       void sairNaApi(atual.refreshToken).catch(() => {});
     }
@@ -102,9 +97,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     [sessao, sessaoExpirada, entrar, sair],
   );
 
+  const permissoes = useMemo(
+    () => sessao?.usuario.permissoes ?? [],
+    [sessao],
+  );
+
   return (
     <AutenticacaoContexto.Provider value={valor}>
-      {children}
+      <PermissoesProvider permissoes={permissoes}>
+        {children}
+      </PermissoesProvider>
     </AutenticacaoContexto.Provider>
   );
 }
