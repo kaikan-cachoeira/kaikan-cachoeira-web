@@ -3,6 +3,8 @@ import Etiqueta from "@/shared/components/Etiqueta/Etiqueta";
 import Botao from "@/shared/components/Botao/Botao";
 import Icone from "@/shared/components/Icone/Icone";
 import { formatarDataHora } from "@/shared/lib/formatacao";
+import Permissao from "@/shared/permissoes/Permissao";
+import { PERMISSOES } from "@/shared/permissoes/permissoes";
 import type { Evento, StatusEventoCodigo } from "../models";
 import { rotuloTipoEvento, varianteStatus } from "../utils/statusEvento";
 import styles from "./EventoCard.module.css";
@@ -45,7 +47,7 @@ export default function EventoCard({
         </div>
         <Icone
           name={event.tipoEvento === "REUNIAO" ? "users" : "ticket"}
-          size={24}
+          size={32}
           className={styles.icon}
         />
       </div>
@@ -73,23 +75,27 @@ export default function EventoCard({
 
         {isOngoing ? (
           <>
-            <Botao
-              as={Link}
-              to="/registro-vendas"
-              size="compact"
-              iconLeft="bag"
-            >
-              Registro de vendas
-            </Botao>
-            <Botao
-              as={Link}
-              to="/caixa"
-              variant="secondary"
-              size="compact"
-              iconLeft="cash"
-            >
-              Caixa
-            </Botao>
+            <Permissao precisa={PERMISSOES.vendasMenu}>
+              <Botao
+                as={Link}
+                to="/registro-vendas"
+                size="compact"
+                iconLeft="bag"
+              >
+                Registro de vendas
+              </Botao>
+            </Permissao>
+            <Permissao precisa={PERMISSOES.caixaMenu}>
+              <Botao
+                as={Link}
+                to="/caixa"
+                variant="secondary"
+                size="compact"
+                iconLeft="cash"
+              >
+                Caixa
+              </Botao>
+            </Permissao>
             <Botao
               variant="secondary"
               size="compact"

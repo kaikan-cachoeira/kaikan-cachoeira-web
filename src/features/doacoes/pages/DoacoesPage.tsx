@@ -29,7 +29,6 @@ import { useDoacoes } from "../hooks/useDoacoes";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
 import {
   formatarMoeda,
-  formatarDataHora,
   formatarNumero,
 } from "@/shared/lib/formatacao";
 import {
@@ -110,7 +109,7 @@ export default function DoacoesPage() {
       return;
     }
     const rect = trigger.getBoundingClientRect();
-    const width = 184;
+    const width = 240;
     const height = 96;
     const left = Math.max(
       8,
@@ -283,7 +282,6 @@ export default function DoacoesPage() {
                 <CelulaCabecalho>Evento destinado</CelulaCabecalho>
                 <CelulaCabecalho>Tipo</CelulaCabecalho>
                 <CelulaCabecalho numeric>Custo da ficha</CelulaCabecalho>
-                <CelulaCabecalho>Data</CelulaCabecalho>
                 <CelulaCabecalho>Ações</CelulaCabecalho>
               </Linha>
             </Cabecalho>
@@ -301,8 +299,7 @@ export default function DoacoesPage() {
                     </Etiqueta>
                   </Celula>
                   <Celula numeric>{formatarMoeda(donation.valorFicha)}</Celula>
-                  <Celula>{formatarDataHora(donation.criadoEm)}</Celula>
-                  <Celula>
+                  <Celula centered>
                     <button
                       type="button"
                       className={styles.moreButton}
@@ -400,7 +397,7 @@ export default function DoacoesPage() {
                   closeActionsMenu();
                 }}
               >
-                <Icone name="edit" size={16} />
+                <Icone name="edit" size={32} />
                 Editar doação
               </button>
               <button
@@ -412,7 +409,7 @@ export default function DoacoesPage() {
                   closeActionsMenu();
                 }}
               >
-                <Icone name="trash" size={16} />
+                <Icone name="trash" size={32} />
                 Excluir doação
               </button>
             </div>,

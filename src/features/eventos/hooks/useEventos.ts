@@ -79,10 +79,11 @@ export function useEventosListaCompletaQuery(
   });
 }
 
-export function useEventoAtualQuery() {
+export function useEventoAtualQuery(enabled = true) {
   return useQuery({
     queryKey: comporChave(queryKeys.eventos, "atual"),
     queryFn: obterEventoAtual,
+    enabled,
   });
 }
 

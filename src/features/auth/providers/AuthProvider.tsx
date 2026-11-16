@@ -1,16 +1,24 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { definirToken } from "@/shared/api/cliente";
 import {
-  lerJSON,
-  removerChave,
-  salvarJSON,
-} from "@/shared/lib/armazenamentoLocal";
+  definirRenovadorDeToken,
+  definirToken,
+} from "@/shared/api/cliente";
+import { removerChave, salvarJSON } from "@/shared/lib/armazenamentoLocal";
+import { PermissoesProvider } from "@/shared/permissoes/PermissoesProvider";
 import type { Credenciais, Sessao } from "../models";
-import { entrar as entrarNaApi, sair as sairNaApi } from "../services/autenticacao";
+import {
+  entrar as entrarNaApi,
+  renovarTokens,
+  sair as sairNaApi,
+} from "../services/autenticacao";
+import type { MotivoEncerramento } from "../services/renovacaoSessao";
+import { renovarSessao } from "../services/renovacaoSessao";
+import {
+  CHAVE_SESSAO,
+  lerSessaoPersistida,
+} from "../services/sessaoPersistida";
 import { AutenticacaoContexto } from "./authContexto";
-
-const CHAVE_SESSAO = "kaikan-cachoeira-session";
 
 interface AuthProviderProps {
   children?: ReactNode;
@@ -18,53 +26,87 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [sessao, setSessao] = useState<Sessao | null>(() => {
-    const inicial = lerJSON<Sessao | null>(CHAVE_SESSAO, null);
+    const inicial = lerSessaoPersistida();
     definirToken(inicial?.accessToken ?? null);
     return inicial;
   });
+  const [sessaoExpirada, setSessaoExpirada] = useState(false);
 
   useEffect(() => {
     const aoAlterarArmazenamento = (event: StorageEvent) => {
       if (event.key === CHAVE_SESSAO) {
-        const proxima = lerJSON<Sessao | null>(CHAVE_SESSAO, null);
+        const proxima = lerSessaoPersistida();
         setSessao(proxima);
         definirToken(proxima?.accessToken ?? null);
+        if (proxima) setSessaoExpirada(false);
       }
     };
     window.addEventListener("storage", aoAlterarArmazenamento);
     return () => window.removeEventListener("storage", aoAlterarArmazenamento);
   }, []);
 
+  const encerrarSessao = useCallback((motivo: MotivoEncerramento) => {
+    removerChave(CHAVE_SESSAO);
+    definirToken(null);
+    setSessao(null);
+    setSessaoExpirada(motivo === "expirada");
+  }, []);
+
+  useEffect(() => {
+    definirRenovadorDeToken((tokenUsado) =>
+      renovarSessao(tokenUsado, {
+        lerSessao: lerSessaoPersistida,
+        salvarSessao: (renovada) => {
+          salvarJSON(CHAVE_SESSAO, renovada);
+          setSessao(renovada);
+        },
+        renovarTokens,
+        definirToken,
+        encerrarSessao,
+      }),
+    );
+
+    return () => definirRenovadorDeToken(null);
+  }, [encerrarSessao]);
+
   const entrar = useCallback(async (credenciais: Credenciais) => {
     const data = await entrarNaApi(credenciais);
     salvarJSON(CHAVE_SESSAO, data);
     definirToken(data.accessToken);
     setSessao(data);
+    setSessaoExpirada(false);
     return data;
   }, []);
 
   const sair = useCallback(() => {
-    if(sessao?.refreshToken) {
-      void sairNaApi(sessao.refreshToken).catch(() => {})
+    const atual = lerSessaoPersistida() ?? sessao;
+    if (atual?.refreshToken) {
+      void sairNaApi(atual.refreshToken).catch(() => {});
     }
-    removerChave(CHAVE_SESSAO);
-    definirToken(null);
-    setSessao(null);
-  }, [sessao?.refreshToken]);
+    encerrarSessao("manual");
+  }, [encerrarSessao, sessao]);
 
   const valor = useMemo(
     () => ({
       usuario: sessao?.usuario || null,
       estaAutenticado: Boolean(sessao?.accessToken),
+      sessaoExpirada,
       entrar,
       sair,
     }),
-    [sessao, entrar, sair],
+    [sessao, sessaoExpirada, entrar, sair],
+  );
+
+  const permissoes = useMemo(
+    () => sessao?.usuario.permissoes ?? [],
+    [sessao],
   );
 
   return (
     <AutenticacaoContexto.Provider value={valor}>
-      {children}
+      <PermissoesProvider permissoes={permissoes}>
+        {children}
+      </PermissoesProvider>
     </AutenticacaoContexto.Provider>
   );
 }

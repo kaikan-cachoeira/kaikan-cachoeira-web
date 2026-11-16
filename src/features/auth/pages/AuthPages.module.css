@@ -78,16 +78,6 @@
   margin-top: 2px;
 }
 
-.demoNote {
-  padding: var(--espaco-12) var(--espaco-16);
-  border: 1px dashed var(--borda-bege);
-  border-radius: var(--raio-campo);
-  background: var(--branco-suave);
-  color: var(--texto-suave);
-  font-size: var(--texto-auxiliar);
-  line-height: 1.5;
-}
-
 .successIcon {
   display: inline-flex;
   align-items: center;

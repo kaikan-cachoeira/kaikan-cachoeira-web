@@ -1,22 +1,10 @@
 import { NavLink } from "react-router-dom";
 import Logo from "@/shared/components/Logo/Logo";
 import Icone from "@/shared/components/Icone/Icone";
+import { areasDoMenu } from "@/shared/navegacao/areas";
+import { usePermissoes } from "@/shared/permissoes/usePermissoes";
 import { useAutenticacao } from "@/features/auth";
 import styles from "./Sidebar.module.css";
-
-const NAV_ITEMS = [
-  { to: "/inicio", label: "Início", icon: "home", end: true },
-  { to: "/estoque", label: "Estoque", icon: "box" },
-  { to: "/eventos", label: "Eventos", icon: "ticket" },
-  { to: "/doacoes", label: "Doações", icon: "gift" },
-  {
-    to: "/relatorio-geral",
-    label: "Relatório geral",
-    icon: "chart",
-  },
-  { to: "/registro-vendas", label: "Registro de vendas", icon: "bag" },
-  { to: "/caixa", label: "Caixa", icon: "cash" },
-];
 
 interface SidebarProps {
   open: boolean;
@@ -26,6 +14,8 @@ interface SidebarProps {
 
 export default function Sidebar({ open, onClose, onNavigate }: SidebarProps) {
   const { usuario, sair } = useAutenticacao();
+  const permissoes = usePermissoes();
+  const areas = areasDoMenu(permissoes);
   const initials:string | undefined = usuario?.nome.slice(0, 2).toUpperCase() || "AD";
 
   return (
@@ -48,18 +38,18 @@ export default function Sidebar({ open, onClose, onNavigate }: SidebarProps) {
 
         <nav className={styles.nav}>
           <ul>
-            {NAV_ITEMS.map((item) => (
-              <li key={item.to}>
+            {areas.map((area) => (
+              <li key={area.path}>
                 <NavLink
-                  to={item.to}
-                  end={item.end}
+                  to={area.path}
+                  end={area.path === "/inicio"}
                   onClick={onNavigate}
                   className={({ isActive }) =>
                     `${styles.link} ${isActive ? styles.active : ""}`.trim()
                   }
                 >
-                  <Icone name={item.icon} size={20} />
-                  <span>{item.label}</span>
+                  <Icone name={area.icon} size={20} />
+                  <span>{area.label}</span>
                 </NavLink>
               </li>
             ))}
