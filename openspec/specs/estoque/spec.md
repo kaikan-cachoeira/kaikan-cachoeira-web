@@ -7,15 +7,15 @@ Define a integração do módulo de estoque com a API real para cadastro, consul
 ## Requirements
 
 ### Requirement: Catálogo de produtos do estoque
-O inventário SHALL consultar `GET /produtos` como fonte de verdade e expor filtros de busca, categoria e situação de estoque na UI. A listagem SHALL manter paginação no cliente e usar IDs numéricos em navegação, seleção e ações.
+O inventário SHALL consultar `GET /produtos` como fonte de verdade e expor filtros de busca, categoria e situação de estoque (`situacao`) na UI. A listagem SHALL consumir paginação server-side e a situação de estoque (`ok`, `out` e `low`) SHALL refletir o conjunto consultado pela API.
 
 #### Scenario: Produtos carregados da API
-- **WHEN** a API retorna `ProdutoResponse[]`
+- **WHEN** a API retorna uma página de produtos
 - **THEN** a tela exibe os produtos com nome, categoria, saldo atual e estoque mínimo usando o contrato da API
 
 #### Scenario: Filtros aplicados
 - **WHEN** o usuário informa busca, categorias ou situação de estoque
-- **THEN** a lista exibida reflete os filtros sem alterar o contrato de resposta da API
+- **THEN** a consulta envia os filtros à API e a lista exibida corresponde à resposta paginada retornada
 
 #### Scenario: Usuário com leitura apenas
 - **WHEN** o usuário possui apenas `PRODUTOS_LEITURA`

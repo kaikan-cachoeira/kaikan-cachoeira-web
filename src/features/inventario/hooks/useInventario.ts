@@ -26,6 +26,7 @@ import {
   listarTiposMovimentacao,
   listarLotesProduto,
   listarMovimentacoesProduto,
+  listarTodosProdutos,
   obterProduto,
   atualizarProduto,
   listarMovimentacoesLote,
@@ -35,6 +36,17 @@ export function useProdutosQuery(params: ParametrosProdutos) {
   return useQuery({
     queryKey: comporChave(queryKeys.produtos, params),
     queryFn: () => listarProdutos(params),
+  });
+}
+
+export function useProdutosListaCompletaQuery(
+  params: Omit<ParametrosProdutos, "page" | "pageSize"> = {},
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: comporChave(queryKeys.produtos, "lista-completa", params),
+    queryFn: () => listarTodosProdutos(params),
+    enabled,
   });
 }
 

@@ -68,7 +68,7 @@ export default function RelatorioGeralPage() {
     donationsQuery,
   } = useRelatorio({ from, to, types });
 
-  const events = eventosQuery.data?.items || [];
+  const events = eventosQuery.data || [];
   const totals = events.reduce(
     (sum, event) => ({
       revenue: sum.revenue + Number(event.metrics?.revenue || 0),

@@ -27,13 +27,13 @@ import {
   excluirProdutoCardapio,
   excluirEvento,
   listarEventos,
+  listarTodosEventos,
   listarProdutosEvento,
   obterCardapioEvento,
   obterEvento,
   obterEventoAtual,
   obterRelatorioEvento,
 } from "../services/eventos";
-import { montarRespostaEventos } from "../utils/listagemEventos";
 import { idDoStatus } from "../utils/statusEvento";
 
 function idValido(id: number | null | undefined): id is number {
@@ -43,17 +43,39 @@ function idValido(id: number | null | undefined): id is number {
 export function useEventosQuery(params: ParametrosEventos) {
   const consultaRemota = useMemo(
     () => ({
+      page: params.page,
+      pageSize: params.pageSize,
       search: params.search,
+      statuses: params.statuses,
+      types: params.types,
       from: params.from,
       to: params.to,
     }),
-    [params.search, params.from, params.to],
+    [
+      params.page,
+      params.pageSize,
+      params.search,
+      params.statuses,
+      params.types,
+      params.from,
+      params.to,
+    ],
   );
 
   return useQuery({
     queryKey: comporChave(queryKeys.eventos, "lista", consultaRemota),
     queryFn: () => listarEventos(consultaRemota),
-    select: (eventos: Evento[]) => montarRespostaEventos(eventos, params),
+  });
+}
+
+export function useEventosListaCompletaQuery(
+  params: Omit<ParametrosEventos, "page" | "pageSize"> = {},
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: comporChave(queryKeys.eventos, "lista-completa", params),
+    queryFn: () => listarTodosEventos(params),
+    enabled,
   });
 }
 
@@ -99,10 +121,19 @@ export function useEventoProdutosQuery(
   });
 }
 
-export function useEventoCardapioQuery(id?: number | null) {
+export function useEventoCardapioQuery(
+  id?: number | null,
+  params?: {
+    search?: string;
+    category?: string;
+    type?: "ESTOQUE" | "PRODUZIDO";
+    page?: number;
+    pageSize?: number;
+  },
+) {
   return useQuery({
-    queryKey: comporChave(queryKeys.eventos, "cardapio", id),
-    queryFn: () => obterCardapioEvento(id as number),
+    queryKey: comporChave(queryKeys.eventos, "cardapio", id, params),
+    queryFn: () => obterCardapioEvento(id as number, params),
     enabled: idValido(id),
   });
 }

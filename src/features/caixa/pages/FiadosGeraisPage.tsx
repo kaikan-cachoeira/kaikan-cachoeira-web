@@ -59,7 +59,7 @@ export default function FiadosGeraisPage() {
   } = useFiadosGerais();
 
   const response = fiadosQuery.data;
-  const eventOptions = (eventosQuery.data?.items || []).map((event) => ({
+  const eventOptions = (eventosQuery.data || []).map((event) => ({
     value: String(event.id),
     label: event.nome,
   }));

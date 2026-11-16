@@ -9,6 +9,7 @@ export {
   useEventoMutations,
   useEventoProdutosQuery,
   useEventoQuery,
+  useEventosListaCompletaQuery,
   useEventos,
   useEventosQuery,
   useRelatorioEventoQuery,

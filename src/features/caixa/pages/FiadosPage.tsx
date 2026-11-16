@@ -11,7 +11,11 @@ import {
 } from "@/shared/components/Estado/Estado";
 import { useFiados } from "../hooks/useFiados";
 import type { Fiado } from "../models";
-import { formatarMoeda, formatarHoraHoje } from "@/shared/lib/formatacao";
+import {
+  formatarHoraHoje,
+  formatarMoeda,
+  formatarNumero,
+} from "@/shared/lib/formatacao";
 import PainelLancamentoCaixa from "../components/PainelLancamentoCaixa";
 import QuitarFiadoModal from "../components/QuitarFiadoModal";
 import styles from "./Caixa.module.css";
@@ -39,6 +43,7 @@ export default function FiadosPage() {
     fiados,
     tabs,
   } = useFiados();
+  const totaisFiados = fiadosQuery.data;
   const permissoes = usePermissoes();
   const podeVerEventos = temPermissao(permissoes, PERMISSOES.eventosMenu);
 
@@ -91,7 +96,13 @@ export default function FiadosPage() {
         />
         <EstatisticaCard
           label="Fiados em aberto"
-          value={formatarMoeda(summary.fiadosEmAberto)}
+          value={formatarMoeda(totaisFiados?.openAmount ?? summary.fiadosEmAberto)}
+        />
+        <EstatisticaCard
+          label="Fiados pendentes"
+          value={formatarNumero(
+            totaisFiados?.pendingCount ?? summary.quantidadeFiadosEmAberto,
+          )}
         />
       </section>
 

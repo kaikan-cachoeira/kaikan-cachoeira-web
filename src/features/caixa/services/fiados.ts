@@ -1,4 +1,6 @@
 import api from "@/shared/api/cliente";
+import { carregarTodasPaginas } from "@/shared/lib/carregarTodasPaginas";
+import type { Paginado } from "@/shared/models/paginacao";
 import type {
   Fiado,
   FormaPagamentoCaixa,
@@ -6,6 +8,19 @@ import type {
   QuitarFiadoPayload,
   RespostaFiados,
 } from "../models";
+
+interface PaginaApi<T> {
+  itens: T[];
+  page: number;
+  size: number;
+  totalItens: number;
+  totalPaginas: number;
+}
+
+interface FiadoListagemApi extends PaginaApi<FiadoApi> {
+  pendingCount: number;
+  openAmount: number;
+}
 
 interface FiadoApi {
   id: number;
@@ -56,47 +71,172 @@ function paraFiadoEvento(item: FiadoApi, eventId: number): Fiado {
   };
 }
 
+function paraPaginadoFiados(
+  pagina: FiadoListagemApi,
+  eventId: number,
+): RespostaFiados {
+  return {
+    items: pagina.itens.map((item) => paraFiadoEvento(item, eventId)),
+    page: pagina.page + 1,
+    pageSize: pagina.size,
+    total: pagina.totalItens,
+    totalPages: pagina.totalPaginas,
+    pendingCount: Number(pagina.pendingCount) || 0,
+    openAmount: Number(pagina.openAmount) || 0,
+  };
+}
+
+function parseListaNumerosCsv(valor?: string): number[] {
+  if (!valor) return [];
+
+  return valor
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter((item) => Number.isInteger(item) && item > 0);
+}
+
+function normalizarTexto(valor?: string): string {
+  return (valor || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function filtrarPorBusca(items: Fiado[], search?: string): Fiado[] {
+  const termo = normalizarTexto(search);
+  if (!termo) return items;
+
+  return items.filter((item) =>
+    normalizarTexto(item.nomeDevedor).includes(termo),
+  );
+}
+
+function paginarFiados(items: Fiado[], page = 1, pageSize = 8): Paginado<Fiado> {
+  const tamanhoPagina = Math.max(1, pageSize);
+  const total = items.length;
+  const totalPages = total === 0 ? 1 : Math.ceil(total / tamanhoPagina);
+  const paginaAtual = Math.min(Math.max(1, page), totalPages);
+  const inicio = (paginaAtual - 1) * tamanhoPagina;
+  const fim = inicio + tamanhoPagina;
+
+  return {
+    items: items.slice(inicio, fim),
+    page: paginaAtual,
+    pageSize: tamanhoPagina,
+    total,
+    totalPages,
+  };
+}
+
+export async function obterResumoFiados(
+  params: Pick<ParametrosFiados, "eventIds" | "status">,
+): Promise<Pick<RespostaFiados, "pendingCount" | "openAmount">> {
+  const eventIds = parseListaNumerosCsv(params.eventIds);
+  if (eventIds.length === 0) {
+    return {
+      pendingCount: 0,
+      openAmount: 0,
+    };
+  }
+
+  const situacao = mapearSituacaoApi(params.status);
+  const resumos = await Promise.all(
+    eventIds.map(async (eventId) => {
+      const { data } = await api.get<FiadoListagemApi>(
+        `/eventos/${eventId}/fiados`,
+        {
+          params: {
+            situacao,
+            page: 0,
+            size: 1,
+          },
+        },
+      );
+
+      return {
+        pendingCount: Number(data.pendingCount) || 0,
+        openAmount: Number(data.openAmount) || 0,
+      };
+    }),
+  );
+
+  return resumos.reduce(
+    (total, resumo) => ({
+      pendingCount: total.pendingCount + resumo.pendingCount,
+      openAmount: total.openAmount + resumo.openAmount,
+    }),
+    { pendingCount: 0, openAmount: 0 },
+  );
+}
+
 export async function listarFiados(
   params: ParametrosFiados,
 ): Promise<RespostaFiados> {
   if (params.eventId) {
-    const fiados = await listarFiadosEvento(
-      params.eventId,
-      mapearSituacaoApi(params.status),
+    const { data } = await api.get<FiadoListagemApi>(
+      `/eventos/${params.eventId}/fiados`,
+      {
+        params: {
+          situacao: mapearSituacaoApi(params.status),
+          page: Math.max(0, (params.page || 1) - 1),
+          size: params.pageSize || 6,
+        },
+      },
     );
 
-    const pageSize = params.pageSize || 6;
-    const page = params.page || 1;
-    const total = fiados.length;
-    const totalPages = Math.ceil(total / pageSize);
-    const inicio = Math.max(0, (page - 1) * pageSize);
+    return paraPaginadoFiados(data, params.eventId);
+  }
 
+  const eventIds = parseListaNumerosCsv(params.eventIds);
+  if (eventIds.length === 0) {
     return {
-      items: fiados.slice(inicio, inicio + pageSize),
-      page,
-      pageSize,
-      total,
-      totalPages,
-      pendingCount: fiados.filter((fiado) => fiado.status === "pending").length,
-      openAmount: fiados
-        .filter((fiado) => fiado.status === "pending")
-        .reduce((acc, fiado) => acc + fiado.remaining, 0),
+      items: [],
+      page: 1,
+      pageSize: params.pageSize || 8,
+      total: 0,
+      totalPages: 1,
+      pendingCount: 0,
+      openAmount: 0,
     };
   }
 
-  // Fluxo legado (fiados gerais / relatórios)
-  const { data } = await api.get<RespostaFiados>("/fiados", { params });
-  return data;
+  const situacao = mapearSituacaoApi(params.status);
+  const listasPorEvento = await Promise.all(
+    eventIds.map((eventId) => listarFiadosEvento(eventId, situacao)),
+  );
+
+  const filtrados = filtrarPorBusca(listasPorEvento.flat(), params.search).sort(
+    (a, b) => Date.parse(b.criadoEm) - Date.parse(a.criadoEm),
+  );
+  const pendentes = filtrados.filter((fiado) => fiado.status === "pending");
+  const paginado = paginarFiados(filtrados, params.page, params.pageSize || 8);
+
+  return {
+    ...paginado,
+    pendingCount: pendentes.length,
+    openAmount: pendentes.reduce((total, fiado) => total + fiado.remaining, 0),
+  };
 }
 
 export async function listarFiadosEvento(
   eventId: number,
   situacao?: string,
 ): Promise<Fiado[]> {
-  const { data } = await api.get<FiadoApi[]>(`/eventos/${eventId}/fiados`, {
-    params: { situacao: situacao || undefined },
+  return carregarTodasPaginas(async (page) => {
+    const { data } = await api.get<FiadoListagemApi>(
+      `/eventos/${eventId}/fiados`,
+      {
+        params: {
+          situacao: situacao || undefined,
+          page: Math.max(0, page - 1),
+          size: 100,
+        },
+      },
+    );
+
+    return paraPaginadoFiados(data, eventId);
   });
-  return data.map((item) => paraFiadoEvento(item, eventId));
 }
 
 export async function quitarFiado(

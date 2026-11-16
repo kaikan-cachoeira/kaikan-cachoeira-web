@@ -4,6 +4,7 @@ export { default as LoteMovimentacoesPage } from "./pages/LoteMovimentacoesPage"
 export {
   useCategoriasQuery,
   useProdutoMutations,
+  useProdutosListaCompletaQuery,
   useProdutosQuery,
 } from "./hooks/useInventario";
 export type {

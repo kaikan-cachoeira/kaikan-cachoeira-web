@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useEventosQuery } from "@/features/eventos";
+import { useEventosListaCompletaQuery } from "@/features/eventos";
 import type { Fiado, ParametrosFiados } from "../models";
 import { useFiadosQuery } from "./useCaixa";
 
@@ -12,18 +12,36 @@ export function useFiadosGerais() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [settleTarget, setSettleTarget] = useState<Fiado | null>(null);
 
-  const eventosQuery = useEventosQuery({ pageSize: 100 });
+  const eventosQuery = useEventosListaCompletaQuery();
   const params = useMemo<ParametrosFiados>(
     () => ({
       search: search || undefined,
       status: status || undefined,
-      eventIds: eventIds.length ? eventIds.join(",") : undefined,
+      eventIds: eventIds.length
+        ? eventIds.join(",")
+        : (eventosQuery.data || []).map((evento) => evento.id).join(",") ||
+          undefined,
       page,
       pageSize: 8,
     }),
-    [search, status, eventIds, page],
+    [search, status, eventIds, eventosQuery.data, page],
   );
   const fiadosQuery = useFiadosQuery(params);
+  const eventNameById = useMemo(() => {
+    const entradas = (eventosQuery.data || []).map((evento) => [
+      evento.id,
+      evento.nome,
+    ] as const);
+    return Object.fromEntries(entradas) as Record<number, string>;
+  }, [eventosQuery.data]);
+  const fiados = useMemo(
+    () =>
+      (fiadosQuery.data?.items || []).map((fiado) => ({
+        ...fiado,
+        eventName: fiado.eventName || eventNameById[fiado.eventId],
+      })),
+    [fiadosQuery.data?.items, eventNameById],
+  );
 
   function runSearch() {
     setSearch(searchDraft.trim());
@@ -54,7 +72,7 @@ export function useFiadosGerais() {
     setSettleTarget,
     eventosQuery,
     fiadosQuery,
-    fiados: fiadosQuery.data?.items || [],
+    fiados,
     hasFilters: Boolean(search || eventIds.length || status !== "pending"),
     runSearch,
     clearFilters,
