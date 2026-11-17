@@ -115,46 +115,12 @@
   gap: var(--espaco-16) var(--espaco-24);
 }
 
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
 .readonlyInput {
   background: var(--branco-suave);
-}
-
-.securityCard {
-  display: flex;
-  align-items: center;
-  gap: var(--espaco-16);
-  padding: var(--espaco-16) var(--espaco-24);
-  border: 1px solid var(--borda-bege);
-  border-radius: var(--raio-card);
-  background: var(--fundo);
-}
-
-.securityIcon {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  flex-shrink: 0;
-  border-radius: var(--raio-campo);
-  background: var(--aviso-suave);
-  color: var(--cor-aviso);
-}
-
-.securityText {
-  flex: 1;
-  min-width: 0;
-}
-
-.securityTitle {
-  margin: 0 0 var(--espaco-4);
-  font-size: var(--texto-corpo);
-  font-weight: 600;
-}
-
-.securitySubtitle {
-  margin: 0;
-  color: var(--texto-suave);
-  font-size: var(--texto-auxiliar);
 }
 
 .actions {
@@ -201,12 +167,6 @@
 
   .formGrid {
     grid-template-columns: 1fr;
-  }
-
-  .securityCard {
-    flex-wrap: wrap;
-    align-items: flex-start;
-    padding: var(--espaco-16);
   }
 
   .actions > * {

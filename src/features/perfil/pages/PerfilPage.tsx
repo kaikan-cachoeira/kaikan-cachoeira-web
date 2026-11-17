@@ -1,11 +1,9 @@
 import { useState } from "react";
 import type { SubmitHandler } from "react-hook-form";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import Botao from "@/shared/components/Botao/Botao";
 import Card, { SecaoCard } from "@/shared/components/Card/Card";
 import Entrada from "@/shared/components/Formulario/Entrada";
-import Icone from "@/shared/components/Icone/Icone";
 import PageHeader from "@/shared/components/PageHeader/PageHeader";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
 import { useAutenticacao } from "@/features/auth";
@@ -14,8 +12,13 @@ import styles from "./PerfilPage.module.css";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+interface SenhaForm {
+  senhaAtual: string;
+  novaSenha: string;
+  confirmarSenha: string;
+}
+
 export default function PerfilPage() {
-  const navigate = useNavigate();
   const { usuario } = useAutenticacao();
   const { addToast } = useToast();
 
@@ -36,6 +39,21 @@ export default function PerfilPage() {
   } = useForm<DadosPerfil>({
     mode: "onTouched",
     defaultValues: dadosIniciais,
+  });
+
+  const {
+    register: registerSenha,
+    handleSubmit: handleSubmitSenha,
+    reset: resetSenha,
+    getValues: getSenhaValues,
+    formState: { errors: errosSenha },
+  } = useForm<SenhaForm>({
+    mode: "onTouched",
+    defaultValues: {
+      senhaAtual: "",
+      novaSenha: "",
+      confirmarSenha: "",
+    },
   });
 
   const iniciais =
@@ -61,6 +79,11 @@ export default function PerfilPage() {
     setDados(values);
     setEditando(false);
     addToast("Seus dados foram atualizados com sucesso.");
+  };
+
+  const onSubmitSenha: SubmitHandler<SenhaForm> = () => {
+    resetSenha();
+    addToast("Sua senha foi alterada com sucesso.");
   };
 
   const readOnly = !editando;
@@ -142,31 +165,8 @@ export default function PerfilPage() {
                 },
               })}
             />
-           
           </div>
         </SecaoCard>
-
-        
-        <Card className={styles.securityCard} as="section" aria-labelledby="perfil-seguranca-titulo">
-          <span className={styles.securityIcon} aria-hidden="true">
-            <Icone name="check-circle" size={24} />
-          </span>
-          <div className={styles.securityText}>
-            <h2 className={styles.securityTitle} id="perfil-seguranca-titulo">
-              Segurança da conta
-            </h2>
-            <p className={styles.securitySubtitle}>
-              Para alterar sua senha, utilize o fluxo de recuperação de senha.
-            </p>
-          </div>
-          <Botao
-            variant="tertiary"
-            iconRight="chevron-right"
-            onClick={() => navigate("/recuperar-senha")}
-          >
-            Alterar senha
-          </Botao>
-        </Card>
 
         {editando ? (
           <div className={styles.actions}>
@@ -183,6 +183,68 @@ export default function PerfilPage() {
             </Botao>
           </div>
         ) : null}
+      </form>
+
+      <form
+        className={styles.form}
+        onSubmit={handleSubmitSenha(onSubmitSenha)}
+        noValidate
+      >
+        <SecaoCard
+          title="Alterar senha"
+          subtitle="Informe a senha atual e escolha uma nova senha para a sua conta."
+        >
+          <div className={styles.formGrid}>
+            <Entrada
+              id="perfil-senha-atual"
+              label="Senha atual"
+              type="password"
+              autoComplete="current-password"
+              required
+              className={styles.fullWidth}
+              error={errosSenha.senhaAtual?.message}
+              {...registerSenha("senhaAtual", {
+                required: "Informe a senha atual.",
+              })}
+            />
+            <Entrada
+              id="perfil-nova-senha"
+              label="Nova senha"
+              type="password"
+              autoComplete="new-password"
+              required
+              hint="Use pelo menos 8 caracteres."
+              error={errosSenha.novaSenha?.message}
+              {...registerSenha("novaSenha", {
+                required: "Informe a nova senha.",
+                minLength: {
+                  value: 8,
+                  message: "A nova senha deve ter pelo menos 8 caracteres.",
+                },
+              })}
+            />
+            <Entrada
+              id="perfil-confirmar-senha"
+              label="Confirmar nova senha"
+              type="password"
+              autoComplete="new-password"
+              required
+              error={errosSenha.confirmarSenha?.message}
+              {...registerSenha("confirmarSenha", {
+                required: "Confirme a nova senha.",
+                validate: (value) =>
+                  value === getSenhaValues("novaSenha") ||
+                  "As senhas não coincidem.",
+              })}
+            />
+          </div>
+        </SecaoCard>
+
+        <div className={styles.actions}>
+          <Botao type="submit" iconLeft="check">
+            Salvar senha
+          </Botao>
+        </div>
       </form>
 
       <p className={styles.footerNote}>Kaikan Cachoeira · Área do usuário</p>
