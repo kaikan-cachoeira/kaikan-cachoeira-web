@@ -27,6 +27,7 @@ import {
 } from "@/features/vendas";
 import { CaixaPage, FiadosGeraisPage, FiadosPage } from "@/features/caixa";
 import { RelatorioGeralPage } from "@/features/relatorio";
+import { PerfilPage } from "@/features/perfil";
 
 export default function AppRoutes() {
   return (
@@ -81,6 +82,7 @@ export default function AppRoutes() {
               path="/em-definicao/relatorio-geral"
               element={<Navigate to="/relatorio-geral" replace />}
             />
+            <Route path="/perfil" element={<PerfilPage />} />
             <Route path="/em-definicao/:slug" element={<PaginaPendente />} />
             <Route path="*" element={<PaginaNaoEncontrada />} />
           </Route>
