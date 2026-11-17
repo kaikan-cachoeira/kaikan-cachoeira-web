@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import Icone from "@/shared/components/Icone/Icone";
 import { useAutenticacao } from "@/features/auth";
 import styles from "./Header.module.css";
@@ -13,6 +13,7 @@ const TITLES = [
   { pattern: /^\/caixa/, title: "Caixa" },
   { pattern: /^\/relatorio-geral/, title: "Relatório geral" },
   { pattern: /^\/em-definicao/, title: "Em definição" },
+  { pattern: /^\/perfil/, title: "Meu perfil" },
 ];
 
 interface HeaderProps {
@@ -109,6 +110,14 @@ export default function Header({ onOpenMenu }: HeaderProps) {
             <p className={styles.accountLabel}>
               {usuario?.cargo ? `Perfil: ${usuario.cargo}` : "Conta compartilhada"}
             </p>
+            <NavLink
+              to="/perfil"
+              className={styles.perfilLink}
+              onClick={() => setMenuOpen(false)}
+            >
+              <Icone name="user" size={18} />
+              Meu perfil
+            </NavLink>
             <button type="button" className={styles.logout} onClick={sair}>
               <Icone name="logout" size={18} />
               Sair

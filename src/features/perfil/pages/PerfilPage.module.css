@@ -1,0 +1,175 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-24);
+}
+
+.banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-24);
+  padding: var(--espaco-32);
+  overflow: hidden;
+  border-radius: var(--raio-card);
+  background: var(--vinho);
+  box-shadow: var(--sombra-1);
+  color: #fff;
+}
+
+.avatarGrande {
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 88px;
+  height: 88px;
+  flex-shrink: 0;
+  border: 4px solid rgba(255, 255, 255, 0.24);
+  border-radius: 50%;
+  background: var(--fundo);
+  color: var(--vinho-escuro);
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.bannerInfo {
+  z-index: 1;
+  min-width: 0;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-8);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #9bc28e;
+}
+
+.nome {
+  margin: var(--espaco-8) 0 var(--espaco-4);
+  color: #fff;
+  font-size: var(--texto-subtitulo);
+  line-height: 1.2;
+}
+
+.email {
+  margin: 0 0 var(--espaco-12);
+  overflow-wrap: anywhere;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: var(--texto-auxiliar);
+}
+
+.rolePill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 2px var(--espaco-12);
+  border-radius: var(--raio-pill);
+  background: #e9e6d7;
+  color: #59572d;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.decor {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(80, 12, 7, 0.28);
+}
+
+.decorOne {
+  top: -72px;
+  right: -35px;
+  width: 180px;
+  height: 180px;
+}
+
+.decorTwo {
+  right: 110px;
+  bottom: -64px;
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-24);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espaco-16) var(--espaco-24);
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.readonlyInput {
+  background: var(--branco-suave);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--espaco-12);
+}
+
+.footerNote {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .banner {
+    padding: var(--espaco-24);
+  }
+}
+
+@media (max-width: 640px) {
+  .stack {
+    gap: var(--espaco-16);
+  }
+
+  .banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--espaco-16);
+    padding: var(--espaco-24);
+  }
+
+  .avatarGrande {
+    width: 64px;
+    height: 64px;
+    font-size: 1.25rem;
+  }
+
+  .nome {
+    font-size: 1.25rem;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .actions > * {
+    flex: 1 1 auto;
+  }
+}
