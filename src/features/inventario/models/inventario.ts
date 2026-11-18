@@ -101,7 +101,9 @@ export interface OpcaoCategoria {
   label: string;
 }
 
-export type AtualizarProdutoPayload = CriarProdutoPayload;
+export interface AtualizarProdutoPayload extends CriarProdutoPayload {
+  removerFoto?: boolean;
+}
 
 export interface PaginaApi<T> {
   itens: T[];

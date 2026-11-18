@@ -9,7 +9,7 @@ import Entrada from "@/shared/components/Formulario/Entrada";
 import Selecao from "@/shared/components/Formulario/Selecao";
 import Icone from "@/shared/components/Icone/Icone";
 import Modal from "@/shared/components/Modal/Modal";
-import type { Produto } from "../models";
+import type { AtualizarProdutoPayload, Produto } from "../models";
 import {
   useCategoriasQuery,
   useProdutoMutations,
@@ -26,7 +26,7 @@ interface ProdutoFormValues {
 }
 
 interface ProdutoFormModalProps {
-  produto?: Produto; // se vier preenchido, o modal funciona em modo edição
+  produto?: Produto;
   onClose: () => void;
   onCreated?: (produto: Produto) => void;
   onUpdated?: (produto: Produto) => void;
@@ -47,6 +47,7 @@ export default function ProdutoFormModal({
   const [image, setImage] = useState<string | null>(produto?.fotoUrl ?? null);
   const [imageName, setImageName] = useState("");
   const [arquivo, setArquivo] = useState<File | null>(null);
+  const [removerFoto, setRemoverFoto] = useState(false);
   const [serverError, setServerError] = useState("");
   const {
     register,
@@ -70,6 +71,16 @@ export default function ProdutoFormModal({
     }
   }, [categoriesLoading, produto?.categoria?.id, setValue]);
 
+  useEffect(() => {
+    function liberarImagem() {
+      if (image && image.startsWith("blob:")) {
+        URL.revokeObjectURL(image);
+      }
+    }
+
+    return liberarImagem;
+  }, [image]);
+
   function handleFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -78,40 +89,54 @@ export default function ProdutoFormModal({
       event.target.value = "";
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result !== "string") return;
-      setImage(reader.result);
-      setImageName(file.name);
-      setArquivo(file);
-      setServerError("");
-    };
-    reader.readAsDataURL(file);
+    setImage(URL.createObjectURL(file));
+    setArquivo(file);
+    setImageName(file.name);
+    setRemoverFoto(false);
+    setServerError("");
+  }
+
+  function removerImagem() {
+    setImage(null);
+    setImageName("");
+    setArquivo(null);
+    setRemoverFoto(false);
+    if (produto && produto.fotoUrl) {
+      setRemoverFoto(true);
+    }
+    setServerError("");
+    if (fileRef.current) {
+      fileRef.current.value = "";
+    }
   }
 
   const onSubmit: SubmitHandler<ProdutoFormValues> = async (values) => {
     setServerError("");
     try {
+      const dadosProduto: AtualizarProdutoPayload = {
+        nome: values.nome,
+        descricao: values.descricao,
+        estoqueMinimo: values.estoqueMinimo,
+      };
+
+      if (values.categoryId) {
+        dadosProduto.categoriaId = Number(values.categoryId);
+      }
+
       if (produto) {
+        if (removerFoto) {
+          dadosProduto.removerFoto = true;
+        }
+
         const atualizado = await atualizarProduto.mutateAsync({
           id: produto.id,
-          payload: {
-            nome: values.nome,
-            descricao: values.descricao,
-            categoriaId: values.categoryId ? Number(values.categoryId) : undefined,
-            estoqueMinimo: values.estoqueMinimo,
-          },
+          payload: dadosProduto,
           arquivo,
         });
         onUpdated?.(atualizado);
       } else {
         const criado = await criarProduto.mutateAsync({
-          payload: {
-            nome: values.nome,
-            descricao: values.descricao,
-            categoriaId: values.categoryId ? Number(values.categoryId) : undefined,
-            estoqueMinimo: values.estoqueMinimo,
-          },
+          payload: dadosProduto,
           arquivo,
         });
         onCreated?.(criado);
@@ -132,6 +157,16 @@ export default function ProdutoFormModal({
     value: String(category.id),
     label: category.nome,
   }));
+
+  let mensagemImagem = "PNG, JPG ou WEBP. A imagem é opcional.";
+
+  if (imageName) {
+    mensagemImagem = imageName;
+  } else if (removerFoto) {
+    mensagemImagem = "A imagem será removida ao salvar as alterações.";
+  } else if (isEdit && image) {
+    mensagemImagem = "Imagem atual. Clique em Upload para trocar.";
+  }
 
   return (
     <Modal
@@ -175,26 +210,38 @@ export default function ProdutoFormModal({
               )}
             </div>
             <div className={styles.uploadInfo}>
-              <Botao
-                variant="secondary"
-                size="compact"
-                iconLeft="upload"
-                onClick={() => fileRef.current?.click()}
-              >
-                Upload
-              </Botao>
-              <p className={styles.hint}>
-                {imageName ||
-                  (isEdit && image
-                    ? "Imagem atual. Clique em Upload para trocar."
-                    : "PNG, JPG ou WEBP. A imagem é opcional.")}
-              </p>
+              <div className={styles.uploadActions}>
+                <Botao
+                  type="button"
+                  variant="secondary"
+                  size="compact"
+                  iconLeft="upload"
+                  disabled={mutation.isPending}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  Upload
+                </Botao>
+                {image && (
+                  <Botao
+                    type="button"
+                    variant="tertiary"
+                    size="compact"
+                    iconLeft="trash"
+                    disabled={mutation.isPending}
+                    onClick={removerImagem}
+                  >
+                    Remover imagem
+                  </Botao>
+                )}
+              </div>
+              <p className={styles.hint}>{mensagemImagem}</p>
             </div>
             <input
               ref={fileRef}
               type="file"
               accept={TIPOS_IMAGEM_ACEITOS.join(",")}
               className="sr-only"
+              disabled={mutation.isPending}
               onChange={handleFile}
               aria-label="Selecionar imagem do produto"
             />

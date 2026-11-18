@@ -1,4 +1,10 @@
 .sidebar {
+  /* Ajustes graduais para janelas entre 480px e 600px de altura. */
+  --largura-logo-compacto: clamp(140px, calc(100svh - 420px), 180px);
+  --espaco-menu: clamp(0px, calc(3.333333svh - 16px), 4px);
+  --espaco-blocos-menu: clamp(4px, calc(3.333333svh - 12px), 8px);
+  --recuo-vertical-menu: clamp(8px, calc(3.333333svh - 8px), 12px);
+  --altura-item-menu: clamp(36px, calc(6.666667svh + 4px), 44px);
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 50;
@@ -6,7 +12,7 @@
   flex-direction: column;
   justify-content: space-between;
   width: var(--largura-sidebar);
-  padding: var(--espaco-24) var(--espaco-16);
+  padding: var(--recuo-vertical-menu) var(--espaco-16);
   border-right: 1px solid var(--borda);
   background: var(--branco-suave);
 }
@@ -16,11 +22,12 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--espaco-8);
-  padding: 0 var(--espaco-8) var(--espaco-24);
+  padding: 0 0 var(--espaco-blocos-menu);
 }
 
 .close {
   display: none;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: 44px;
@@ -39,15 +46,15 @@
 .nav ul {
   display: flex;
   flex-direction: column;
-  gap: var(--espaco-8);
+  gap: var(--espaco-menu);
 }
 
 .link {
   display: flex;
   align-items: center;
   gap: var(--espaco-12);
-  min-height: 48px;
-  padding: var(--espaco-8) var(--espaco-12);
+  min-height: var(--altura-item-menu);
+  padding: var(--espaco-menu) var(--espaco-12);
   border-radius: var(--raio-campo);
   color: var(--texto);
   font-size: var(--texto-corpo);
@@ -84,8 +91,9 @@
 .userArea {
   display: flex;
   flex-direction: column;
-  gap: var(--espaco-12);
-  padding: var(--espaco-16) var(--espaco-8) 0;
+  flex-shrink: 0;
+  gap: var(--espaco-blocos-menu);
+  padding: var(--recuo-vertical-menu) var(--espaco-8) 0;
   border-top: 1px solid var(--borda);
 }
 

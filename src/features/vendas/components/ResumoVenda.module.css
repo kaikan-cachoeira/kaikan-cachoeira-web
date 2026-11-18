@@ -1,4 +1,5 @@
 .summary {
+  container-type: inline-size;
   position: sticky;
   top: calc(var(--altura-topbar) + var(--espaco-24));
   display: flex;
@@ -32,7 +33,7 @@
 
 .itemMain {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) 112px 36px;
   align-items: center;
   gap: var(--espaco-8);
 }
@@ -44,11 +45,14 @@
 }
 
 .itemName {
-  overflow: hidden;
   font-size: var(--texto-auxiliar);
   font-weight: 500;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+}
+
+.itemQuantity {
+  width: 112px;
+  min-width: 0;
 }
 
 .itemPrice {
@@ -110,7 +114,7 @@
   padding-top: var(--espaco-4);
 }
 
-.finalValue > span {
+.finalValue > label {
   color: var(--texto-suave);
   font-size: var(--texto-auxiliar);
 }
@@ -124,22 +128,9 @@
   font-weight: 600;
 }
 
-.valueInput {
-  min-height: 44px;
-  padding: 10px var(--espaco-12);
-  border: 1px solid var(--borda);
-  border-radius: var(--raio-campo);
+.finalValue input {
   background: var(--branco-suave);
   font-weight: 600;
-}
-
-.valueInputError {
-  border-color: var(--cor-erro);
-}
-
-.valueError {
-  color: var(--cor-erro);
-  font-size: 0.75rem;
 }
 
 .totals {
@@ -180,6 +171,16 @@
 
 .confirm {
   width: 100%;
+}
+
+@container (max-width: 280px) {
+  .itemMain {
+    grid-template-columns: minmax(0, 1fr) 36px;
+  }
+
+  .itemInfo {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 1100px) {

@@ -25,7 +25,7 @@ export default function Sidebar({ open, onClose, onNavigate }: SidebarProps) {
     >
       <div className={styles.top}>
         <div className={styles.brandRow}>
-          <Logo />
+          <Logo compact />
           <button
             type="button"
             className={styles.close}

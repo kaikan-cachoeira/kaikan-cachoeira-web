@@ -1,5 +1,6 @@
 import Botao from "@/shared/components/Botao/Botao";
 import Icone from "@/shared/components/Icone/Icone";
+import CampoMoeda from "@/shared/components/Formulario/CampoMoeda";
 import SeletorQuantidade from "@/shared/components/SeletorQuantidade/SeletorQuantidade";
 import { useCarrinho } from "../hooks/useVendas";
 import { formatarMoeda, formatarNumero } from "@/shared/lib/formatacao";
@@ -46,14 +47,16 @@ export default function ResumoVenda({
                     ) : null}
                   </span>
                 </div>
-                <SeletorQuantidade
-                  size="small"
-                  value={item.quantity}
-                  min={1}
-                  max={item.availableQuantity ?? undefined}
-                  onChange={(next) => definirQuantidade(item.menuItemId, next)}
-                  label={`quantidade de ${item.name}`}
-                />
+                <div className={styles.itemQuantity}>
+                  <SeletorQuantidade
+                    size="small"
+                    value={item.quantity}
+                    min={1}
+                    max={item.availableQuantity ?? undefined}
+                    onChange={(next) => definirQuantidade(item.menuItemId, next)}
+                    label={`quantidade de ${item.name}`}
+                  />
+                </div>
                 <button
                   type="button"
                   className={styles.remove}
@@ -77,24 +80,18 @@ export default function ResumoVenda({
         </p>
       )}
 
-      <div className={styles.finalValue}>
-        <span>Valor final</span>
-        <input
-          className={`${styles.valueInput} ${valorFinalInvalido ? styles.valueInputError : ""}`.trim()}
-          type="number"
-          min={0}
-          max={totalComDescontoDosItens}
-          step="0.01"
-          value={Number.isFinite(valorFinal) ? valorFinal : 0}
-          onChange={(event) => onValorFinalChange(Number(event.target.value))}
-          aria-invalid={valorFinalInvalido}
-        />
-        {valorFinalInvalido ? (
-          <small className={styles.valueError}>
-            O valor final deve estar entre 0 e {formatarMoeda(totalComDescontoDosItens)}.
-          </small>
-        ) : null}
-      </div>
+      <CampoMoeda
+        id="venda-valor-final"
+        className={styles.finalValue}
+        label="Valor final"
+        value={Number.isFinite(valorFinal) ? valorFinal : 0}
+        onChange={onValorFinalChange}
+        error={
+          valorFinalInvalido
+            ? `O valor final deve estar entre 0 e ${formatarMoeda(totalComDescontoDosItens)}.`
+            : undefined
+        }
+      />
 
       <dl className={styles.totals}>
         <div>
