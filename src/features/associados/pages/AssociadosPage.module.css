@@ -5,7 +5,24 @@
 }
 
 .yearSelect {
-  min-width: 176px;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--espaco-8);
+}
+
+.yearSelect > label {
+  white-space: nowrap;
+}
+
+.yearSelect > div {
+  width: 120px;
+}
+
+.yearSelect select {
+  min-height: 36px;
+  padding: 6px var(--espaco-8);
 }
 
 .summary {
@@ -60,7 +77,12 @@
 }
 
 @media (max-width: 720px) {
+  .summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .yearSelect {
-    width: 100%;
+    width: auto;
   }
 }

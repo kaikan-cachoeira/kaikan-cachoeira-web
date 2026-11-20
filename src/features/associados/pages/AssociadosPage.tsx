@@ -61,7 +61,6 @@ export default function AssociadosPage() {
     setFiltersOpen,
     anoEscolhido,
     setAnoEscolhido,
-    ano,
     tipo,
     setTipo,
     status,
@@ -143,16 +142,6 @@ export default function AssociadosPage() {
         placeholder="Pesquisar associado ou titular..."
         filtersOpen={filtersOpen}
         onToggleFilters={() => setFiltersOpen((current) => !current)}
-        extra={
-          <Selecao
-            className={styles.yearSelect}
-            label="Ano da anuidade"
-            options={opcoesAno}
-            value={String(anoEscolhido ?? opcoesAno[0]?.value ?? "")}
-            onChange={(event) => alterarAno(event.target.value)}
-            disabled={!opcoesAno.length}
-          />
-        }
       />
 
       {filtersOpen ? (
@@ -205,8 +194,15 @@ export default function AssociadosPage() {
               {pluralizar("associado", data.total)}{" "}
               {pluralizar("encontrado", data.total)}
             </span>
-            {ano !== undefined ? (
-              <Etiqueta variant="neutral">Anuidade {ano}</Etiqueta>
+            {opcoesAno.length ? (
+              <Selecao
+                className={styles.yearSelect}
+                label="Ano da anuidade"
+                aria-label="Ano da anuidade"
+                options={opcoesAno}
+                value={String(anoEscolhido ?? opcoesAno[0]?.value ?? "")}
+                onChange={(event) => alterarAno(event.target.value)}
+              />
             ) : null}
           </div>
 
