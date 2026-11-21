@@ -92,7 +92,6 @@ export default function PerfilPage() {
   return (
     <div className={styles.stack}>
       <PageHeader
-        title="Meu perfil"
         subtitle="Gerencie suas informações pessoais e os dados da sua conta."
       />
 
@@ -109,14 +108,6 @@ export default function PerfilPage() {
           <p className={styles.email}>{dados.email}</p>
           <span className={styles.rolePill}>{dados.cargo}</span>
         </div>
-        <span
-          className={`${styles.decor} ${styles.decorOne}`}
-          aria-hidden="true"
-        />
-        <span
-          className={`${styles.decor} ${styles.decorTwo}`}
-          aria-hidden="true"
-        />
       </Card>
 
       <form className={styles.form} onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -141,6 +132,7 @@ export default function PerfilPage() {
               label="Nome completo"
               autoComplete="name"
               required
+              disabled={!editando}
               error={errors.nome?.message}
               readOnly={readOnly}
               inputClassName={readonlyClass}
@@ -154,6 +146,7 @@ export default function PerfilPage() {
               type="email"
               autoComplete="email"
               required
+              disabled={!editando}
               error={errors.email?.message}
               readOnly={readOnly}
               inputClassName={readonlyClass}
@@ -246,8 +239,6 @@ export default function PerfilPage() {
           </Botao>
         </div>
       </form>
-
-      <p className={styles.footerNote}>Kaikan Cachoeira · Área do usuário</p>
     </div>
   );
 }
