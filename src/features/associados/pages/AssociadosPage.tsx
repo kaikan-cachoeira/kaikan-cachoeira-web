@@ -208,100 +208,140 @@ export default function AssociadosPage() {
 
           {data.items.length ? (
             <>
-              <Tabela caption="Associados">
-                <Cabecalho>
-                  <Linha>
-                    <CelulaCabecalho>Associado</CelulaCabecalho>
-                    <CelulaCabecalho>Contato</CelulaCabecalho>
-                    <CelulaCabecalho>Idade</CelulaCabecalho>
-                    <CelulaCabecalho>Tipo</CelulaCabecalho>
-                    <CelulaCabecalho>Anuidade</CelulaCabecalho>
-                    <CelulaCabecalho numeric>Valor / pago</CelulaCabecalho>
-                    <CelulaCabecalho>Ações</CelulaCabecalho>
-                  </Linha>
-                </Cabecalho>
-                <Corpo>
-                  {data.items.map((associado) => {
-                    const anuidade = associado.anuidade;
-                    const statusAnuidade = anuidade
-                      ? STATUS_ANUIDADE[anuidade.status]
-                      : null;
+              <div className={styles.tabelaContainer}>
+                <Tabela caption="Associados" className={styles.tabela}>
+                  <Cabecalho>
+                    <Linha>
+                      <CelulaCabecalho>Associado</CelulaCabecalho>
+                      <CelulaCabecalho className={styles.hideContact}>
+                        Contato
+                      </CelulaCabecalho>
+                      <CelulaCabecalho className={styles.hideAge}>
+                        Idade
+                      </CelulaCabecalho>
+                      <CelulaCabecalho className={styles.hideType}>
+                        Tipo
+                      </CelulaCabecalho>
+                      <CelulaCabecalho>Anuidade</CelulaCabecalho>
+                      <CelulaCabecalho numeric>Valor / pago</CelulaCabecalho>
+                      <CelulaCabecalho className={styles.actionsCell}>
+                        Ações
+                      </CelulaCabecalho>
+                    </Linha>
+                  </Cabecalho>
+                  <Corpo>
+                    {data.items.map((associado) => {
+                      const anuidade = associado.anuidade;
+                      const statusAnuidade = anuidade
+                        ? STATUS_ANUIDADE[anuidade.status]
+                        : null;
+                      const idade = calcularIdade(associado.dataNascimento);
+                      const tipo = tipoAssociado(associado.tipo);
 
-                    return (
-                      <Linha key={associado.id}>
-                        <Celula>
-                          <div className={styles.associateCell}>
-                            <span className={styles.avatar} aria-hidden="true">
-                              {iniciais(associado.nome)}
-                            </span>
-                            <span>
-                              <span className={styles.memberName}>
-                                {associado.nome}
+                      return (
+                        <Linha key={associado.id}>
+                          <Celula>
+                            <div className={styles.associateCell}>
+                              <span className={styles.avatar} aria-hidden="true">
+                                {iniciais(associado.nome)}
                               </span>
-                              {associado.tipo === "DEPENDENTE" ? (
-                                <span className={styles.secondary}>
-                                  Dependente de{" "}
-                                  {associado.titularNome || "titular não informado"}
+                              <span className={styles.associateDetails}>
+                                <span className={styles.memberName}>
+                                  {associado.nome}
                                 </span>
-                              ) : null}
-                            </span>
-                          </div>
-                        </Celula>
-                        <Celula className={styles.contactCell}>
-                          {associado.numeroContato}
-                        </Celula>
-                        <Celula>
-                          <span>{calcularIdade(associado.dataNascimento)} anos</span>
-                          <span className={styles.secondary}>
-                            {formatarDataNascimento(associado.dataNascimento)}
-                          </span>
-                        </Celula>
-                        <Celula>
-                          <Etiqueta variant="neutral">
-                            {tipoAssociado(associado.tipo)}
-                          </Etiqueta>
-                        </Celula>
-                        <Celula>
-                          {associado.tipo === "DEPENDENTE" ? (
-                            <Etiqueta variant="muted">
-                              Incluído no titular
-                            </Etiqueta>
-                          ) : statusAnuidade ? (
-                            <Etiqueta variant={statusAnuidade.variant}>
-                              {statusAnuidade.label}
-                            </Etiqueta>
-                          ) : (
-                            <Etiqueta variant="muted">Sem anuidade</Etiqueta>
-                          )}
-                        </Celula>
-                        <Celula numeric>
-                          {anuidade ? (
-                            <>
-                              <span>{formatarMoeda(anuidade.valor)}</span>
-                              <span className={styles.secondary}>
-                                {formatarMoeda(anuidade.totalPago)} recebido
+                                {associado.tipo === "DEPENDENTE" ? (
+                                  <span className={styles.secondary}>
+                                    Dependente de{" "}
+                                    {associado.titularNome || "titular não informado"}
+                                  </span>
+                                ) : null}
                               </span>
-                            </>
-                          ) : (
-                            "—"
-                          )}
-                        </Celula>
-                        <Celula>
-                          <Botao
-                            variant="secondary"
-                            size="compact"
-                            iconLeft="edit"
-                            aria-label={`Editar ${associado.nome}`}
-                            onClick={() => abrirEditar(associado)}
-                          >
-                            Editar
-                          </Botao>
-                        </Celula>
-                      </Linha>
-                    );
-                  })}
-                </Corpo>
-              </Tabela>
+                              <span className={styles.infoCompacta}>
+                                <span className={styles.infoCompactaSemIdade}>
+                                  {tipo} ·{" "}
+                                  <span className={styles.phone}>
+                                    {associado.numeroContato}
+                                  </span>
+                                </span>
+                                <span className={styles.infoCompactaComIdade}>
+                                  {tipo} ·{" "}
+                                  <span className={styles.ageValue}>
+                                    {idade} anos
+                                  </span>{" "}
+                                  ·{" "}
+                                  <span className={styles.phone}>
+                                    {associado.numeroContato}
+                                  </span>
+                                </span>
+                              </span>
+                            </div>
+                          </Celula>
+                          <Celula className={`${styles.hideContact} ${styles.contactCell}`}>
+                            {associado.numeroContato}
+                          </Celula>
+                          <Celula className={`${styles.hideAge} ${styles.ageCell}`}>
+                            <span>{idade} anos</span>
+                            <span className={styles.secondary}>
+                              {formatarDataNascimento(associado.dataNascimento)}
+                            </span>
+                          </Celula>
+                          <Celula className={styles.hideType}>
+                            <Etiqueta variant="neutral">{tipo}</Etiqueta>
+                          </Celula>
+                          <Celula>
+                            <span className={styles.mobileLabel}>Anuidade</span>
+                            {associado.tipo === "DEPENDENTE" ? (
+                              <Etiqueta
+                                variant="muted"
+                                className={styles.annualTag}
+                              >
+                                Incluído no titular
+                              </Etiqueta>
+                            ) : statusAnuidade ? (
+                              <Etiqueta variant={statusAnuidade.variant}>
+                                {statusAnuidade.label}
+                              </Etiqueta>
+                            ) : (
+                              <Etiqueta variant="muted">Sem anuidade</Etiqueta>
+                            )}
+                          </Celula>
+                          <Celula numeric className={styles.valueCell}>
+                            <span className={styles.mobileLabel}>Valor / pago</span>
+                            {anuidade ? (
+                              <>
+                                <span className={styles.money}>
+                                  {formatarMoeda(anuidade.valor)}
+                                </span>
+                                <span className={styles.secondary}>
+                                  <span className={styles.money}>
+                                    {formatarMoeda(anuidade.totalPago)}
+                                  </span>{" "}
+                                  recebido
+                                </span>
+                              </>
+                            ) : (
+                              "—"
+                            )}
+                          </Celula>
+                          <Celula className={styles.actionsCell}>
+                            <div className={styles.actions}>
+                              <Botao
+                                variant="secondary"
+                                size="compact"
+                                iconLeft="edit"
+                                aria-label={`Editar ${associado.nome}`}
+                                onClick={() => abrirEditar(associado)}
+                              >
+                                Editar
+                              </Botao>
+                            </div>
+                          </Celula>
+                        </Linha>
+                      );
+                    })}
+                  </Corpo>
+                </Tabela>
+              </div>
               <Paginacao
                 page={data.page}
                 totalPages={data.totalPages}
