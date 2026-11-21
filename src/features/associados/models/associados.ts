@@ -13,6 +13,24 @@ export interface AnuidadeAssociado {
   status: StatusAnuidade;
 }
 
+export interface PagamentoAnuidade {
+  id: number;
+  anuidadeId: number;
+  valor: number;
+  criadoEm: string;
+}
+
+export interface HistoricoPagamentos {
+  anuidade: AnuidadeAssociado | null;
+  pagamentos: PagamentoAnuidade[];
+}
+
+export interface RegistrarPagamentoPayload {
+  associadoId: number;
+  configuracaoId: number;
+  valor: number;
+}
+
 export interface Associado {
   id: number;
   nome: string;

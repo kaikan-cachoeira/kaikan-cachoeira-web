@@ -9,6 +9,7 @@ import { criarSeedAssociados } from "./dadosAssociados";
 
 describe("demo associados", () => {
   const db = criarSeedAssociados();
+  let pagamentoCompletoId: number;
 
   it("monta páginas com total de itens e páginas", () => {
     const pagina = montarPaginaAssociados(db, { page: 1, size: 5 });
@@ -354,5 +355,239 @@ describe("demo associados", () => {
         (associado: { anuidade: unknown }) => associado.anuidade === null,
       ),
     ).toBe(true);
+  });
+
+  it("devolve o histórico ordenado do mais recente para o mais antigo", async () => {
+    const resposta = await demoAdapter({
+      url: "/associados/4/pagamentos",
+      method: "get",
+      params: { ano: 2026 },
+    });
+
+    expect(resposta.data.anuidade).toMatchObject({
+      id: 204,
+      valor: 150,
+      totalPago: 50,
+      status: "PENDENTE",
+    });
+    expect(
+      resposta.data.pagamentos.map((pagamento: { id: number }) => pagamento.id),
+    ).toEqual([2004, 2003]);
+  });
+
+  it("retorna 404 ao consultar o histórico de associado inexistente", async () => {
+    await expect(
+      demoAdapter({
+        url: "/associados/999/pagamentos",
+        method: "get",
+        params: { ano: 2026 },
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        status: 404,
+        data: {
+          codigo: "ASSOCIADO_NAO_ENCONTRADO",
+          mensagem: "Associado não encontrado.",
+        },
+      },
+    });
+  });
+
+  it("usa o maior ano configurado quando o histórico não recebe ano", async () => {
+    const resposta = await demoAdapter({
+      url: "/associados/1/pagamentos",
+      method: "get",
+    });
+
+    expect(resposta.data).toEqual({ anuidade: null, pagamentos: [] });
+  });
+
+  it("registra pagamento parcial e mantém a anuidade pendente", async () => {
+    const pagamento = await demoAdapter({
+      url: "/anuidades/pagamentos",
+      method: "post",
+      data: JSON.stringify({ associadoId: 3, configuracaoId: 2, valor: 25 }),
+    });
+    const historico = await demoAdapter({
+      url: "/associados/3/pagamentos",
+      method: "get",
+      params: { ano: 2026 },
+    });
+
+    expect(pagamento.status).toBe(201);
+    expect(pagamento.data).toMatchObject({
+      anuidadeId: 203,
+      valor: 25,
+    });
+    expect(historico.data.anuidade).toMatchObject({
+      totalPago: 25,
+      status: "PENDENTE",
+    });
+  });
+
+  it("marca a anuidade como paga quando o saldo é completado", async () => {
+    const pagamento = await demoAdapter({
+      url: "/anuidades/pagamentos",
+      method: "post",
+      data: JSON.stringify({ associadoId: 3, configuracaoId: 2, valor: 125 }),
+    });
+    const historico = await demoAdapter({
+      url: "/associados/3/pagamentos",
+      method: "get",
+      params: { ano: 2026 },
+    });
+    pagamentoCompletoId = pagamento.data.id;
+
+    expect(historico.data.anuidade).toMatchObject({
+      totalPago: 150,
+      status: "PAGO",
+    });
+  });
+
+  it("recusa pagamento acima do saldo restante", async () => {
+    await expect(
+      demoAdapter({
+        url: "/anuidades/pagamentos",
+        method: "post",
+        data: JSON.stringify({
+          associadoId: 7,
+          configuracaoId: 2,
+          valor: 150.01,
+        }),
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        status: 400,
+        data: {
+          codigo: "SALDO_INSUFICIENTE",
+          mensagem:
+            "O valor não pode ultrapassar o saldo restante de R$\u00a0150,00.",
+        },
+      },
+    });
+  });
+
+  it("recusa valor de pagamento inválido", async () => {
+    await expect(
+      demoAdapter({
+        url: "/anuidades/pagamentos",
+        method: "post",
+        data: JSON.stringify({
+          associadoId: 7,
+          configuracaoId: 2,
+          valor: 0,
+        }),
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        status: 400,
+        data: {
+          codigo: "PAGAMENTO_INVALIDO",
+          mensagem: "Informe um valor de pagamento válido.",
+        },
+      },
+    });
+  });
+
+  it("recusa pagamento para dependente", async () => {
+    await expect(
+      demoAdapter({
+        url: "/anuidades/pagamentos",
+        method: "post",
+        data: JSON.stringify({
+          associadoId: 9,
+          configuracaoId: 2,
+          valor: 10,
+        }),
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        status: 400,
+        data: {
+          codigo: "PAGAMENTO_DEPENDENTE",
+          mensagem: "Dependentes são cobertos pela anuidade do titular.",
+        },
+      },
+    });
+  });
+
+  it("recusa pagamentos para anuidades pagas ou isentas", async () => {
+    await expect(
+      demoAdapter({
+        url: "/anuidades/pagamentos",
+        method: "post",
+        data: JSON.stringify({
+          associadoId: 1,
+          configuracaoId: 2,
+          valor: 10,
+        }),
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        status: 409,
+        data: { mensagem: "Esta anuidade já está paga." },
+      },
+    });
+    await expect(
+      demoAdapter({
+        url: "/anuidades/pagamentos",
+        method: "post",
+        data: JSON.stringify({
+          associadoId: 5,
+          configuracaoId: 2,
+          valor: 10,
+        }),
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        status: 400,
+        data: { mensagem: "Não é possível pagar uma anuidade isenta." },
+      },
+    });
+  });
+
+  it("cria a cobrança individual quando o primeiro pagamento é registrado", async () => {
+    const pagamento = await demoAdapter({
+      url: "/anuidades/pagamentos",
+      method: "post",
+      data: JSON.stringify({ associadoId: 1, configuracaoId: 3, valor: 60 }),
+    });
+    const historico = await demoAdapter({
+      url: "/associados/1/pagamentos",
+      method: "get",
+      params: { ano: 2028 },
+    });
+
+    expect(pagamento.data).toMatchObject({ valor: 60 });
+    expect(historico.data.anuidade).toMatchObject({
+      valor: 210,
+      totalPago: 60,
+      status: "PENDENTE",
+    });
+  });
+
+  it("recalcula para pendente ao excluir um pagamento de anuidade paga", async () => {
+    const antes = await demoAdapter({
+      url: "/associados/3/pagamentos",
+      method: "get",
+      params: { ano: 2026 },
+    });
+    expect(antes.data.anuidade.status).toBe("PAGO");
+
+    await demoAdapter({
+      url: `/anuidades/pagamentos/${pagamentoCompletoId}`,
+      method: "delete",
+    });
+    const depois = await demoAdapter({
+      url: "/associados/3/pagamentos",
+      method: "get",
+      params: { ano: 2026 },
+    });
+
+    expect(depois.data.anuidade).toMatchObject({
+      totalPago: 25,
+      status: "PENDENTE",
+    });
+    expect(depois.data.pagamentos).toHaveLength(1);
   });
 });

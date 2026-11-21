@@ -29,6 +29,7 @@ export interface PagamentoAnuidadeDemo {
   id: number;
   anuidadeId: number;
   valor: number;
+  criadoEm: string;
 }
 
 export interface DadosAssociadosDemo {
@@ -177,19 +178,84 @@ export function criarSeedAssociados(): DadosAssociadosDemo {
     ],
     anuidades,
     pagamentos: [
-      { id: 1001, anuidadeId: 101, valor: 120 },
-      { id: 1002, anuidadeId: 102, valor: 120 },
-      { id: 1003, anuidadeId: 103, valor: 120 },
-      { id: 1004, anuidadeId: 104, valor: 120 },
-      { id: 1005, anuidadeId: 105, valor: 120 },
-      { id: 1006, anuidadeId: 106, valor: 120 },
-      { id: 1007, anuidadeId: 108, valor: 120 },
-      { id: 2001, anuidadeId: 201, valor: 150 },
-      { id: 2002, anuidadeId: 202, valor: 150 },
-      { id: 2003, anuidadeId: 204, valor: 20 },
-      { id: 2004, anuidadeId: 204, valor: 30 },
-      { id: 2005, anuidadeId: 206, valor: 150 },
-      { id: 2006, anuidadeId: 208, valor: 150 },
+      {
+        id: 1001,
+        anuidadeId: 101,
+        valor: 120,
+        criadoEm: "2025-02-01T12:00:00.000Z",
+      },
+      {
+        id: 1002,
+        anuidadeId: 102,
+        valor: 120,
+        criadoEm: "2025-02-02T12:00:00.000Z",
+      },
+      {
+        id: 1003,
+        anuidadeId: 103,
+        valor: 120,
+        criadoEm: "2025-02-03T12:00:00.000Z",
+      },
+      {
+        id: 1004,
+        anuidadeId: 104,
+        valor: 120,
+        criadoEm: "2025-02-04T12:00:00.000Z",
+      },
+      {
+        id: 1005,
+        anuidadeId: 105,
+        valor: 120,
+        criadoEm: "2025-02-05T12:00:00.000Z",
+      },
+      {
+        id: 1006,
+        anuidadeId: 106,
+        valor: 120,
+        criadoEm: "2025-02-06T12:00:00.000Z",
+      },
+      {
+        id: 1007,
+        anuidadeId: 108,
+        valor: 120,
+        criadoEm: "2025-02-08T12:00:00.000Z",
+      },
+      {
+        id: 2001,
+        anuidadeId: 201,
+        valor: 150,
+        criadoEm: "2026-02-01T12:00:00.000Z",
+      },
+      {
+        id: 2002,
+        anuidadeId: 202,
+        valor: 150,
+        criadoEm: "2026-02-02T12:00:00.000Z",
+      },
+      {
+        id: 2003,
+        anuidadeId: 204,
+        valor: 20,
+        criadoEm: "2026-02-03T12:00:00.000Z",
+      },
+      {
+        id: 2004,
+        anuidadeId: 204,
+        valor: 30,
+        criadoEm: "2026-02-04T12:00:00.000Z",
+      },
+      {
+        id: 2005,
+        anuidadeId: 206,
+        valor: 150,
+        criadoEm: "2026-02-06T12:00:00.000Z",
+      },
+      {
+        id: 2006,
+        anuidadeId: 208,
+        valor: 150,
+        criadoEm: "2026-02-08T12:00:00.000Z",
+      },
     ],
   };
 }

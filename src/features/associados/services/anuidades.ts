@@ -2,6 +2,9 @@
 import api from "@/shared/api/cliente";
 import type {
   ConfiguracaoAnuidade,
+  HistoricoPagamentos,
+  PagamentoAnuidade,
+  RegistrarPagamentoPayload,
   SalvarConfiguracaoAnuidadePayload,
 } from "../models";
 
@@ -55,4 +58,29 @@ export async function atualizarConfiguracaoAnuidade(
 
 export async function excluirConfiguracaoAnuidade(id: number): Promise<void> {
   await api.delete(`/anuidades/configuracoes/${id}`);
+}
+
+export async function listarPagamentosAnuidade(
+  associadoId: number,
+  ano: number,
+): Promise<HistoricoPagamentos> {
+  const { data } = await api.get<HistoricoPagamentos>(
+    `/associados/${associadoId}/pagamentos`,
+    { params: { ano } },
+  );
+  return data;
+}
+
+export async function registrarPagamentoAnuidade(
+  payload: RegistrarPagamentoPayload,
+): Promise<PagamentoAnuidade> {
+  const { data } = await api.post<PagamentoAnuidade>(
+    "/anuidades/pagamentos",
+    payload,
+  );
+  return data;
+}
+
+export async function excluirPagamentoAnuidade(id: number): Promise<void> {
+  await api.delete(`/anuidades/pagamentos/${id}`);
 }

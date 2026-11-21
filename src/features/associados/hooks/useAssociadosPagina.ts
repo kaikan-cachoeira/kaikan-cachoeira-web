@@ -20,6 +20,11 @@ type FluxoAnuidades =
   | { tela: "editar"; configuracao: ConfiguracaoAnuidade }
   | null;
 
+type FluxoPagamentos =
+  | { tela: "historico"; associado: Associado }
+  | { tela: "pagar"; associado: Associado }
+  | null;
+
 function idadeNumerica(valor: string): number | undefined {
   if (!valor.trim()) return undefined;
   const idade = Number(valor);
@@ -42,9 +47,14 @@ export function useAssociadosPagina() {
     useState<EstadoModalAssociado>(null);
   const [fluxoAnuidades, setFluxoAnuidades] =
     useState<FluxoAnuidades>(null);
+  const [fluxoPagamentos, setFluxoPagamentos] =
+    useState<FluxoPagamentos>(null);
 
   const configuracoesQuery = useConfiguracoesAnuidadeQuery();
   const ano = anoEscolhidoState ?? configuracoesQuery.data?.[0]?.ano;
+  const configuracaoSelecionada = configuracoesQuery.data?.find(
+    (configuracao) => configuracao.ano === ano,
+  );
 
   const params = useMemo<ParametrosAssociados>(
     () => ({
@@ -162,6 +172,27 @@ export function useAssociadosPagina() {
     setFluxoAnuidades(null);
   }
 
+  function abrirHistoricoPagamentos(associado: Associado) {
+    setFluxoPagamentos({ tela: "historico", associado });
+  }
+
+  function abrirPagamento(associado: Associado) {
+    setFluxoPagamentos({ tela: "pagar", associado });
+  }
+
+  function abrirPagamentoDoHistorico() {
+    if (fluxoPagamentos?.tela === "historico") {
+      setFluxoPagamentos({
+        tela: "pagar",
+        associado: fluxoPagamentos.associado,
+      });
+    }
+  }
+
+  function fecharFluxoPagamentos() {
+    setFluxoPagamentos(null);
+  }
+
   function configuracaoCriada(configuracao: ConfiguracaoAnuidade) {
     setAnoEscolhido(configuracao.ano);
   }
@@ -193,6 +224,7 @@ export function useAssociadosPagina() {
     setIdadeMax,
     associadosQuery,
     configuracoesQuery,
+    configuracaoSelecionada,
     opcoesAno,
     modalAssociado,
     abrirCriar,
@@ -204,6 +236,11 @@ export function useAssociadosPagina() {
     editarConfiguracao,
     voltarParaListaAnuidades,
     fecharAnuidades,
+    fluxoPagamentos,
+    abrirHistoricoPagamentos,
+    abrirPagamento,
+    abrirPagamentoDoHistorico,
+    fecharFluxoPagamentos,
     configuracaoCriada,
     configuracaoExcluida,
     runSearch,

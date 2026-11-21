@@ -1,10 +1,12 @@
 import { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from "axios";
 import { lerJSON, salvarJSON } from "@/shared/lib/armazenamentoLocal";
+import { formatarMoeda } from "@/shared/lib/formatacao";
 import {
   criarSeedAssociados,
   type AssociadoDemo,
   type ConfiguracaoAnuidadeDemo,
   type DadosAssociadosDemo,
+  type PagamentoAnuidadeDemo,
   type StatusAnuidadeDemo,
   type TipoAssociadoDemo,
 } from "./dadosAssociados";
@@ -63,7 +65,21 @@ function obterBanco(): DadosAssociadosDemo {
 
   const persistido = lerJSON<DadosAssociadosDemo | null>(STORAGE_KEY, null);
   if (persistido) {
-    bancoMemoria = persistido;
+    const pagamentos = persistido.pagamentos.map((pagamento, index) => {
+      if (pagamento.criadoEm) return pagamento;
+      const ano =
+        persistido.anuidades.find(
+          (anuidade) => anuidade.id === pagamento.anuidadeId,
+        )?.ano ?? new Date().getUTCFullYear();
+      return {
+        ...pagamento,
+        criadoEm: new Date(Date.UTC(ano, 0, 1, 0, 0, index)).toISOString(),
+      };
+    });
+    bancoMemoria = { ...persistido, pagamentos };
+    if (pagamentos.some((_, index) => !persistido.pagamentos[index]?.criadoEm)) {
+      salvarJSON(STORAGE_KEY, bancoMemoria);
+    }
   } else {
     bancoMemoria = criarSeedAssociados();
     salvarJSON(STORAGE_KEY, bancoMemoria);
@@ -110,17 +126,37 @@ function paraAssociadoDoAno(
 
   const totalPago = db.pagamentos
     .filter((pagamento) => pagamento.anuidadeId === anuidade.id)
-    .reduce((total, pagamento) => total + pagamento.valor, 0);
+    .reduce((total, pagamento) => total + Math.round(pagamento.valor * 100), 0);
 
   return {
     ...associado,
     anuidade: {
       id: anuidade.id,
       valor: anuidade.valor,
-      totalPago,
+      totalPago: totalPago / 100,
       status: anuidade.status,
     },
   };
+}
+
+function totalPagoCentavos(
+  db: DadosAssociadosDemo,
+  anuidadeId: number,
+): number {
+  return db.pagamentos
+    .filter((pagamento) => pagamento.anuidadeId === anuidadeId)
+    .reduce((total, pagamento) => total + Math.round(pagamento.valor * 100), 0);
+}
+
+function recalcularStatusAnuidade(
+  db: DadosAssociadosDemo,
+  anuidade: DadosAssociadosDemo["anuidades"][number],
+): void {
+  if (anuidade.status === "ISENTO") return;
+  anuidade.status =
+    totalPagoCentavos(db, anuidade.id) >= Math.round(anuidade.valor * 100)
+      ? "PAGO"
+      : "PENDENTE";
 }
 
 function maiorAnoConfigurado(
@@ -217,6 +253,183 @@ function salvarConfiguracaoAnuidade(
     });
   }
   return configuracao;
+}
+
+function consultarHistoricoPagamentos(
+  db: DadosAssociadosDemo,
+  associadoId: number,
+  params: URLSearchParams,
+) {
+  const associado = db.associados.find((item) => item.id === associadoId);
+  if (!associado) {
+    throw new FalhaAssociadoDemo(
+      404,
+      "ASSOCIADO_NAO_ENCONTRADO",
+      "Associado não encontrado.",
+    );
+  }
+
+  const ano = params.has("ano")
+    ? numeroParametro(params, "ano")
+    : maiorAnoConfigurado(db);
+  const anuidade = db.anuidades.find(
+    (item) => item.associadoId === associadoId && item.ano === ano,
+  );
+  if (!anuidade) return { anuidade: null, pagamentos: [] };
+
+  const pagamentos = db.pagamentos
+    .filter((pagamento) => pagamento.anuidadeId === anuidade.id)
+    .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm))
+    .map((pagamento) => ({ ...pagamento }));
+
+  return {
+    anuidade: {
+      id: anuidade.id,
+      valor: anuidade.valor,
+      totalPago: totalPagoCentavos(db, anuidade.id) / 100,
+      status: anuidade.status,
+    },
+    pagamentos,
+  };
+}
+
+function registrarPagamento(
+  db: DadosAssociadosDemo,
+  corpo: unknown,
+): PagamentoAnuidadeDemo {
+  if (!corpo || typeof corpo !== "object" || Array.isArray(corpo)) {
+    throw new FalhaAssociadoDemo(
+      400,
+      "PAGAMENTO_INVALIDO",
+      "Informe um valor de pagamento válido.",
+    );
+  }
+
+  const payload = corpo as Record<string, unknown>;
+  const valor = payload.valor;
+  if (
+    typeof valor !== "number" ||
+    !Number.isFinite(valor) ||
+    valor <= 0
+  ) {
+    throw new FalhaAssociadoDemo(
+      400,
+      "PAGAMENTO_INVALIDO",
+      "Informe um valor de pagamento válido.",
+    );
+  }
+
+  const associado = db.associados.find(
+    (item) => item.id === payload.associadoId,
+  );
+  if (!associado) {
+    throw new FalhaAssociadoDemo(
+      404,
+      "ASSOCIADO_NAO_ENCONTRADO",
+      "Associado não encontrado.",
+    );
+  }
+
+  const configuracao = db.configuracoes.find(
+    (item) => item.id === payload.configuracaoId,
+  );
+  if (!configuracao) {
+    throw new FalhaAssociadoDemo(
+      404,
+      "CONFIGURACAO_NAO_ENCONTRADA",
+      "Configuração de anuidade não encontrada.",
+    );
+  }
+
+  if (associado.tipo === "DEPENDENTE") {
+    throw new FalhaAssociadoDemo(
+      400,
+      "PAGAMENTO_DEPENDENTE",
+      "Dependentes são cobertos pela anuidade do titular.",
+    );
+  }
+
+  const existente = db.anuidades.find(
+    (item) =>
+      item.associadoId === associado.id && item.ano === configuracao.ano,
+  );
+  if (existente?.status === "ISENTO") {
+    throw new FalhaAssociadoDemo(
+      400,
+      "ANUIDADE_ISENTA",
+      "Não é possível pagar uma anuidade isenta.",
+    );
+  }
+  if (existente?.status === "PAGO") {
+    throw new FalhaAssociadoDemo(
+      409,
+      "ANUIDADE_PAGA",
+      "Esta anuidade já está paga.",
+    );
+  }
+
+  const anuidade =
+    existente ??
+    ({
+      id: Math.max(0, ...db.anuidades.map((item) => item.id)) + 1,
+      associadoId: associado.id,
+      ano: configuracao.ano,
+      valor: configuracao.valor,
+      status: "PENDENTE",
+    } satisfies DadosAssociadosDemo["anuidades"][number]);
+  const saldoCentavos = Math.max(
+    0,
+    Math.round(anuidade.valor * 100) - totalPagoCentavos(db, anuidade.id),
+  );
+  const valorCentavos = Math.round(valor * 100);
+  const saldo = saldoCentavos / 100;
+  if (
+    valorCentavos <= 0 ||
+    valor > saldo + 0.005 ||
+    valorCentavos > saldoCentavos
+  ) {
+    throw new FalhaAssociadoDemo(
+      400,
+      "SALDO_INSUFICIENTE",
+      `O valor não pode ultrapassar o saldo restante de ${formatarMoeda(saldo)}.`,
+    );
+  }
+
+  if (!existente) db.anuidades.push(anuidade);
+  const pagamento: PagamentoAnuidadeDemo = {
+    id: Math.max(0, ...db.pagamentos.map((item) => item.id)) + 1,
+    anuidadeId: anuidade.id,
+    valor: valorCentavos / 100,
+    criadoEm: new Date().toISOString(),
+  };
+  db.pagamentos.push(pagamento);
+  recalcularStatusAnuidade(db, anuidade);
+  return pagamento;
+}
+
+function excluirPagamento(db: DadosAssociadosDemo, id: number): void {
+  const indice = db.pagamentos.findIndex((pagamento) => pagamento.id === id);
+  if (indice < 0) {
+    throw new FalhaAssociadoDemo(
+      404,
+      "PAGAMENTO_NAO_ENCONTRADO",
+      "Pagamento não encontrado.",
+    );
+  }
+
+  const pagamento = db.pagamentos[indice];
+  if (!pagamento) {
+    throw new FalhaAssociadoDemo(
+      404,
+      "PAGAMENTO_NAO_ENCONTRADO",
+      "Pagamento não encontrado.",
+    );
+  }
+  db.pagamentos.splice(indice, 1);
+  const anuidade = db.anuidades.find(
+    (item) => item.id === pagamento.anuidadeId,
+  );
+  if (anuidade) recalcularStatusAnuidade(db, anuidade);
 }
 
 export function excluirConfiguracaoDoBanco(
@@ -570,6 +783,12 @@ export function rotearAssociadosDemo({
     method === "delete" && /^\/anuidades\/configuracoes\/\d+$/.test(path);
   const rotaCriarAssociado = method === "post" && path === "/associados";
   const rotaAtualizarAssociado = method === "put" && /^\/associados\/\d+$/.test(path);
+  const rotaHistoricoPagamentos =
+    method === "get" && /^\/associados\/\d+\/pagamentos$/.test(path);
+  const rotaRegistrarPagamento =
+    method === "post" && path === "/anuidades/pagamentos";
+  const rotaExcluirPagamento =
+    method === "delete" && /^\/anuidades\/pagamentos\/\d+$/.test(path);
 
   if (
     !rotaAssociados &&
@@ -578,7 +797,10 @@ export function rotearAssociadosDemo({
     !rotaAtualizarConfiguracao &&
     !rotaExcluirConfiguracao &&
     !rotaCriarAssociado &&
-    !rotaAtualizarAssociado
+    !rotaAtualizarAssociado &&
+    !rotaHistoricoPagamentos &&
+    !rotaRegistrarPagamento &&
+    !rotaExcluirPagamento
   ) {
     return null;
   }
@@ -586,6 +808,43 @@ export function rotearAssociadosDemo({
   return Promise.resolve()
     .then(() => {
       const db = obterBanco();
+      if (rotaHistoricoPagamentos) {
+        const idMatch = path.match(/^\/associados\/(\d+)\/pagamentos$/);
+        const associadoId = idMatch ? Number(idMatch[1]) : undefined;
+        if (associadoId === undefined) {
+          throw new FalhaAssociadoDemo(
+            404,
+            "ASSOCIADO_NAO_ENCONTRADO",
+            "Associado não encontrado.",
+          );
+        }
+        return {
+          data: consultarHistoricoPagamentos(db, associadoId, params),
+          status: 200,
+        };
+      }
+
+      if (rotaRegistrarPagamento) {
+        const pagamento = registrarPagamento(db, lerCorpo(config));
+        salvarJSON(STORAGE_KEY, db);
+        return { data: pagamento, status: 201 };
+      }
+
+      if (rotaExcluirPagamento) {
+        const idMatch = path.match(/^\/anuidades\/pagamentos\/(\d+)$/);
+        const id = idMatch ? Number(idMatch[1]) : undefined;
+        if (id === undefined) {
+          throw new FalhaAssociadoDemo(
+            404,
+            "PAGAMENTO_NAO_ENCONTRADO",
+            "Pagamento não encontrado.",
+          );
+        }
+        excluirPagamento(db, id);
+        salvarJSON(STORAGE_KEY, db);
+        return { data: { ok: true }, status: 200 };
+      }
+
       if (rotaConfiguracoes) {
         return {
           data: [...db.configuracoes]

@@ -142,6 +142,20 @@ table.tabela {
     min-width: 110px;
   }
 
+  .actions > button {
+    box-sizing: border-box;
+    max-width: 100%;
+    min-width: 0;
+    padding-right: var(--espaco-4);
+    padding-left: var(--espaco-4);
+    font-size: calc(var(--texto-auxiliar) * 0.7);
+  }
+
+  .actions > button > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
   .hideContact,
   .hideType {
     display: none;
@@ -241,6 +255,13 @@ table.tabela {
 
   .actions {
     justify-content: flex-start;
+  }
+
+  .actions > button {
+    max-width: none;
+    padding-right: var(--espaco-12);
+    padding-left: var(--espaco-12);
+    font-size: var(--texto-auxiliar);
   }
 }
 

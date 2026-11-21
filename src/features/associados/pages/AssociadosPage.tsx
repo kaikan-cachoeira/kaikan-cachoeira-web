@@ -26,6 +26,8 @@ import { useAssociadosPagina } from "../hooks/useAssociadosPagina";
 import AssociadoModal from "../components/AssociadoModal";
 import AnuidadesModal from "../components/AnuidadesModal";
 import ConfiguracaoAnuidadeModal from "../components/ConfiguracaoAnuidadeModal";
+import PagamentoModal from "../components/PagamentoModal";
+import HistoricoPagamentosModal from "../components/HistoricoPagamentosModal";
 import styles from "./AssociadosPage.module.css";
 
 const OPCOES_TIPO = [
@@ -71,6 +73,7 @@ export default function AssociadosPage() {
     setIdadeMax,
     associadosQuery,
     configuracoesQuery,
+    configuracaoSelecionada,
     opcoesAno,
     modalAssociado,
     abrirCriar,
@@ -82,6 +85,11 @@ export default function AssociadosPage() {
     editarConfiguracao,
     voltarParaListaAnuidades,
     fecharAnuidades,
+    fluxoPagamentos,
+    abrirHistoricoPagamentos,
+    abrirPagamento,
+    abrirPagamentoDoHistorico,
+    fecharFluxoPagamentos,
     configuracaoCriada,
     configuracaoExcluida,
     runSearch,
@@ -334,6 +342,31 @@ export default function AssociadosPage() {
                               >
                                 Editar
                               </Botao>
+                              {associado.tipo === "TITULAR" &&
+                              configuracaoSelecionada ? (
+                                <>
+                                  <Botao
+                                    variant="tertiary"
+                                    size="compact"
+                                    aria-label={`Ver pagamentos de ${associado.nome}`}
+                                    onClick={() =>
+                                      abrirHistoricoPagamentos(associado)
+                                    }
+                                  >
+                                    Ver pagamentos
+                                  </Botao>
+                                  {(!anuidade ||
+                                    anuidade.status === "PENDENTE") ? (
+                                    <Botao
+                                      size="compact"
+                                      aria-label={`Pagar anuidade de ${associado.nome}`}
+                                      onClick={() => abrirPagamento(associado)}
+                                    >
+                                      Pagar
+                                    </Botao>
+                                  ) : null}
+                                </>
+                              ) : null}
                             </div>
                           </Celula>
                         </Linha>
@@ -401,6 +434,21 @@ export default function AssociadosPage() {
         <ConfiguracaoAnuidadeModal
           configuracao={fluxoAnuidades.configuracao}
           onClose={voltarParaListaAnuidades}
+        />
+      ) : null}
+      {fluxoPagamentos?.tela === "historico" && configuracaoSelecionada ? (
+        <HistoricoPagamentosModal
+          associado={fluxoPagamentos.associado}
+          ano={configuracaoSelecionada.ano}
+          onRegistrarPagamento={abrirPagamentoDoHistorico}
+          onClose={fecharFluxoPagamentos}
+        />
+      ) : null}
+      {fluxoPagamentos?.tela === "pagar" && configuracaoSelecionada ? (
+        <PagamentoModal
+          associado={fluxoPagamentos.associado}
+          configuracao={configuracaoSelecionada}
+          onClose={fecharFluxoPagamentos}
         />
       ) : null}
     </div>
