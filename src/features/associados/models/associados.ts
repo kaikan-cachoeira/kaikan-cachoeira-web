@@ -31,6 +31,12 @@ export interface RegistrarPagamentoPayload {
   valor: number;
 }
 
+export interface AlterarIsencaoPayload {
+  associadoId: number;
+  configuracaoId: number;
+  isento: boolean;
+}
+
 export interface Associado {
   id: number;
   nome: string;

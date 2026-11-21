@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { comporChave, queryKeys } from "@/shared/query/keys";
 import type {
+  AlterarIsencaoPayload,
   RegistrarPagamentoPayload,
   SalvarConfiguracaoAnuidadePayload,
 } from "../models";
 import {
   atualizarConfiguracaoAnuidade,
+  alterarIsencaoAnuidade,
   criarConfiguracaoAnuidade,
   excluirConfiguracaoAnuidade,
   excluirPagamentoAnuidade,
@@ -98,5 +100,11 @@ export function usePagamentoAnuidadeMutations() {
     onSuccess: invalidarConsultas,
   });
 
-  return { registrarPagamento, excluirPagamento };
+  const alterarIsencao = useMutation({
+    mutationFn: (payload: AlterarIsencaoPayload) =>
+      alterarIsencaoAnuidade(payload),
+    onSuccess: invalidarConsultas,
+  });
+
+  return { registrarPagamento, excluirPagamento, alterarIsencao };
 }

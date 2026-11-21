@@ -590,4 +590,148 @@ describe("demo associados", () => {
     });
     expect(depois.data.pagamentos).toHaveLength(1);
   });
+
+  it("isenta uma anuidade existente sem pagamentos", async () => {
+    const resposta = await demoAdapter({
+      url: "/associados/7/anuidades/2/isencao",
+      method: "put",
+      data: JSON.stringify({ isento: true }),
+    });
+
+    expect(resposta.data).toMatchObject({
+      id: 207,
+      valor: 150,
+      totalPago: 0,
+      status: "ISENTO",
+    });
+    await expect(
+      demoAdapter({
+        url: "/anuidades/pagamentos",
+        method: "post",
+        data: JSON.stringify({
+          associadoId: 7,
+          configuracaoId: 2,
+          valor: 10,
+        }),
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        status: 400,
+        data: { mensagem: "Não é possível pagar uma anuidade isenta." },
+      },
+    });
+  });
+
+  it("cria uma anuidade já isenta quando a cobrança ainda não existe", async () => {
+    const resposta = await demoAdapter({
+      url: "/associados/2/anuidades/3/isencao",
+      method: "put",
+      data: JSON.stringify({ isento: true }),
+    });
+    const historico = await demoAdapter({
+      url: "/associados/2/pagamentos",
+      method: "get",
+      params: { ano: 2028 },
+    });
+
+    expect(resposta.data).toMatchObject({
+      valor: 210,
+      totalPago: 0,
+      status: "ISENTO",
+    });
+    expect(historico.data.anuidade).toMatchObject(resposta.data);
+  });
+
+  it("recusa isentar anuidade que possui pagamentos", async () => {
+    await expect(
+      demoAdapter({
+        url: "/associados/4/anuidades/2/isencao",
+        method: "put",
+        data: JSON.stringify({ isento: true }),
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        status: 409,
+        data: {
+          codigo: "ANUIDADE_COM_PAGAMENTOS",
+          mensagem:
+            "Esta anuidade possui pagamentos. Exclua os pagamentos antes de isentar.",
+        },
+      },
+    });
+  });
+
+  it("recusa isentar dependente", async () => {
+    await expect(
+      demoAdapter({
+        url: "/associados/9/anuidades/2/isencao",
+        method: "put",
+        data: JSON.stringify({ isento: true }),
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        status: 400,
+        data: {
+          mensagem: "Dependentes são cobertos pela anuidade do titular.",
+        },
+      },
+    });
+  });
+
+  it("remove a isenção e recalcula a anuidade para pendente", async () => {
+    const resposta = await demoAdapter({
+      url: "/associados/7/anuidades/2/isencao",
+      method: "put",
+      data: JSON.stringify({ isento: false }),
+    });
+
+    expect(resposta.data).toMatchObject({
+      id: 207,
+      valor: 150,
+      totalPago: 0,
+      status: "PENDENTE",
+    });
+  });
+
+  it("torna a isenção idempotente", async () => {
+    const primeira = await demoAdapter({
+      url: "/associados/2/anuidades/3/isencao",
+      method: "put",
+      data: JSON.stringify({ isento: true }),
+    });
+    const segunda = await demoAdapter({
+      url: "/associados/2/anuidades/3/isencao",
+      method: "put",
+      data: JSON.stringify({ isento: true }),
+    });
+
+    expect(segunda.data).toEqual(primeira.data);
+  });
+
+  it("retorna 404 se o associado ou a configuração não existem", async () => {
+    await expect(
+      demoAdapter({
+        url: "/associados/999/anuidades/2/isencao",
+        method: "put",
+        data: JSON.stringify({ isento: true }),
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        status: 404,
+        data: { codigo: "ASSOCIADO_NAO_ENCONTRADO" },
+      },
+    });
+    await expect(
+      demoAdapter({
+        url: "/associados/1/anuidades/999/isencao",
+        method: "put",
+        data: JSON.stringify({ isento: true }),
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        status: 404,
+        data: { codigo: "CONFIGURACAO_NAO_ENCONTRADA" },
+      },
+    });
+  });
 });

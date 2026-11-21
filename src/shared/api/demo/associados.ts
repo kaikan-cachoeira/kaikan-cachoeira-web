@@ -432,6 +432,100 @@ function excluirPagamento(db: DadosAssociadosDemo, id: number): void {
   if (anuidade) recalcularStatusAnuidade(db, anuidade);
 }
 
+function alterarIsencaoAnuidadeDemo(
+  db: DadosAssociadosDemo,
+  associadoId: number,
+  configuracaoId: number,
+  corpo: unknown,
+): AnuidadeAssociadoDemo {
+  const associado = db.associados.find((item) => item.id === associadoId);
+  if (!associado) {
+    throw new FalhaAssociadoDemo(
+      404,
+      "ASSOCIADO_NAO_ENCONTRADO",
+      "Associado não encontrado.",
+    );
+  }
+
+  const configuracao = db.configuracoes.find(
+    (item) => item.id === configuracaoId,
+  );
+  if (!configuracao) {
+    throw new FalhaAssociadoDemo(
+      404,
+      "CONFIGURACAO_NAO_ENCONTRADA",
+      "Configuração de anuidade não encontrada.",
+    );
+  }
+
+  if (!corpo || typeof corpo !== "object" || Array.isArray(corpo)) {
+    throw new FalhaAssociadoDemo(
+      400,
+      "ISENCAO_INVALIDA",
+      "Informe se a anuidade deve ser isenta.",
+    );
+  }
+
+  const isento = (corpo as Record<string, unknown>).isento;
+  if (typeof isento !== "boolean") {
+    throw new FalhaAssociadoDemo(
+      400,
+      "ISENCAO_INVALIDA",
+      "Informe se a anuidade deve ser isenta.",
+    );
+  }
+
+  if (associado.tipo === "DEPENDENTE") {
+    throw new FalhaAssociadoDemo(
+      400,
+      "PAGAMENTO_DEPENDENTE",
+      "Dependentes são cobertos pela anuidade do titular.",
+    );
+  }
+
+  let anuidade = db.anuidades.find(
+    (item) =>
+      item.associadoId === associado.id && item.ano === configuracao.ano,
+  );
+
+  if (isento && anuidade) {
+    const anuidadeId = anuidade.id;
+    const possuiPagamentos = db.pagamentos.some(
+      (pagamento) => pagamento.anuidadeId === anuidadeId,
+    );
+    if (possuiPagamentos) {
+      throw new FalhaAssociadoDemo(
+        409,
+        "ANUIDADE_COM_PAGAMENTOS",
+        "Esta anuidade possui pagamentos. Exclua os pagamentos antes de isentar.",
+      );
+    }
+  }
+
+  if (!anuidade) {
+    anuidade = {
+      id: Math.max(0, ...db.anuidades.map((item) => item.id)) + 1,
+      associadoId: associado.id,
+      ano: configuracao.ano,
+      valor: configuracao.valor,
+      status: isento ? "ISENTO" : "PENDENTE",
+    };
+    db.anuidades.push(anuidade);
+  } else if (isento) {
+    anuidade.status = "ISENTO";
+  } else if (anuidade.status === "ISENTO") {
+    anuidade.status = "PENDENTE";
+    recalcularStatusAnuidade(db, anuidade);
+  }
+
+  return {
+    id: anuidade.id,
+    valor: anuidade.valor,
+    totalPago: totalPagoCentavos(db, anuidade.id) / 100,
+    status: anuidade.status,
+  };
+}
+
 export function excluirConfiguracaoDoBanco(
   db: DadosAssociadosDemo,
   id: number,
@@ -785,6 +879,9 @@ export function rotearAssociadosDemo({
   const rotaAtualizarAssociado = method === "put" && /^\/associados\/\d+$/.test(path);
   const rotaHistoricoPagamentos =
     method === "get" && /^\/associados\/\d+\/pagamentos$/.test(path);
+  const rotaAlterarIsencao =
+    method === "put" &&
+    /^\/associados\/\d+\/anuidades\/\d+\/isencao$/.test(path);
   const rotaRegistrarPagamento =
     method === "post" && path === "/anuidades/pagamentos";
   const rotaExcluirPagamento =
@@ -799,6 +896,7 @@ export function rotearAssociadosDemo({
     !rotaCriarAssociado &&
     !rotaAtualizarAssociado &&
     !rotaHistoricoPagamentos &&
+    !rotaAlterarIsencao &&
     !rotaRegistrarPagamento &&
     !rotaExcluirPagamento
   ) {
@@ -808,6 +906,29 @@ export function rotearAssociadosDemo({
   return Promise.resolve()
     .then(() => {
       const db = obterBanco();
+      if (rotaAlterarIsencao) {
+        const ids = path.match(
+          /^\/associados\/(\d+)\/anuidades\/(\d+)\/isencao$/,
+        );
+        const associadoId = ids ? Number(ids[1]) : undefined;
+        const configuracaoId = ids ? Number(ids[2]) : undefined;
+        if (associadoId === undefined || configuracaoId === undefined) {
+          throw new FalhaAssociadoDemo(
+            404,
+            "ANUIDADE_NAO_ENCONTRADA",
+            "Anuidade não encontrada.",
+          );
+        }
+        const anuidade = alterarIsencaoAnuidadeDemo(
+          db,
+          associadoId,
+          configuracaoId,
+          lerCorpo(config),
+        );
+        salvarJSON(STORAGE_KEY, db);
+        return { data: anuidade, status: 200 };
+      }
+
       if (rotaHistoricoPagamentos) {
         const idMatch = path.match(/^\/associados\/(\d+)\/pagamentos$/);
         const associadoId = idMatch ? Number(idMatch[1]) : undefined;

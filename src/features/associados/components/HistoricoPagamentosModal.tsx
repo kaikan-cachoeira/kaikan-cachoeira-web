@@ -39,10 +39,14 @@ export default function HistoricoPagamentosModal({
 }: HistoricoPagamentosModalProps) {
   const [pagamentoParaExcluir, setPagamentoParaExcluir] =
     useState<PagamentoAnuidade | null>(null);
+  const [acaoIsencao, setAcaoIsencao] = useState<"isentar" | "remover" | null>(
+    null,
+  );
   const { addToast } = useToast();
   const historicoQuery = usePagamentosAnuidadeQuery(associado.id, ano);
   const configuracoesQuery = useConfiguracoesAnuidadeQuery();
-  const { excluirPagamento } = usePagamentoAnuidadeMutations();
+  const { excluirPagamento, alterarIsencao } =
+    usePagamentoAnuidadeMutations();
   const isLoading =
     historicoQuery.isLoading || configuracoesQuery.isLoading;
   const isError = historicoQuery.isError || configuracoesQuery.isError;
@@ -55,11 +59,23 @@ export default function HistoricoPagamentosModal({
   const totalRecebido = anuidade?.totalPago ?? 0;
   const status = anuidade?.status ?? "PENDENTE";
   const statusInfo = STATUS[status];
+  const pagamentos = historico?.pagamentos ?? [];
+  const podeAlterarIsencao =
+    associado.tipo === "TITULAR" &&
+    configuracao !== undefined &&
+    historico !== undefined;
   const podeRegistrar =
     associado.tipo === "TITULAR" &&
+    configuracao !== undefined &&
     historico !== undefined &&
     (!anuidade || anuidade.status === "PENDENTE");
   const isDeleting = excluirPagamento.isPending;
+  const isChangingIsencao = alterarIsencao.isPending;
+  const isProcessing = isDeleting || isChangingIsencao;
+  const isIsento = anuidade?.status === "ISENTO";
+  const podeIsentar =
+    podeAlterarIsencao && !isIsento && pagamentos.length === 0;
+  const podeRemoverIsencao = podeAlterarIsencao && isIsento;
 
   async function confirmarExclusao() {
     if (!pagamentoParaExcluir) return;
@@ -75,6 +91,32 @@ export default function HistoricoPagamentosModal({
     }
   }
 
+  async function confirmarAlteracaoIsencao() {
+    if (!acaoIsencao || !configuracao) return;
+    const isento = acaoIsencao === "isentar";
+    try {
+      await alterarIsencao.mutateAsync({
+        associadoId: associado.id,
+        configuracaoId: configuracao.id,
+        isento,
+      });
+      setAcaoIsencao(null);
+      addToast(
+        isento ? "Anuidade marcada como isenta." : "Isenção removida.",
+      );
+    } catch (error) {
+      addToast(
+        mensagemErro(
+          error,
+          isento
+            ? "Não foi possível isentar a anuidade."
+            : "Não foi possível remover a isenção.",
+        ),
+        "error",
+      );
+    }
+  }
+
   function tentarNovamente() {
     if (historicoQuery.isError) void historicoQuery.refetch();
     if (configuracoesQuery.isError) void configuracoesQuery.refetch();
@@ -85,21 +127,39 @@ export default function HistoricoPagamentosModal({
       <Modal
         title="Pagamentos da anuidade"
         subtitle={`${associado.nome} · ${ano}`}
-        onClose={isDeleting ? undefined : onClose}
-        showClose={!isDeleting}
-        closeOnOverlay={!isDeleting}
+        onClose={isProcessing ? undefined : onClose}
+        showClose={!isProcessing}
+        closeOnOverlay={!isProcessing}
         size="large"
         footer={
           <>
             <Botao
               variant="secondary"
               onClick={onClose}
-              disabled={isDeleting}
+              disabled={isProcessing}
             >
               Fechar
             </Botao>
+            {podeIsentar ? (
+              <Botao
+                variant="secondary"
+                onClick={() => setAcaoIsencao("isentar")}
+                disabled={isProcessing}
+              >
+                Isentar anuidade
+              </Botao>
+            ) : null}
+            {podeRemoverIsencao ? (
+              <Botao
+                variant="secondary"
+                onClick={() => setAcaoIsencao("remover")}
+                disabled={isProcessing}
+              >
+                Remover isenção
+              </Botao>
+            ) : null}
             {podeRegistrar ? (
-              <Botao onClick={onRegistrarPagamento} disabled={isDeleting}>
+              <Botao onClick={onRegistrarPagamento} disabled={isProcessing}>
                 Registrar pagamento
               </Botao>
             ) : null}
@@ -132,9 +192,9 @@ export default function HistoricoPagamentosModal({
               </div>
             </div>
 
-            {historico.pagamentos.length ? (
+            {pagamentos.length ? (
               <ul className={styles.payments}>
-                {historico.pagamentos.map((pagamento) => (
+                {pagamentos.map((pagamento) => (
                   <li className={styles.payment} key={pagamento.id}>
                     <div className={styles.paymentInfo}>
                       <strong>{formatarMoeda(pagamento.valor)}</strong>
@@ -161,6 +221,11 @@ export default function HistoricoPagamentosModal({
                 Nenhum pagamento registrado nesta anuidade.
               </p>
             )}
+            {podeAlterarIsencao && !isIsento && pagamentos.length > 0 ? (
+              <p className={styles.helper}>
+                Para isentar, exclua os pagamentos desta anuidade.
+              </p>
+            ) : null}
           </div>
         ) : null}
       </Modal>
@@ -174,6 +239,28 @@ export default function HistoricoPagamentosModal({
           loading={isDeleting}
           onConfirm={() => void confirmarExclusao()}
           onCancel={() => setPagamentoParaExcluir(null)}
+        />
+      ) : null}
+      {acaoIsencao ? (
+        <ConfirmacaoDialog
+          title={
+            acaoIsencao === "isentar"
+              ? "Isentar anuidade"
+              : "Remover isenção"
+          }
+          message={
+            acaoIsencao === "isentar"
+              ? `${associado.nome} ficará isento da anuidade de ${ano}.`
+              : `A anuidade de ${ano} de ${associado.nome} voltará para pendente.`
+          }
+          confirmLabel={
+            acaoIsencao === "isentar"
+              ? "Isentar anuidade"
+              : "Remover isenção"
+          }
+          loading={isChangingIsencao}
+          onConfirm={() => void confirmarAlteracaoIsencao()}
+          onCancel={() => setAcaoIsencao(null)}
         />
       ) : null}
     </>

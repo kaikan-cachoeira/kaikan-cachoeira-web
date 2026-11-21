@@ -1,6 +1,8 @@
 // Contrato provisório: o backend ainda não implementa estes endpoints.
 import api from "@/shared/api/cliente";
 import type {
+  AnuidadeAssociado,
+  AlterarIsencaoPayload,
   ConfiguracaoAnuidade,
   HistoricoPagamentos,
   PagamentoAnuidade,
@@ -83,4 +85,14 @@ export async function registrarPagamentoAnuidade(
 
 export async function excluirPagamentoAnuidade(id: number): Promise<void> {
   await api.delete(`/anuidades/pagamentos/${id}`);
+}
+
+export async function alterarIsencaoAnuidade(
+  payload: AlterarIsencaoPayload,
+): Promise<AnuidadeAssociado> {
+  const { data } = await api.put<AnuidadeAssociado>(
+    `/associados/${payload.associadoId}/anuidades/${payload.configuracaoId}/isencao`,
+    { isento: payload.isento },
+  );
+  return data;
 }

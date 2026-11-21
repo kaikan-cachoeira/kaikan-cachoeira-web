@@ -12,6 +12,7 @@ export {
   usePagamentosAnuidadeQuery,
 } from "./hooks/useAnuidades";
 export type {
+  AlterarIsencaoPayload,
   AnuidadeAssociado,
   Associado,
   ConfiguracaoAnuidade,

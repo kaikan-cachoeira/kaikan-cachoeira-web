@@ -1,4 +1,5 @@
 export type {
+  AlterarIsencaoPayload,
   AnuidadeAssociado,
   Associado,
   ConfiguracaoAnuidade,
