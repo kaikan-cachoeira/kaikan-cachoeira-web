@@ -142,6 +142,29 @@
   font-size: 0.75rem;
 }
 
+.perfilLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espaco-8);
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: var(--espaco-8);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-campo);
+  background: transparent;
+  color: var(--texto);
+  font-size: var(--texto-auxiliar);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.perfilLink:hover {
+  border-color: var(--vinho);
+  background: var(--vinho-suave);
+  color: var(--vinho);
+}
+
 .logout {
   display: flex;
   align-items: center;
