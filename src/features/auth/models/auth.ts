@@ -1,5 +1,6 @@
 export interface Usuario {
   nome: string;
+  email: string;
   cargo: string;
   permissoes: string[]
 }

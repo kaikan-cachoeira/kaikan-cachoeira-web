@@ -6,8 +6,7 @@ import Card, { SecaoCard } from "@/shared/components/Card/Card";
 import Entrada from "@/shared/components/Formulario/Entrada";
 import PageHeader from "@/shared/components/PageHeader/PageHeader";
 import { useToast } from "@/shared/components/Toast/ToastProvider";
-import { useAutenticacao } from "@/features/auth";
-import { DADOS_INICIAIS, type DadosPerfil } from "../models";
+import { type Usuario, useAutenticacao } from "@/features/auth";
 import styles from "./PerfilPage.module.css";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -22,13 +21,14 @@ export default function PerfilPage() {
   const { usuario } = useAutenticacao();
   const { addToast } = useToast();
 
-  const dadosIniciais: DadosPerfil = {
-    ...DADOS_INICIAIS,
-    nome: usuario?.nome ?? DADOS_INICIAIS.nome,
-    cargo: usuario?.cargo ?? DADOS_INICIAIS.cargo,
+  const dadosIniciais: Usuario = {
+    nome: usuario?.nome ?? "Nome de usuário não encontrado",
+    email: usuario?.email ?? "E-mail não encontrado",
+    cargo: usuario?.cargo ?? "Cargo não encontrado",
+    permissoes: usuario?.permissoes ?? [],
   };
 
-  const [dados, setDados] = useState<DadosPerfil>(dadosIniciais);
+  const [dados, setDados] = useState<Usuario>(dadosIniciais);
   const [editando, setEditando] = useState(false);
 
   const {
@@ -36,7 +36,7 @@ export default function PerfilPage() {
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<DadosPerfil>({
+  } = useForm<Usuario>({
     mode: "onTouched",
     defaultValues: dadosIniciais,
   });
@@ -75,7 +75,7 @@ export default function PerfilPage() {
     setEditando(false);
   }
 
-  const onSubmit: SubmitHandler<DadosPerfil> = (values) => {
+  const onSubmit: SubmitHandler<Usuario> = (values) => {
     setDados(values);
     setEditando(false);
     addToast("Seus dados foram atualizados com sucesso.");
