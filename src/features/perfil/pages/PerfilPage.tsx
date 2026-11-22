@@ -1,93 +1,27 @@
-import { useState } from "react";
-import type { SubmitHandler } from "react-hook-form";
-import { useForm } from "react-hook-form";
 import Botao from "@/shared/components/Botao/Botao";
 import Card, { SecaoCard } from "@/shared/components/Card/Card";
 import Entrada from "@/shared/components/Formulario/Entrada";
 import PageHeader from "@/shared/components/PageHeader/PageHeader";
-import { useToast } from "@/shared/components/Toast/ToastProvider";
-import { type Usuario, useAutenticacao } from "@/features/auth";
+import { usePerfil } from "../hooks/usePerfil";
 import styles from "./PerfilPage.module.css";
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-interface SenhaForm {
-  senhaAtual: string;
-  novaSenha: string;
-  confirmarSenha: string;
-}
-
 export default function PerfilPage() {
-  const { usuario } = useAutenticacao();
-  const { addToast } = useToast();
-
-  const dadosIniciais: Usuario = {
-    nome: usuario?.nome ?? "Nome de usuário não encontrado",
-    email: usuario?.email ?? "E-mail não encontrado",
-    cargo: usuario?.cargo ?? "Cargo não encontrado",
-    permissoes: usuario?.permissoes ?? [],
-  };
-
-  const [dados, setDados] = useState<Usuario>(dadosIniciais);
-  const [editando, setEditando] = useState(false);
-
   const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<Usuario>({
-    mode: "onTouched",
-    defaultValues: dadosIniciais,
-  });
+    dados,
+    editando,
+    iniciais,
+    somenteLeitura,
+    camposPerfil,
+    errosPerfil,
+    enviarPerfil,
+    camposSenha,
+    errosSenha,
+    enviarSenha,
+    handleEditar,
+    handleCancelar,
+  } = usePerfil();
 
-  const {
-    register: registerSenha,
-    handleSubmit: handleSubmitSenha,
-    reset: resetSenha,
-    getValues: getSenhaValues,
-    formState: { errors: errosSenha },
-  } = useForm<SenhaForm>({
-    mode: "onTouched",
-    defaultValues: {
-      senhaAtual: "",
-      novaSenha: "",
-      confirmarSenha: "",
-    },
-  });
-
-  const iniciais =
-    (dados.nome || "U")
-      .split(" ")
-      .filter(Boolean)
-      .map((parte) => parte[0])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase() || "U";
-
-  function handleEditar() {
-    reset(dados);
-    setEditando(true);
-  }
-
-  function handleCancelar() {
-    reset(dados);
-    setEditando(false);
-  }
-
-  const onSubmit: SubmitHandler<Usuario> = (values) => {
-    setDados(values);
-    setEditando(false);
-    addToast("Seus dados foram atualizados com sucesso.");
-  };
-
-  const onSubmitSenha: SubmitHandler<SenhaForm> = () => {
-    resetSenha();
-    addToast("Sua senha foi alterada com sucesso.");
-  };
-
-  const readOnly = !editando;
-  const readonlyClass = readOnly ? styles.readonlyInput : "";
+  const readonlyClass = somenteLeitura ? styles.readonlyInput : "";
 
   return (
     <div className={styles.stack}>
@@ -110,7 +44,7 @@ export default function PerfilPage() {
         </div>
       </Card>
 
-      <form className={styles.form} onSubmit={handleSubmit(onSubmit)} noValidate>
+      <form className={styles.form} onSubmit={enviarPerfil} noValidate>
         <SecaoCard
           title="Informações pessoais"
           subtitle="Seus dados básicos de identificação e contato."
@@ -133,12 +67,10 @@ export default function PerfilPage() {
               autoComplete="name"
               required
               disabled={!editando}
-              error={errors.nome?.message}
-              readOnly={readOnly}
+              error={errosPerfil.nome?.message}
+              readOnly={somenteLeitura}
               inputClassName={readonlyClass}
-              {...register("nome", {
-                required: "Informe o nome completo.",
-              })}
+              {...camposPerfil.nome}
             />
             <Entrada
               id="perfil-email"
@@ -147,16 +79,10 @@ export default function PerfilPage() {
               autoComplete="email"
               required
               disabled={!editando}
-              error={errors.email?.message}
-              readOnly={readOnly}
+              error={errosPerfil.email?.message}
+              readOnly={somenteLeitura}
               inputClassName={readonlyClass}
-              {...register("email", {
-                required: "Informe o e-mail.",
-                pattern: {
-                  value: EMAIL_REGEX,
-                  message: "Informe um e-mail válido.",
-                },
-              })}
+              {...camposPerfil.email}
             />
           </div>
         </SecaoCard>
@@ -180,7 +106,7 @@ export default function PerfilPage() {
 
       <form
         className={styles.form}
-        onSubmit={handleSubmitSenha(onSubmitSenha)}
+        onSubmit={enviarSenha}
         noValidate
       >
         <SecaoCard
@@ -196,9 +122,7 @@ export default function PerfilPage() {
               required
               className={styles.fullWidth}
               error={errosSenha.senhaAtual?.message}
-              {...registerSenha("senhaAtual", {
-                required: "Informe a senha atual.",
-              })}
+              {...camposSenha.senhaAtual}
             />
             <Entrada
               id="perfil-nova-senha"
@@ -208,13 +132,7 @@ export default function PerfilPage() {
               required
               hint="Use pelo menos 8 caracteres."
               error={errosSenha.novaSenha?.message}
-              {...registerSenha("novaSenha", {
-                required: "Informe a nova senha.",
-                minLength: {
-                  value: 8,
-                  message: "A nova senha deve ter pelo menos 8 caracteres.",
-                },
-              })}
+              {...camposSenha.novaSenha}
             />
             <Entrada
               id="perfil-confirmar-senha"
@@ -223,12 +141,7 @@ export default function PerfilPage() {
               autoComplete="new-password"
               required
               error={errosSenha.confirmarSenha?.message}
-              {...registerSenha("confirmarSenha", {
-                required: "Confirme a nova senha.",
-                validate: (value) =>
-                  value === getSenhaValues("novaSenha") ||
-                  "As senhas não coincidem.",
-              })}
+              {...camposSenha.confirmarSenha}
             />
           </div>
         </SecaoCard>
