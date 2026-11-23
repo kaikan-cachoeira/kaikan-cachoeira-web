@@ -100,6 +100,7 @@
 
 .readonlyInput {
   background: var(--branco-suave);
+  caret-color: transparent;
 }
 
 .actions {
