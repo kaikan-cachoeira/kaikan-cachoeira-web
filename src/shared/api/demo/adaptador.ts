@@ -213,6 +213,7 @@ const PERMISSOES_DEMO = [
   "CAIXA_MENU",
   "RELATORIOS_MENU",
   "DASHBOARD_MENU",
+  "ASSOCIADOS_LEITURA",
   "EVENTOS_LEITURA",
   "PRODUTOS_LEITURA",
   "CARDAPIO_EVENTO_LEITURA",
@@ -343,6 +344,45 @@ async function route(config: any) {
       return fail(config, 400, "A senha deve ter ao menos 8 caracteres.");
     }
     return ok(config, { ok: true });
+  }
+
+  if (method === "get" && path === "/associados") {
+    const ano = Number(params.get("ano"));
+    const status = params.get("status");
+    const page = Number(params.get("page") || 0);
+    const size = Number(params.get("size") || 20);
+    if (!Number.isInteger(ano) || ano <= 0) {
+      return fail(config, 400, "Informe um ano válido.");
+    }
+    if (
+      status &&
+      !["PENDENTE", "PAGO", "ISENTO"].includes(status)
+    ) {
+      return fail(config, 400, "Status da anuidade inválido.");
+    }
+    if (!Number.isInteger(page) || page < 0 || !Number.isInteger(size) || size < 1 || size > 100) {
+      return fail(config, 400, "Parâmetros de paginação inválidos.");
+    }
+
+    const associados = db.associados
+      .filter(
+        (item: any) =>
+          item.ano === ano &&
+          (!status || item.associado.status === status),
+      )
+      .sort((a: any, b: any) =>
+        a.associado.nome.localeCompare(b.associado.nome, "pt-BR"),
+      );
+    const totalItens = associados.length;
+    return ok(config, {
+      itens: associados
+        .slice(page * size, (page + 1) * size)
+        .map((item: any) => item.associado),
+      page,
+      size,
+      totalItens,
+      totalPaginas: Math.ceil(totalItens / size),
+    });
   }
 
   /* Categorias */

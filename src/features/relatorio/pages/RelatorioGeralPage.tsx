@@ -60,8 +60,10 @@ export default function RelatorioGeralPage() {
   const podeVerEstoque = temPermissao(permissoes, PERMISSOES.estoqueMenu);
   const podeVerDoacoes = temPermissao(permissoes, PERMISSOES.doacoesMenu);
   const {
+    anoAnuidade,
     eventosQuery,
     produtosQuery,
+    associadosPendentesQuery,
     estoqueBaixoQuery,
     semEstoqueQuery,
     fiadosQuery,
@@ -113,6 +115,73 @@ export default function RelatorioGeralPage() {
     setTypes([]);
   }
 
+  const associadosPendentesSection = (
+    <SecaoCard
+      title={`Associados com pagamento pendente (${anoAnuidade})`}
+      subtitle="Situação das anuidades do ano vigente."
+    >
+      {associadosPendentesQuery.isLoading ? (
+        <EstadoCarregando message="Carregando associados pendentes..." />
+      ) : associadosPendentesQuery.isError ? (
+        <EstadoErro
+          message="Não foi possível carregar os associados pendentes."
+          onRetry={associadosPendentesQuery.refetch}
+        />
+      ) : associadosPendentesQuery.data?.length ? (
+        <div className={styles.pendingAssociatesScroll}>
+          <Tabela caption={`Associados com pagamento pendente em ${anoAnuidade}`}>
+            <Cabecalho>
+              <Linha>
+                <CelulaCabecalho>Associado</CelulaCabecalho>
+                <CelulaCabecalho>Tipo</CelulaCabecalho>
+                <CelulaCabecalho>Contato</CelulaCabecalho>
+                <CelulaCabecalho>Titular responsável</CelulaCabecalho>
+                <CelulaCabecalho>Status</CelulaCabecalho>
+                <CelulaCabecalho numeric>Valor da anuidade</CelulaCabecalho>
+                <CelulaCabecalho numeric>Total pago</CelulaCabecalho>
+              </Linha>
+            </Cabecalho>
+            <Corpo>
+              {associadosPendentesQuery.data.map((associado) => (
+                <Linha key={associado.id}>
+                  <Celula>{associado.nome}</Celula>
+                  <Celula>
+                    {associado.tipo === "TITULAR" ? "Titular" : "Dependente"}
+                  </Celula>
+                  <Celula>{associado.numeroContato || "—"}</Celula>
+                  <Celula>{associado.titularNome || "—"}</Celula>
+                  <Celula>
+                    <Etiqueta variant="warning">Pendente</Etiqueta>
+                  </Celula>
+                  <Celula numeric>
+                    {associado.anuidade
+                      ? formatarMoeda(associado.anuidade.valor)
+                      : "—"}
+                  </Celula>
+                  <Celula numeric>
+                    {associado.anuidade
+                      ? formatarMoeda(associado.anuidade.totalPago)
+                      : "—"}
+                  </Celula>
+                </Linha>
+              ))}
+            </Corpo>
+          </Tabela>
+        </div>
+      ) : (
+        <EstadoVazio
+          title="Nenhum associado com pagamento pendente."
+          description={`Nenhuma anuidade pendente encontrada para ${anoAnuidade}.`}
+        />
+      )}
+    </SecaoCard>
+  );
+  const associadosPendentesGrid = (
+    <div className={styles.insightsGrid}>
+      <div className={styles.leftColumn}>{associadosPendentesSection}</div>
+    </div>
+  );
+
   return (
     <div className={styles.stack}>
       <PageHeader subtitle="Indicadores consolidados e comparativo dos eventos" />
@@ -145,25 +214,34 @@ export default function RelatorioGeralPage() {
       </section>
 
       {eventosQuery.isLoading ? (
-        <EstadoCarregando message="Carregando relatório geral..." />
+        <>
+          <EstadoCarregando message="Carregando relatório geral..." />
+          {associadosPendentesGrid}
+        </>
       ) : eventosQuery.isError ? (
-        <EstadoErro
-          message="Não foi possível carregar o relatório geral."
-          onRetry={eventosQuery.refetch}
-        />
+        <>
+          <EstadoErro
+            message="Não foi possível carregar o relatório geral."
+            onRetry={eventosQuery.refetch}
+          />
+          {associadosPendentesGrid}
+        </>
       ) : events.length === 0 ? (
-        <EstadoVazio
-          title="Nenhum evento encontrado neste período."
-          description="Ajuste os filtros ou consulte todos os eventos."
-          icon="chart"
-          action={
-            hasFilters ? (
-              <Botao variant="secondary" onClick={clearFilters}>
-                Limpar filtros
-              </Botao>
-            ) : null
-          }
-        />
+        <>
+          <EstadoVazio
+            title="Nenhum evento encontrado neste período."
+            description="Ajuste os filtros ou consulte todos os eventos."
+            icon="chart"
+            action={
+              hasFilters ? (
+                <Botao variant="secondary" onClick={clearFilters}>
+                  Limpar filtros
+                </Botao>
+              ) : null
+            }
+          />
+          {associadosPendentesGrid}
+        </>
       ) : (
         <>
           <section className={styles.statsGrid} aria-label="Resumo consolidado">
@@ -306,38 +384,43 @@ export default function RelatorioGeralPage() {
           </SecaoCard>
 
           <div className={styles.insightsGrid}>
-            <SecaoCard
-              title="Produtos mais vendidos"
-              subtitle="No período e tipos de evento selecionados"
-            >
-              {produtosQuery.isLoading ? (
-                <EstadoCarregando message="Carregando produtos..." />
-              ) : produtosQuery.isError ? (
-                <EstadoErro
-                  message="Não foi possível carregar os produtos mais vendidos."
-                  onRetry={produtosQuery.refetch}
-                />
-              ) : produtosQuery.data?.items.length ? (
-                <ol className={styles.productList}>
-                  {produtosQuery.data.items.map((product, index) => (
-                    <li className={styles.productItem} key={product.name}>
-                      <span className={styles.rank}>{index + 1}</span>
-                      <div className={styles.productDetails}>
-                        <span className={styles.productName}>{product.name}</span>
-                        <span className={styles.productMeta}>
-                          {formatarNumero(product.sold)} unidades ·{" "}
-                          {formatarMoeda(product.revenue)}
-                        </span>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <p className={styles.emptyText}>
-                  Nenhum produto vendido neste período.
-                </p>
-              )}
-            </SecaoCard>
+            <div className={styles.leftColumn}>
+              <SecaoCard
+                title="Produtos mais vendidos"
+                subtitle="No período e tipos de evento selecionados"
+              >
+                {produtosQuery.isLoading ? (
+                  <EstadoCarregando message="Carregando produtos..." />
+                ) : produtosQuery.isError ? (
+                  <EstadoErro
+                    message="Não foi possível carregar os produtos mais vendidos."
+                    onRetry={produtosQuery.refetch}
+                  />
+                ) : produtosQuery.data?.items.length ? (
+                  <ol className={styles.productList}>
+                    {produtosQuery.data.items.map((product, index) => (
+                      <li className={styles.productItem} key={product.name}>
+                        <span className={styles.rank}>{index + 1}</span>
+                        <div className={styles.productDetails}>
+                          <span className={styles.productName}>
+                            {product.name}
+                          </span>
+                          <span className={styles.productMeta}>
+                            {formatarNumero(product.sold)} unidades ·{" "}
+                            {formatarMoeda(product.revenue)}
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className={styles.emptyText}>
+                    Nenhum produto vendido neste período.
+                  </p>
+                )}
+              </SecaoCard>
+              {associadosPendentesSection}
+            </div>
 
             <div className={styles.rightColumn}>
               <SecaoCard
