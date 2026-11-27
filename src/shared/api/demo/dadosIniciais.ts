@@ -23,6 +23,7 @@ function lote(id: any, entryQty: any, balance: any, totalCost: any, createdAt: a
 }
 
 export function createSeed() {
+  const anoAtual = new Date().getFullYear();
   const categories = [
     {
       id: "cat-comida",
@@ -922,6 +923,79 @@ export function createSeed() {
     },
   ];
 
+  const associados = [
+    {
+      ano: anoAtual,
+      associado: {
+        id: 1,
+        nome: "Ana Tanaka",
+        numeroContato: "11999990001",
+        idade: 39,
+        dataNascimento: "1987-02-10",
+        tipo: "TITULAR",
+        titularId: null,
+        titularNome: null,
+        status: "PENDENTE",
+        anuidade: {
+          id: 1,
+          valor: 180,
+          totalPago: 60,
+          status: "PENDENTE",
+        },
+      },
+    },
+    {
+      ano: anoAtual,
+      associado: {
+        id: 2,
+        nome: "Kenji Tanaka",
+        numeroContato: "11999990002",
+        idade: 15,
+        dataNascimento: "2011-03-05",
+        tipo: "DEPENDENTE",
+        titularId: 1,
+        titularNome: "Ana Tanaka",
+        status: "PENDENTE",
+        anuidade: null,
+      },
+    },
+    {
+      ano: anoAtual,
+      associado: {
+        id: 3,
+        nome: "Marina Sato",
+        numeroContato: "11999990003",
+        idade: 52,
+        dataNascimento: "1974-04-01",
+        tipo: "TITULAR",
+        titularId: null,
+        titularNome: null,
+        status: "PENDENTE",
+        anuidade: null,
+      },
+    },
+    {
+      ano: anoAtual,
+      associado: {
+        id: 4,
+        nome: "Yuki Nakamura",
+        numeroContato: "11999990004",
+        idade: 44,
+        dataNascimento: "1982-05-10",
+        tipo: "TITULAR",
+        titularId: null,
+        titularNome: null,
+        status: "PAGO",
+        anuidade: {
+          id: 4,
+          valor: 180,
+          totalPago: 180,
+          status: "PAGO",
+        },
+      },
+    },
+  ];
+
   return {
     version: 1,
     categories,
@@ -932,5 +1006,6 @@ export function createSeed() {
     sales,
     cashEntries,
     fiados,
+    associados,
   };
 }

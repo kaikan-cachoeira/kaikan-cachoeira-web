@@ -11,6 +11,10 @@ export function getDb() {
   const stored = lerJSON<{ version?: number } | null>(STORAGE_KEY, null);
   if (stored && stored.version === DB_VERSION) {
     memoryDb = stored;
+    if (!Array.isArray(memoryDb.associados)) {
+      memoryDb.associados = createSeed().associados;
+      persistDb();
+    }
   } else {
     memoryDb = createSeed();
     persistDb();

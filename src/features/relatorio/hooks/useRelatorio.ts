@@ -5,7 +5,10 @@ import { useEventosListaCompletaQuery } from "@/features/eventos";
 import { listarTodosProdutos } from "@/features/inventario/services/inventario";
 import { obterResumoFiados } from "@/features/caixa/services/fiados";
 import { listarDoacoes } from "@/features/doacoes/services/doacoes";
-import { listarProdutosMaisVendidos } from "../services/relatorio";
+import {
+  listarAssociadosPendentes,
+  listarProdutosMaisVendidos,
+} from "../services/relatorio";
 
 async function listarTodasDoacoes(eventIds: string) {
   const items = await carregarTodasPaginas((page) =>
@@ -30,6 +33,7 @@ export interface FiltrosRelatorio {
 }
 
 export function useRelatorio(filtros: FiltrosRelatorio) {
+  const anoAnuidade = new Date().getFullYear();
   const eventTypes = filtros.types.map((tipo) =>
     tipo === "Reunião" ? "REUNIAO" : "EVENTO",
   );
@@ -53,6 +57,15 @@ export function useRelatorio(filtros: FiltrosRelatorio) {
   const produtosQuery = useQuery({
     queryKey: comporChave(queryKeys.eventos, "relatorio", "produtos", productsParams),
     queryFn: () => listarProdutosMaisVendidos(productsParams),
+  });
+  const associadosPendentesQuery = useQuery({
+    queryKey: comporChave(
+      queryKeys.eventos,
+      "relatorio",
+      "associados-pendentes",
+      anoAnuidade,
+    ),
+    queryFn: () => listarAssociadosPendentes(anoAnuidade),
   });
 
   const estoqueBaixoQuery = useQuery({
@@ -98,8 +111,10 @@ export function useRelatorio(filtros: FiltrosRelatorio) {
   });
 
   return {
+    anoAnuidade,
     eventosQuery,
     produtosQuery,
+    associadosPendentesQuery,
     estoqueBaixoQuery,
     semEstoqueQuery,
     fiadosQuery,

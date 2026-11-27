@@ -152,11 +152,17 @@
   gap: var(--espaco-24);
 }
 
+.leftColumn,
 .rightColumn {
   display: flex;
   flex-direction: column;
   gap: var(--espaco-24);
   min-width: 0;
+}
+
+.pendingAssociatesScroll {
+  max-height: 20rem;
+  overflow-y: auto;
 }
 
 .productList {
