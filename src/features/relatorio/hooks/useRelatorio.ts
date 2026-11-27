@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { comporChave, queryKeys } from "@/shared/query/keys";
 import { carregarTodasPaginas } from "@/shared/lib/carregarTodasPaginas";
+import { fimDoDiaISO, inicioDoDiaISO } from "@/features/eventos/utils/datas";
 import { useEventosListaCompletaQuery } from "@/features/eventos";
 import { listarTodosProdutos } from "@/features/inventario/services/inventario";
 import { obterResumoFiados } from "@/features/caixa/services/fiados";
 import { listarDoacoes } from "@/features/doacoes/services/doacoes";
-import { listarProdutosMaisVendidos } from "../services/relatorio";
+import { listarProdutosMaisVendidos, obterRelatorioGeral } from "../services/relatorio";
 
 async function listarTodasDoacoes(eventIds: string) {
   const items = await carregarTodasPaginas((page) =>
@@ -33,21 +34,22 @@ export function useRelatorio(filtros: FiltrosRelatorio) {
   const eventTypes = filtros.types.map((tipo) =>
     tipo === "Reunião" ? "REUNIAO" : "EVENTO",
   );
-  const eventParams = {
-    statuses: "EM_ANDAMENTO,ENCERRADO",
-    types: eventTypes.length ? eventTypes.join(",") : undefined,
-    from: filtros.from || undefined,
-    to: filtros.to || undefined,
-    pageSize: 100,
+  const reportParams = {
+    dataInicio: filtros.from ? inicioDoDiaISO(filtros.from) || undefined : undefined,
+    dataFim: filtros.to ? fimDoDiaISO(filtros.to) || undefined : undefined,
+    tipos: eventTypes.length ? eventTypes.join(",") : undefined,
   };
-  const eventosQuery = useEventosListaCompletaQuery(eventParams);
+  const relatorioGeralQuery = useQuery({
+    queryKey: comporChave(queryKeys.eventos, "relatorio", "geral", reportParams),
+    queryFn: () => obterRelatorioGeral(reportParams),
+  });
   const eventosTodosQuery = useEventosListaCompletaQuery();
   const todosEventIds = (eventosTodosQuery.data || []).map((event) => event.id);
 
   const productsParams = {
     types: filtros.types.length ? filtros.types.join(",") : undefined,
-    from: eventParams.from,
-    to: eventParams.to,
+    from: filtros.from || undefined,
+    to: filtros.to || undefined,
     limit: 5,
   };
   const produtosQuery = useQuery({
@@ -89,8 +91,9 @@ export function useRelatorio(filtros: FiltrosRelatorio) {
     enabled: todosEventIds.length > 0,
   });
 
-  const events = eventosQuery.data || [];
-  const eventIds = events.map((event) => event.id);
+  const eventIds = (relatorioGeralQuery.data?.itens || []).map(
+    (event) => event.eventoId,
+  );
   const donationsQuery = useQuery({
     queryKey: comporChave(queryKeys.eventos, "relatorio", "doacoes", eventIds),
     queryFn: () => listarTodasDoacoes(eventIds.join(",")),
@@ -98,7 +101,7 @@ export function useRelatorio(filtros: FiltrosRelatorio) {
   });
 
   return {
-    eventosQuery,
+    relatorioGeralQuery,
     produtosQuery,
     estoqueBaixoQuery,
     semEstoqueQuery,

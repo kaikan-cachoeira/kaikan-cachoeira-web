@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { varianteStatus, type Evento } from "@/features/eventos";
+import { varianteStatus } from "@/features/eventos";
 import Botao from "@/shared/components/Botao/Botao";
 import {
   EstatisticaCard,
@@ -38,10 +38,6 @@ const TYPE_OPTIONS = [
   { value: "Reunião", label: "Reunião" },
 ];
 
-function obterLucro(event: Evento) {
-  return Number(event.metrics?.profit || 0);
-}
-
 function periodoLabel(from: string, to: string) {
   const formatDateInput = (value: string) =>
     formatarData(value ? `${value}T12:00:00` : value);
@@ -60,7 +56,7 @@ export default function RelatorioGeralPage() {
   const podeVerEstoque = temPermissao(permissoes, PERMISSOES.estoqueMenu);
   const podeVerDoacoes = temPermissao(permissoes, PERMISSOES.doacoesMenu);
   const {
-    eventosQuery,
+    relatorioGeralQuery,
     produtosQuery,
     estoqueBaixoQuery,
     semEstoqueQuery,
@@ -68,16 +64,16 @@ export default function RelatorioGeralPage() {
     donationsQuery,
   } = useRelatorio({ from, to, types });
 
-  const events = eventosQuery.data || [];
-  const totals = events.reduce(
-    (sum, event) => ({
-      revenue: sum.revenue + Number(event.metrics?.revenue || 0),
-      costs: sum.costs + Number(event.metrics?.costs || 0),
-      profit: sum.profit + Number(event.metrics?.profit || 0),
-      sales: sum.sales + Number(event.metrics?.sales || 0),
-    }),
-    { revenue: 0, costs: 0, profit: 0, sales: 0 },
-  );
+  const report = relatorioGeralQuery.data;
+  const events = report?.itens || [];
+  const totals = {
+    revenue: report?.receitaTotal ?? 0,
+    costs: report?.custosTotais ?? 0,
+    profit: report?.lucroTotal ?? 0,
+    sales: report?.quantidadeVendas ?? 0,
+  };
+  const totalRegistros =
+    (report?.quantidadeEventos || 0) + (report?.quantidadeReunioes || 0);
 
   const chartEvents = [...events]
     .sort((a, b) => Date.parse(a.dataHoraInicio) - Date.parse(b.dataHoraInicio))
@@ -85,8 +81,8 @@ export default function RelatorioGeralPage() {
   const chartMax = Math.max(
     1,
     ...chartEvents.flatMap((event) => [
-      Number(event.metrics?.revenue || 0),
-      Number(event.metrics?.costs || 0),
+      event.receitaTotal,
+      event.custoTotal,
     ]),
   );
   const donations = donationsQuery.data?.items || [];
@@ -115,7 +111,7 @@ export default function RelatorioGeralPage() {
 
   return (
     <div className={styles.stack}>
-      <PageHeader subtitle="Indicadores consolidados e comparativo dos eventos" />
+      <PageHeader subtitle="Indicadores consolidados e comparativo dos eventos e reuniões" />
 
       <section className={styles.filters} aria-label="Filtros do relatório">
         <Entrada
@@ -144,17 +140,17 @@ export default function RelatorioGeralPage() {
         </Botao>
       </section>
 
-      {eventosQuery.isLoading ? (
+      {relatorioGeralQuery.isLoading ? (
         <EstadoCarregando message="Carregando relatório geral..." />
-      ) : eventosQuery.isError ? (
+      ) : relatorioGeralQuery.isError ? (
         <EstadoErro
           message="Não foi possível carregar o relatório geral."
-          onRetry={eventosQuery.refetch}
+          onRetry={relatorioGeralQuery.refetch}
         />
       ) : events.length === 0 ? (
         <EstadoVazio
-          title="Nenhum evento encontrado neste período."
-          description="Ajuste os filtros ou consulte todos os eventos."
+          title="Nenhum registro encontrado neste período."
+          description="Ajuste os filtros ou consulte todos os períodos."
           icon="chart"
           action={
             hasFilters ? (
@@ -182,25 +178,25 @@ export default function RelatorioGeralPage() {
               value={formatarNumero(totals.sales)}
             />
             <p className={styles.periodSummary}>
-              {formatarNumero(events.length)}{" "}
-              {events.length === 1 ? "evento" : "eventos"} ·{" "}
+              {formatarNumero(totalRegistros)}{" "}
+              {totalRegistros === 1 ? "registro" : "registros"} ·{" "}
               {periodoLabel(from, to)}
             </p>
           </section>
 
-          <SecaoCard title="Receita e custos por evento">
+          <SecaoCard title="Receita e custos por evento ou reunião">
             <div
               className={styles.chartScroll}
               role="img"
-              aria-label={`Receita e custos de ${chartEvents.length} eventos. Receita total ${formatarMoeda(totals.revenue)} e custos totais ${formatarMoeda(totals.costs)}.`}
+              aria-label={`Receita e custos de ${chartEvents.length} registros. Receita total ${formatarMoeda(totals.revenue)} e custos totais ${formatarMoeda(totals.costs)}.`}
             >
               <div className={styles.chart}>
                 {chartEvents.map((event) => {
-                  const revenue = Number(event.metrics?.revenue || 0);
-                  const costs = Number(event.metrics?.costs || 0);
-                  const profit = obterLucro(event);
+                  const revenue = event.receitaTotal;
+                  const costs = event.custoTotal;
+                  const profit = event.lucro;
                   return (
-                    <div className={styles.chartEvent} key={event.id}>
+                    <div className={styles.chartEvent} key={event.eventoId}>
                       <div className={styles.bars}>
                         <span
                           className={`${styles.bar} ${styles.revenueBar}`}
@@ -242,11 +238,11 @@ export default function RelatorioGeralPage() {
             </div>
           </SecaoCard>
 
-          <SecaoCard title="Comparativo de eventos">
-            <Tabela caption="Comparativo consolidado dos eventos">
+          <SecaoCard title="Comparativo de eventos e reuniões">
+            <Tabela caption="Comparativo consolidado dos eventos e reuniões">
               <Cabecalho>
                 <Linha>
-                  <CelulaCabecalho>Evento</CelulaCabecalho>
+                  <CelulaCabecalho>Registro</CelulaCabecalho>
                   <CelulaCabecalho>Data</CelulaCabecalho>
                   <CelulaCabecalho numeric>Vendas</CelulaCabecalho>
                   <CelulaCabecalho numeric>Receita</CelulaCabecalho>
@@ -259,7 +255,7 @@ export default function RelatorioGeralPage() {
                 {[...events]
                   .sort((a, b) => Date.parse(b.dataHoraInicio) - Date.parse(a.dataHoraInicio))
                   .map((event) => (
-                    <Linha key={event.id}>
+                    <Linha key={event.eventoId}>
                       <Celula>
                         <div className={styles.eventCell}>
                           <span className={styles.eventName}>{event.nome}</span>
@@ -270,29 +266,29 @@ export default function RelatorioGeralPage() {
                       </Celula>
                       <Celula>{formatarData(event.dataHoraInicio)}</Celula>
                       <Celula numeric>
-                        {formatarNumero(event.metrics?.sales)}
+                        {formatarNumero(event.quantidadeVendas)}
                       </Celula>
                       <Celula numeric>
-                        {formatarMoeda(event.metrics?.revenue)}
+                        {formatarMoeda(event.receitaTotal)}
                       </Celula>
                       <Celula numeric>
-                        {formatarMoeda(event.metrics?.costs)}
+                        {formatarMoeda(event.custoTotal)}
                       </Celula>
                       <Celula numeric>
                         <span
                           className={
-                            obterLucro(event) >= 0
+                            event.lucro >= 0
                               ? styles.positive
                               : styles.negative
                           }
                         >
-                          {formatarMoeda(obterLucro(event))}
+                          {formatarMoeda(event.lucro)}
                         </span>
                       </Celula>
                       <Celula>
                         <Botao
                           as={Link}
-                          to={`/eventos/${event.id}`}
+                          to={`/eventos/${event.eventoId}`}
                           variant="tertiary"
                           size="compact"
                         >

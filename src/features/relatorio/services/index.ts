@@ -1,1 +1,1 @@
-export { listarProdutosMaisVendidos } from "./relatorio";
+export { listarProdutosMaisVendidos, obterRelatorioGeral } from "./relatorio";
