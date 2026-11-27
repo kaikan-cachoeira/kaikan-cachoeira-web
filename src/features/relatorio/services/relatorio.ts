@@ -19,7 +19,7 @@ export async function listarProdutosMaisVendidos(
   params: ParametrosProdutosMaisVendidos,
 ): Promise<RespostaProdutosMaisVendidos> {
   const { data } = await api.get<RespostaProdutosMaisVendidos>(
-    "/reports/top-products",
+    "/relatorios/produtos-mais-vendidos",
     { params },
   );
   return data;

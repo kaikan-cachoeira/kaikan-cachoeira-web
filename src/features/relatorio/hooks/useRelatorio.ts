@@ -6,6 +6,10 @@ import { useEventosListaCompletaQuery } from "@/features/eventos";
 import { listarTodosProdutos } from "@/features/inventario/services/inventario";
 import { obterResumoFiados } from "@/features/caixa/services/fiados";
 import { listarDoacoes } from "@/features/doacoes/services/doacoes";
+import type {
+  ParametrosProdutosMaisVendidos,
+  ParametrosRelatorioGeral,
+} from "../models";
 import { listarProdutosMaisVendidos, obterRelatorioGeral } from "../services/relatorio";
 
 async function listarTodasDoacoes(eventIds: string) {
@@ -30,15 +34,30 @@ export interface FiltrosRelatorio {
   types: string[];
 }
 
-export function useRelatorio(filtros: FiltrosRelatorio) {
+export function construirParametrosRelatorio(
+  filtros: FiltrosRelatorio,
+): ParametrosRelatorioGeral {
   const eventTypes = filtros.types.map((tipo) =>
     tipo === "Reunião" ? "REUNIAO" : "EVENTO",
   );
-  const reportParams = {
+  return {
     dataInicio: filtros.from ? inicioDoDiaISO(filtros.from) || undefined : undefined,
     dataFim: filtros.to ? fimDoDiaISO(filtros.to) || undefined : undefined,
     tipos: eventTypes.length ? eventTypes.join(",") : undefined,
   };
+}
+
+export function construirParametrosProdutosMaisVendidos(
+  filtros: FiltrosRelatorio,
+): ParametrosProdutosMaisVendidos {
+  return {
+    ...construirParametrosRelatorio(filtros),
+    limite: 5,
+  };
+}
+
+export function useRelatorio(filtros: FiltrosRelatorio) {
+  const reportParams = construirParametrosRelatorio(filtros);
   const relatorioGeralQuery = useQuery({
     queryKey: comporChave(queryKeys.eventos, "relatorio", "geral", reportParams),
     queryFn: () => obterRelatorioGeral(reportParams),
@@ -46,12 +65,7 @@ export function useRelatorio(filtros: FiltrosRelatorio) {
   const eventosTodosQuery = useEventosListaCompletaQuery();
   const todosEventIds = (eventosTodosQuery.data || []).map((event) => event.id);
 
-  const productsParams = {
-    types: filtros.types.length ? filtros.types.join(",") : undefined,
-    from: filtros.from || undefined,
-    to: filtros.to || undefined,
-    limit: 5,
-  };
+  const productsParams = construirParametrosProdutosMaisVendidos(filtros);
   const produtosQuery = useQuery({
     queryKey: comporChave(queryKeys.eventos, "relatorio", "produtos", productsParams),
     queryFn: () => listarProdutosMaisVendidos(productsParams),

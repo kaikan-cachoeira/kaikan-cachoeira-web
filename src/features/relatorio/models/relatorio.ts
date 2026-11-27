@@ -1,8 +1,8 @@
 export interface ParametrosProdutosMaisVendidos {
-  from?: string;
-  to?: string;
-  types?: string;
-  limit?: number;
+  dataInicio?: string;
+  dataFim?: string;
+  tipos?: string;
+  limite?: number;
 }
 
 export interface ProdutoMaisVendido {
