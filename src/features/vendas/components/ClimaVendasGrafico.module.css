@@ -1,0 +1,166 @@
+.stack,
+.figure {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: var(--espaco-16);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-12) var(--espaco-24);
+  font-size: 1.125rem;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-8);
+}
+
+.salesSample {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--vinho);
+}
+
+.temperatureSample {
+  width: 24px;
+  height: 3px;
+  background: var(--cor-aviso);
+}
+
+.axisNames {
+  display: flex;
+  justify-content: space-between;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+}
+
+.scroll {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  border-radius: var(--raio-campo);
+}
+
+.scroll:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 3px;
+}
+
+.scroll svg {
+  display: block;
+  max-width: none;
+  font-family: var(--fonte);
+}
+
+.axis line {
+  stroke: var(--borda);
+}
+
+.axis text,
+.hourLabel,
+.dateLabel {
+  fill: var(--texto-suave);
+  font-size: 12px;
+}
+
+.hourLabel {
+  font-size: 14px;
+}
+
+.hour {
+  cursor: pointer;
+  outline: none;
+}
+
+.hitArea {
+  fill: transparent;
+}
+
+.hitArea[data-selected] {
+  fill: var(--vinho-suave);
+}
+
+.hour:focus-visible .hitArea {
+  stroke: var(--foco);
+  stroke-width: 2;
+}
+
+.salesBar {
+  fill: var(--vinho);
+}
+
+.temperatureLine,
+.temperaturePoint {
+  pointer-events: none;
+  stroke: var(--cor-aviso);
+  stroke-width: 3;
+}
+
+.temperatureLine {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.temperaturePoint {
+  fill: var(--fundo);
+  stroke-width: 2;
+}
+
+.help {
+  color: var(--texto-suave);
+  font-size: 1rem;
+}
+
+.details {
+  padding: var(--espaco-16);
+  border: 1px solid var(--borda-bege);
+  border-radius: var(--raio-campo);
+  background: var(--fundo);
+}
+
+.details h3 {
+  margin-bottom: var(--espaco-16);
+  font-size: var(--texto-auxiliar);
+  line-height: 1.5;
+}
+
+.detailsGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--espaco-16);
+}
+
+.detailsGrid dt {
+  color: var(--texto-suave);
+  font-size: 1rem;
+}
+
+.detailsGrid dd {
+  margin-top: var(--espaco-4);
+  font-size: var(--texto-auxiliar);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1100px) {
+  .detailsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .legend {
+    flex-direction: column;
+    font-size: 1rem;
+  }
+
+  .detailsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

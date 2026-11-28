@@ -1,4 +1,5 @@
 import api from "@/shared/api/cliente";
+import { carregarTodasPaginas } from "@/shared/lib/carregarTodasPaginas";
 import { fimDoDiaISO, inicioDoDiaISO } from "@/features/eventos";
 import type {
   CriarVendaPayload,
@@ -87,6 +88,12 @@ export async function listarVendas(
   );
 
   return paraPaginado(data, params.eventId);
+}
+
+export async function listarTodasVendasEvento(eventId: number): Promise<Venda[]> {
+  return carregarTodasPaginas((page) =>
+    listarVendas({ eventId, cancelada: false, page, pageSize: 100 }),
+  );
 }
 
 export async function criarVenda(payload: CriarVendaPayload): Promise<void> {

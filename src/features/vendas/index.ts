@@ -3,6 +3,8 @@ export { default as HistoricoVendasPage } from "./pages/HistoricoVendasPage";
 export { default as EventoVendasPage } from "./pages/EventoVendasPage";
 export { VendaProvider } from "./providers/VendaProvider";
 export { default as VendasPorHora } from "./widgets/VendasPorHora";
+export { default as ClimaVendas } from "./widgets/ClimaVendas";
+export { useClimaVendas } from "./hooks/useClimaVendas";
 export {
   useHistoricoVendas,
   useVendaMutations,

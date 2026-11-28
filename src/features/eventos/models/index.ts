@@ -1,4 +1,10 @@
 export type {
+  ClimaEventoResponse,
+  ClimaHora,
+  ResumoClimatico,
+} from "./clima";
+
+export type {
   AdicionarProdutoCardapioPayload,
   AtualizarCustoEventoPayload,
   AtualizarEventoPayload,

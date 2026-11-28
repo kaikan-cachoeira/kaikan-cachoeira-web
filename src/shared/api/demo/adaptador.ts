@@ -1,5 +1,6 @@
 import { AxiosError } from "axios";
 import { getDb, persistDb } from "./store";
+import { consultarEventosDemo } from "./eventos";
 import { criarId, agoraISO } from "@/shared/lib/armazenamentoLocal";
 
 function ok(config: any, data: any, status = 200) {
@@ -328,6 +329,20 @@ async function route(config: any) {
   if (!path.startsWith("/auth/")) {
     if (!lerEmailDoAccessToken(tokenDoCabecalho(config))) {
       return fail(config, 401, "Sessão expirada. Entre novamente.");
+    }
+  }
+
+  if (method === "get") {
+    const consultaEvento = consultarEventosDemo(db, path, params);
+    if (consultaEvento) {
+      if (consultaEvento.status >= 400) {
+        return Promise.reject(new AxiosError(
+          String("mensagem" in consultaEvento.data ? consultaEvento.data.mensagem : "Falha na consulta do evento."),
+          "ERR_DEMO_REQUEST", config, null,
+          { status: consultaEvento.status, statusText: "Erro", headers: {}, config, data: consultaEvento.data },
+        ));
+      }
+      return ok(config, consultaEvento.data);
     }
   }
 

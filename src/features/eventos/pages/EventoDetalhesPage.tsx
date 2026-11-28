@@ -29,6 +29,7 @@ import {
 import { rotuloTipoDoacao } from "@/shared/lib/tiposDoacao";
 import type {
   CustoAdicionalRelatorio,
+  Evento,
   ItemCardapio,
   MovimentacaoRelatorio,
   OrigemProdutoEvento,
@@ -252,7 +253,13 @@ function VendasPorHoraChart({ data }: { data: VendasPorHoraRelatorio }) {
   );
 }
 
-export default function EventoDetalhesPage() {
+interface EventoDetalhesPageProps {
+  renderClimaVendas?: (evento: Evento) => ReactNode;
+}
+
+export default function EventoDetalhesPage({
+  renderClimaVendas,
+}: EventoDetalhesPageProps) {
   const { id: paramId } = useParams();
   const id = Number(paramId);
   const idValido = Number.isFinite(id) && id > 0;
@@ -330,6 +337,7 @@ export default function EventoDetalhesPage() {
 
   const relatorioCarregando = !isNotStarted && relatorioQuery.isLoading;
   const relatorioIndisponivel = !isNotStarted && relatorioQuery.isError;
+  const secaoClima = !isReuniao ? renderClimaVendas?.(event) : null;
 
   return (
     <div className={styles.stack}>
@@ -443,12 +451,18 @@ export default function EventoDetalhesPage() {
       )}
 
       {relatorioCarregando ? (
-        <EstadoCarregando message="Carregando relatório do evento..." />
+        <>
+          <EstadoCarregando message="Carregando relatório do evento..." />
+          {secaoClima}
+        </>
       ) : relatorioIndisponivel ? (
-        <EstadoErro
-          message="Não foi possível carregar o relatório do evento. O cabeçalho e o resumo continuam disponíveis."
-          onRetry={relatorioQuery.refetch}
-        />
+        <>
+          <EstadoErro
+            message="Não foi possível carregar o relatório do evento. O cabeçalho e o resumo continuam disponíveis."
+            onRetry={relatorioQuery.refetch}
+          />
+          {secaoClima}
+        </>
       ) : isReuniao ? (
         <>
           <SecaoCard
@@ -530,6 +544,8 @@ export default function EventoDetalhesPage() {
               </SecaoCard>
             </div>
           ) : null}
+
+          {secaoClima}
 
           <SecaoCard
             title="Produtos e desempenho"

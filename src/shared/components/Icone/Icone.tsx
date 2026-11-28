@@ -1,6 +1,24 @@
 import type { ReactNode } from "react";
 
 const paths: Record<string, ReactNode> = {
+  thermometer: (
+    <>
+      <path d="M9 14.8V5a3 3 0 0 1 6 0v9.8a5 5 0 1 1-6 0Z" />
+      <path d="M12 9v8" />
+      <circle cx="12" cy="18" r="1.5" fill="currentColor" stroke="none" />
+    </>
+  ),
+  "cloud-rain": (
+    <>
+      <path d="M6 15a4 4 0 1 1 0-8 6 6 0 0 1 11-2 5 5 0 0 1 1 10" />
+      <path d="m8 17-1 3m6-3-1 3m6-3-1 3" />
+    </>
+  ),
+  wind: (
+    <>
+      <path d="M3 8h12a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h5a3 3 0 1 1-3 3" />
+    </>
+  ),
   eye: (
     <>
       <path d="M2.2 12s3.4-6.2 9.8-6.2S21.8 12 21.8 12s-3.4 6.2-9.8 6.2S2.2 12 2.2 12Z" />

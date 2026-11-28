@@ -21,6 +21,7 @@ import {
   EventosPage,
 } from "@/features/eventos";
 import {
+  ClimaVendas,
   EventoVendasPage,
   HistoricoVendasPage,
   RegistroVendasPage,
@@ -55,7 +56,16 @@ export default function AppRoutes() {
             />
             <Route path="/doacoes" element={<DoacoesPage />} />
             <Route path="/eventos" element={<EventosPage />} />
-            <Route path="/eventos/:id" element={<EventoDetalhesPage />} />
+            <Route
+              path="/eventos/:id"
+              element={
+                <EventoDetalhesPage
+                  renderClimaVendas={(evento) => (
+                    <ClimaVendas key={evento.id} evento={evento} />
+                  )}
+                />
+              }
+            />
             <Route
               path="/eventos/:id/cardapio"
               element={<EventoCardapioPage />}

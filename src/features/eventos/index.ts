@@ -3,6 +3,7 @@ export { default as EventoDetalhesPage } from "./pages/EventoDetalhesPage";
 export { default as EventoCardapioPage } from "./pages/EventoCardapioPage";
 export { useEventoCardapio } from "./hooks/useEventoCardapio";
 export { useEventoDetalhes } from "./hooks/useEventoDetalhes";
+export { useClimaEventoQuery } from "./hooks/useClimaEvento";
 export {
   useEventoAtualQuery,
   useEventoCardapioQuery,
@@ -25,6 +26,8 @@ export type {
   AdicionarProdutoCardapioPayload,
   AtualizarEventoPayload,
   AtualizarProdutoCardapioPayload,
+  ClimaEventoResponse,
+  ClimaHora,
   CriarCustoEventoPayload,
   CriarEventoPayload,
   CustoEvento,
@@ -40,6 +43,7 @@ export type {
   RelatorioReuniao,
   RespostaCardapio,
   RespostaEventos,
+  ResumoClimatico,
   ResumoEvento,
   Status,
   StatusEventoCodigo,
